@@ -29,7 +29,6 @@ modules:
     buildsystem: simple
     build-commands:
       # Build the app using offline cache
-      - ls -R flatpak-node/npm-cache | head -n 20
       - npm ci --offline --cache=flatpak-node/npm-cache --no-audit --no-fund
       - npm run dist -- --linux --dir
       # Install to /app
