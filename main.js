@@ -19,6 +19,8 @@ function createMainWindow() {
   mainWindow = new BrowserWindow({
     width: 1280,
     height: 800,
+    minWidth: 800,
+    minHeight: 600,
     icon: path.join(__dirname, "icon512.png"),
     frame: false,
     autoHideMenuBar: true,
