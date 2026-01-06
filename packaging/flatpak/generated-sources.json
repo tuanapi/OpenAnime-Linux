@@ -1,12 +1,5 @@
 [
     {
-        "type": "archive",
-        "url": "https://www.electronjs.org/headers/v35.7.5/node-v35.7.5-headers.tar.gz",
-        "strip-components": 1,
-        "sha256": "517f40c12493db37bb95b1b2c9f81e66dcaeeab97ae8d1f9fd25c33778dfb197",
-        "dest": "flatpak-node/cache/node-gyp/35.7.5"
-    },
-    {
         "type": "file",
         "url": "https://codeload.github.com/electron/node-gyp/tar.gz/06b29aafb7708acef8b3669835c8a7857ebc92d2",
         "sha512": "3178339530c41277490774c16ef779b8540effc81a20da351df7a7f2f79fe6babf54754f781eb7baebffb8ee7ef0616c009feb6aebba5c1efd4ba2b8f9a5dcfb",
@@ -15,16 +8,16 @@
     },
     {
         "type": "file",
-        "url": "https://github.com/electron/electron/releases/download/v35.7.5/SHASUMS256.txt",
-        "sha256": "6e379d0be079aac68d3b441d9d66c2dbef534b05a3336c23c35019e5b2261b15",
-        "dest-filename": "SHASUMS256.txt-35.7.5",
+        "url": "https://github.com/electron/electron/releases/download/v37.10.3/SHASUMS256.txt",
+        "sha256": "f6107ad6ea24aeda2d270459c06a2d35f9bdbc761ddd1e0243d51d592c94098f",
+        "dest-filename": "SHASUMS256.txt-37.10.3",
         "dest": "flatpak-node/cache/electron"
     },
     {
         "type": "file",
-        "url": "https://github.com/electron/electron/releases/download/v35.7.5/electron-v35.7.5-linux-arm64.zip",
-        "sha256": "35c4c30aed2639a38fafa6bd1a6a97b3af89a681afbd5c7a0f40673859040ea3",
-        "dest-filename": "electron-v35.7.5-linux-arm64.zip",
+        "url": "https://github.com/electron/electron/releases/download/v37.10.3/electron-v37.10.3-linux-arm64.zip",
+        "sha256": "37a228821184136fa86a8727bec19ab400524dd7d4bca78937de5d50704592d1",
+        "dest-filename": "electron-v37.10.3-linux-arm64.zip",
         "dest": "flatpak-node/cache/electron",
         "only-arches": [
             "aarch64"
@@ -32,9 +25,9 @@
     },
     {
         "type": "file",
-        "url": "https://github.com/electron/electron/releases/download/v35.7.5/electron-v35.7.5-linux-armv7l.zip",
-        "sha256": "350e80638b5ba8a1b56e2463fa55de25f8ee595c0496ef833b07fb4dc65e0c22",
-        "dest-filename": "electron-v35.7.5-linux-armv7l.zip",
+        "url": "https://github.com/electron/electron/releases/download/v37.10.3/electron-v37.10.3-linux-armv7l.zip",
+        "sha256": "db4c1f6c8f012ddd15965c5f8837a61b65d0c3f8f296d81e3f0bf7158ef9779f",
+        "dest-filename": "electron-v37.10.3-linux-armv7l.zip",
         "dest": "flatpak-node/cache/electron",
         "only-arches": [
             "arm"
@@ -42,9 +35,9 @@
     },
     {
         "type": "file",
-        "url": "https://github.com/electron/electron/releases/download/v35.7.5/electron-v35.7.5-linux-x64.zip",
-        "sha256": "368d155a2189e1056d111d334b712779e77066fce1f5ab935b22c4ef544eaa29",
-        "dest-filename": "electron-v35.7.5-linux-x64.zip",
+        "url": "https://github.com/electron/electron/releases/download/v37.10.3/electron-v37.10.3-linux-x64.zip",
+        "sha256": "c0b4edd6bd9858cda4cf7ab299e69a2d3ecd2e5fcca78507bc0851ba35614660",
+        "dest-filename": "electron-v37.10.3-linux-x64.zip",
         "dest": "flatpak-node/cache/electron",
         "only-arches": [
             "x86_64"
@@ -843,10 +836,10 @@
     },
     {
         "type": "file",
-        "url": "https://registry.npmjs.org/electron/-/electron-35.7.5.tgz",
-        "sha512": "7672fe26f2eb68a665ee2bac5d3553198b35d1329fcd48b7d2e1034eab264e6d20b8df55dad6ce8d3cf22196e1f67df28148e0118ca8fa2800c0c457222dc83f",
-        "dest-filename": "fe26f2eb68a665ee2bac5d3553198b35d1329fcd48b7d2e1034eab264e6d20b8df55dad6ce8d3cf22196e1f67df28148e0118ca8fa2800c0c457222dc83f",
-        "dest": "flatpak-node/npm-cache/_cacache/content-v2/sha512/76/72"
+        "url": "https://registry.npmjs.org/electron/-/electron-37.10.3.tgz",
+        "sha512": "dc88c21928d0987e7421b5b63c5bde693ccaf8ac1c157f4f12113b2976fdbf9213f1c2c08abc8037ba9ece6fd7cce0e10d194bbb4c4a1b58fcc5606d67f6f1fe",
+        "dest-filename": "c21928d0987e7421b5b63c5bde693ccaf8ac1c157f4f12113b2976fdbf9213f1c2c08abc8037ba9ece6fd7cce0e10d194bbb4c4a1b58fcc5606d67f6f1fe",
+        "dest": "flatpak-node/npm-cache/_cacache/content-v2/sha512/dc/88"
     },
     {
         "type": "file",
@@ -2721,12 +2714,6 @@
     },
     {
         "type": "inline",
-        "contents": "3973526c206ff047c122b8312b09a9cf442be5ce\t{\"key\": \"make-fetch-happen:request-cache:https://registry.npmjs.org/electron/-/electron-35.7.5.tgz\", \"integrity\": \"sha512-dnL+JvLraKZl7iusXTVTGYs10TKfzUi30uEDTqsmTm0guN9V2tbOjTzyIZbh9n3ygUjgEYyo+igAwMRXIi3IPw==\", \"time\": 0, \"size\": 175517, \"metadata\": {\"url\": \"https://registry.npmjs.org/electron/-/electron-35.7.5.tgz\", \"reqHeaders\": {}, \"resHeaders\": {}}}",
-        "dest-filename": "eac83bf43fde596ad0e77f87d36dc8c45979d7443f7bae79ee7e600bb2fd",
-        "dest": "flatpak-node/npm-cache/_cacache/index-v5/55/d6"
-    },
-    {
-        "type": "inline",
         "contents": "3a2cf8ba70c468343bfdd6cda9c012f955b07bb1\t{\"key\": \"make-fetch-happen:request-cache:https://registry.npmjs.org/ansi-regex/-/ansi-regex-6.2.2.tgz\", \"integrity\": \"sha512-Bq3SmSpyFHaWjPk8If9yc6svM8c56dB5BAtW4Qbw5jHTwwXXcTLoRMkpDJp6VL0XzlWaCHTXrkFURMYmD0sLqg==\", \"time\": 0, \"size\": 2880, \"metadata\": {\"url\": \"https://registry.npmjs.org/ansi-regex/-/ansi-regex-6.2.2.tgz\", \"reqHeaders\": {}, \"resHeaders\": {}}}",
         "dest-filename": "f26dea52f5e17e7686475713bb1059b055da65c0aa1c9b779c4e21cfcff8",
         "dest": "flatpak-node/npm-cache/_cacache/index-v5/d1/e5"
@@ -2928,6 +2915,12 @@
         "contents": "5025fc821e00072d0e863cdc15ae06a7d0cac569\t{\"key\": \"make-fetch-happen:request-cache:https://registry.npmjs.org/isbinaryfile/-/isbinaryfile-5.0.7.tgz\", \"integrity\": \"sha512-gnWD14Jh3FzS3CPhF0AxNOJ8CxqeblPTADzI38r0wt8ZyQl5edpy75myt08EG2oKvpyiqSqsx+Wkz9vtkbTqYQ==\", \"time\": 0, \"size\": 4330, \"metadata\": {\"url\": \"https://registry.npmjs.org/isbinaryfile/-/isbinaryfile-5.0.7.tgz\", \"reqHeaders\": {}, \"resHeaders\": {}}}",
         "dest-filename": "83c239ea0882a0dddefc86f1c7369353143c88c774de6d54a48434e1269f",
         "dest": "flatpak-node/npm-cache/_cacache/index-v5/fc/e7"
+    },
+    {
+        "type": "inline",
+        "contents": "50318c07d98ad4bd82c6ba1edf0c3d424f403518\t{\"key\": \"make-fetch-happen:request-cache:https://registry.npmjs.org/electron/-/electron-37.10.3.tgz\", \"integrity\": \"sha512-3IjCGSjQmH50IbW2PFveaTzK+KwcFX9PEhE7KXb9v5IT8cLAiryAN7qezm/XzODhDRlLu0xKG1j8xWBtZ/bx/g==\", \"time\": 0, \"size\": 179070, \"metadata\": {\"url\": \"https://registry.npmjs.org/electron/-/electron-37.10.3.tgz\", \"reqHeaders\": {}, \"resHeaders\": {}}}",
+        "dest-filename": "78af7a96e182805b2502f05c45f73883b494fe082d6dce47383643c5c184",
+        "dest": "flatpak-node/npm-cache/_cacache/index-v5/a6/e0"
     },
     {
         "type": "inline",
@@ -3438,12 +3431,6 @@
         "contents": "8fa5eaee2ba465ce7fe9b02539be8151c2340edd\t{\"key\": \"make-fetch-happen:request-cache:https://registry.npmjs.org/abbrev/-/abbrev-1.1.1.tgz\", \"integrity\": \"sha512-nne9/IiQ/hzIhY6pdDnbBtz7DjPTKrY00P/zvPSm5pOFkl6xuGrGnXn/VtTNNfNtAfZ9/1RtehkszU9qcTii0Q==\", \"time\": 0, \"size\": 2301, \"metadata\": {\"url\": \"https://registry.npmjs.org/abbrev/-/abbrev-1.1.1.tgz\", \"reqHeaders\": {}, \"resHeaders\": {}}}",
         "dest-filename": "d2cf4975f2aeaff2cf9821384d314926fd8032f77cb968ad6b44489f139c",
         "dest": "flatpak-node/npm-cache/_cacache/index-v5/f2/bd"
-    },
-    {
-        "type": "inline",
-        "contents": "9",
-        "dest-filename": "installVersion",
-        "dest": "flatpak-node/cache/node-gyp/35.7.5"
     },
     {
         "type": "inline",
@@ -4387,16 +4374,16 @@
     {
         "type": "shell",
         "commands": [
-            "mkdir -p \"f71d58b9535ad2f1d90f09dd91a30fea648c4fe7e710e38a47d6983edd09e53f\"",
-            "ln -s \"../SHASUMS256.txt-35.7.5\" \"f71d58b9535ad2f1d90f09dd91a30fea648c4fe7e710e38a47d6983edd09e53f/SHASUMS256.txt\""
+            "mkdir -p \"020e126cad35e5d7c7aef970b1a4becbc8b14205b2f9a17c0427b97c2867ffe5\"",
+            "ln -s \"../SHASUMS256.txt-37.10.3\" \"020e126cad35e5d7c7aef970b1a4becbc8b14205b2f9a17c0427b97c2867ffe5/SHASUMS256.txt\""
         ],
         "dest": "flatpak-node/cache/electron"
     },
     {
         "type": "shell",
         "commands": [
-            "mkdir -p \"f71d58b9535ad2f1d90f09dd91a30fea648c4fe7e710e38a47d6983edd09e53f\"",
-            "ln -s \"../electron-v35.7.5-linux-arm64.zip\" \"f71d58b9535ad2f1d90f09dd91a30fea648c4fe7e710e38a47d6983edd09e53f/electron-v35.7.5-linux-arm64.zip\""
+            "mkdir -p \"020e126cad35e5d7c7aef970b1a4becbc8b14205b2f9a17c0427b97c2867ffe5\"",
+            "ln -s \"../electron-v37.10.3-linux-arm64.zip\" \"020e126cad35e5d7c7aef970b1a4becbc8b14205b2f9a17c0427b97c2867ffe5/electron-v37.10.3-linux-arm64.zip\""
         ],
         "dest": "flatpak-node/cache/electron",
         "only-arches": [
@@ -4406,8 +4393,8 @@
     {
         "type": "shell",
         "commands": [
-            "mkdir -p \"f71d58b9535ad2f1d90f09dd91a30fea648c4fe7e710e38a47d6983edd09e53f\"",
-            "ln -s \"../electron-v35.7.5-linux-armv7l.zip\" \"f71d58b9535ad2f1d90f09dd91a30fea648c4fe7e710e38a47d6983edd09e53f/electron-v35.7.5-linux-armv7l.zip\""
+            "mkdir -p \"020e126cad35e5d7c7aef970b1a4becbc8b14205b2f9a17c0427b97c2867ffe5\"",
+            "ln -s \"../electron-v37.10.3-linux-armv7l.zip\" \"020e126cad35e5d7c7aef970b1a4becbc8b14205b2f9a17c0427b97c2867ffe5/electron-v37.10.3-linux-armv7l.zip\""
         ],
         "dest": "flatpak-node/cache/electron",
         "only-arches": [
@@ -4417,8 +4404,8 @@
     {
         "type": "shell",
         "commands": [
-            "mkdir -p \"f71d58b9535ad2f1d90f09dd91a30fea648c4fe7e710e38a47d6983edd09e53f\"",
-            "ln -s \"../electron-v35.7.5-linux-x64.zip\" \"f71d58b9535ad2f1d90f09dd91a30fea648c4fe7e710e38a47d6983edd09e53f/electron-v35.7.5-linux-x64.zip\""
+            "mkdir -p \"020e126cad35e5d7c7aef970b1a4becbc8b14205b2f9a17c0427b97c2867ffe5\"",
+            "ln -s \"../electron-v37.10.3-linux-x64.zip\" \"020e126cad35e5d7c7aef970b1a4becbc8b14205b2f9a17c0427b97c2867ffe5/electron-v37.10.3-linux-x64.zip\""
         ],
         "dest": "flatpak-node/cache/electron",
         "only-arches": [
@@ -4428,8 +4415,8 @@
     {
         "type": "shell",
         "commands": [
-            "mkdir -p \"httpsgithub.comelectronelectronreleasesdownloadv35.7.5electron-v35.7.5-linux-arm64.zip\"",
-            "ln -s \"../electron-v35.7.5-linux-arm64.zip\" \"httpsgithub.comelectronelectronreleasesdownloadv35.7.5electron-v35.7.5-linux-arm64.zip/electron-v35.7.5-linux-arm64.zip\""
+            "mkdir -p \"httpsgithub.comelectronelectronreleasesdownloadv37.10.3electron-v37.10.3-linux-arm64.zip\"",
+            "ln -s \"../electron-v37.10.3-linux-arm64.zip\" \"httpsgithub.comelectronelectronreleasesdownloadv37.10.3electron-v37.10.3-linux-arm64.zip/electron-v37.10.3-linux-arm64.zip\""
         ],
         "dest": "flatpak-node/cache/electron",
         "only-arches": [
@@ -4439,8 +4426,8 @@
     {
         "type": "shell",
         "commands": [
-            "mkdir -p \"httpsgithub.comelectronelectronreleasesdownloadv35.7.5electron-v35.7.5-linux-armv7l.zip\"",
-            "ln -s \"../electron-v35.7.5-linux-armv7l.zip\" \"httpsgithub.comelectronelectronreleasesdownloadv35.7.5electron-v35.7.5-linux-armv7l.zip/electron-v35.7.5-linux-armv7l.zip\""
+            "mkdir -p \"httpsgithub.comelectronelectronreleasesdownloadv37.10.3electron-v37.10.3-linux-armv7l.zip\"",
+            "ln -s \"../electron-v37.10.3-linux-armv7l.zip\" \"httpsgithub.comelectronelectronreleasesdownloadv37.10.3electron-v37.10.3-linux-armv7l.zip/electron-v37.10.3-linux-armv7l.zip\""
         ],
         "dest": "flatpak-node/cache/electron",
         "only-arches": [
@@ -4450,8 +4437,8 @@
     {
         "type": "shell",
         "commands": [
-            "mkdir -p \"httpsgithub.comelectronelectronreleasesdownloadv35.7.5electron-v35.7.5-linux-x64.zip\"",
-            "ln -s \"../electron-v35.7.5-linux-x64.zip\" \"httpsgithub.comelectronelectronreleasesdownloadv35.7.5electron-v35.7.5-linux-x64.zip/electron-v35.7.5-linux-x64.zip\""
+            "mkdir -p \"httpsgithub.comelectronelectronreleasesdownloadv37.10.3electron-v37.10.3-linux-x64.zip\"",
+            "ln -s \"../electron-v37.10.3-linux-x64.zip\" \"httpsgithub.comelectronelectronreleasesdownloadv37.10.3electron-v37.10.3-linux-x64.zip/electron-v37.10.3-linux-x64.zip\""
         ],
         "dest": "flatpak-node/cache/electron",
         "only-arches": [
