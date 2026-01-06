@@ -45,5 +45,5 @@ modules:
           - exec /app/openanime --no-sandbox --ozone-platform=x11 --enable-features=Vulkan,WebGPU --enable-unsafe-webgpu --enable-gpu-rasterization --ignore-gpu-blocklist "$@"
       - type: git
         url: https://github.com/tuanapi/OpenAnime-Linux-Desktop-App.git
-        tag: v1.0.4
+        tag: v1.0.5
       - generated-sources.json
