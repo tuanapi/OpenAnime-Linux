@@ -3,12 +3,10 @@ const path = require("path");
 
 const URL = "https://openani.me";
 
-// --- GPU & Performance Configuration ---
-// Electron 35+ with Chromium 132+ fixes the 4K color bug on NVIDIA
 app.commandLine.appendSwitch("enable-features", "Vulkan,VaapiVideoDecoder,VaapiVideoEncoder,CanvasOopRasterization,UseMultiPlaneFormatForHardwareVideo,AcceleratedVideoDecodeLinuxGL");
 app.commandLine.appendSwitch("enable-unsafe-webgpu");
 app.commandLine.appendSwitch("ignore-gpu-blocklist");
-app.commandLine.appendSwitch("ozone-platform-hint", "auto"); // Native Wayland support with X11 fallback
+app.commandLine.appendSwitch("ozone-platform-hint", "auto");
 app.commandLine.appendSwitch("enable-gpu-rasterization");
 app.commandLine.appendSwitch("enable-zero-copy");
 app.commandLine.appendSwitch("enable-hardware-overlays");
@@ -33,7 +31,6 @@ function createMainWindow() {
     }
   });
 
-  // Lock navigation to openani.me
   mainWindow.webContents.on("will-navigate", (e, url) => {
     if (!url.startsWith(URL)) e.preventDefault();
   });
@@ -44,21 +41,17 @@ function createMainWindow() {
 
   mainWindow.loadURL(URL);
 
-  // Handle Keyboard Shortcuts
+  // Keyboard Shortcuts Handler
   mainWindow.webContents.on('before-input-event', (event, input) => {
     if (input.type !== 'keyDown') return;
 
-    // ESC -> Exit Fullscreen (instead of quitting)
+    // ESC -> Go Back
     if (input.key === "Escape") {
       if (mainWindow.isFullScreen()) {
         mainWindow.setFullScreen(false);
+      } else if (mainWindow.webContents.navigationHistory.canGoBack()) {
+        mainWindow.webContents.navigationHistory.goBack();
       }
-    }
-
-    // F11 -> Toggle Fullscreen
-    if (input.key === "F11") {
-      event.preventDefault();
-      mainWindow.setFullScreen(!mainWindow.isFullScreen());
     }
   });
 }

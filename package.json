@@ -1,5 +1,5 @@
 {
-  "name": "openanime",
+  "name": "OpenAnime",
   "version": "1.0.4",
   "main": "main.js",
   "description": "OpenAnime için geliştirilmiş, resmi olmayan (unofficial), yerel WebGPU destekli Linux istemcisi.",
@@ -35,7 +35,7 @@
     "asar": true
   },
   "devDependencies": {
-    "electron": "^35.7.5",
+    "electron": "37.10.3",
     "electron-builder": "^26.0.12"
   }
 }

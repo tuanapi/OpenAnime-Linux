@@ -13,3 +13,4 @@ Thumbs.db
 # IDE
 .vscode/
 .idea/
+squashfs-root/

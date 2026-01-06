@@ -1,72 +1,90 @@
-# OpenAnime Linux İstemcisi
+# OpenAnime Linux Client
 
 **OpenAnime** is an unofficial desktop client for [OpenAni.me](https://openani.me), specifically optimized for Linux.
 
 It features hardware acceleration for smooth 4K playback.
 
-### 📑 Versiyon: 1.0.4 (Optimize Sürüm)
-🚀 **4K Performans Odaklı**: WebGPU + Native Wayland + Vulkan entegrasyonu tamamlandı.
+### Version 1.0.4
+Includes WebGPU, Native Wayland, and Vulkan integration.
 
 ![OpenAnime Icon](icon512.png)
 
-## 🚀 Özellikler
+## Features
 
-*   **Donanım Hızlandırma**: WebGPU ve Vulkan ile güçlendirilmiş Electron 35 altyapısı sayesinde akıcı 4K oynatma.
-*   **Çerçevesiz Arayüz**: Tam ekranda **otomatik gizlenen** özel pencere kontrolleri (Küçült, Büyüt, Kapat).
-*   **Tak ve Çalıştır**: Tek dosyalık AppImage. Kurulum gerektirmez.
+*   **Hardware Acceleration**: Smooth 4K playback powered by WebGPU and Vulkan (Electron 35).
+*   **Frameless UI**: Custom window controls that auto-hide for an immersive viewing experience.
+*   **Plug & Play**: Single-file AppImage. No installation required.
 
-## 📥 Kurulum
+## Installation
 
-### Seçenek 1: AppImage (Önerilen)
-1.  [Releases](../../releases) sayfasından `.AppImage` dosyasını indirin.
-2.  Çalıştırılabilir yapın (Örn: `OpenAnime-1.0.3.AppImage`).
-3.  Çalıştırın!
+<details>
+<summary><strong>Option 1: AppImage (Recommended)</strong></summary>
 
-    **Sistem Entegrasyonu (Masaüstü Kısayolu ve İkon)**:
-    ```bash
-    chmod +x install.sh
-    ./install.sh
-    ```
+1.  Download the `.AppImage` file from the [Releases](../../releases) page.
+2.  Make it executable (e.g., `OpenAnime-1.0.4.AppImage`).
+3.  Run it!
 
-    **Kaldırma**:
-    ```bash
-    chmod +x uninstall.sh
-    ./uninstall.sh
-    ```
+**System Integration (Desktop Shortcut & Icon)**:
+```bash
+chmod +x install.sh
+./install.sh
+```
 
-### Seçenek 2: AUR (Arch Linux)
+**Uninstall**:
+```bash
+chmod +x uninstall.sh
+./uninstall.sh
+```
+</details>
+
+<details>
+<summary><strong>Option 2: AUR (Arch Linux)</strong></summary>
+
 ```bash
 yay -S openanime-bin
 ```
+</details>
 
-### Seçenek 3: Flatpak
+<details>
+<summary><strong>Option 3: Flatpak</strong></summary>
+
 ```bash
 flatpak install flathub io.github.tuanapi.OpenAnime
 ```
+</details>
 
-## 🛠️ Kaynak Kodundan Derleme
+## Screenshots
 
-Gereksinimler: `node`, `npm`.
+| Main Interface | Detail View |
+| :---: | :---: |
+| ![Main](screenshots/main.png) | ![Detail](screenshots/detail.png) |
+| **Discover** | **Player** |
+| ![Discover](screenshots/discover.png) | ![Player](screenshots/player2.png) |
+
+## Build from Source
+
+Requirements: `node`, `npm`.
 
 ```bash
 git clone https://github.com/tuanapi/OpenAnime-Linux-Desktop-App.git
 cd OpenAnime-Linux-Desktop-App
 npm install
-npm start          # Geliştirici modu
+npm start          # Dev mode
 ```
 ```bash
-npm run dist       # AppImage oluştur (dist/ klasöründe)
+npm run dist       # Build AppImage (in dist/)
 ```
 
-## 🖥️ Test Edilen Sistem (Doğrulandı)
+## Tested Environment
 
-Bu istemci, özellikle yüksek performanslı NVIDIA sistemlerinde karşılaşılan 4K renk sorunlarını çözmek için aşağıdaki donanım üzerinde test edilmiş ve onaylanmıştır:
+Verified for 4K playback on NVIDIA systems:
 
-*   **İşletim Sistemi**: EndeavourOS (Kernel 6.18.2-arch2-1)
-*   **Masaüstü Ortamı**: KDE Plasma 6.5.4 (Wayland)
-*   **İşlemci**: AMD Ryzen 7 7800X3D
-*   **Ekran Kartı**: NVIDIA GeForce RTX 5070 Ti (Sürücü: 590.48.01)
-*   **RAM**: 64 GB
+*   **OS**: EndeavourOS (Kernel 6.18.2)
+*   **DE**: KDE Plasma 6.5.4 (Wayland)
+*   **GPU**: NVIDIA GeForce RTX 5070 Ti (Driver: 590.48.01)
 
-## 📜 Lisans
+## Community
+Join the discussion on our [Discord Server](https://discord.gg/openanime).
+
+## License
 MIT
