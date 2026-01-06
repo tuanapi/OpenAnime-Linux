@@ -1,6 +1,6 @@
 # OpenAnime Linux
 
-[OpenAnime](https://openani.me) için yapılmış, resmi olmayan (unofficial) Linux masaüstü uygulaması.
+[OpenAnime](https://openani.me) için yapılmış, unofficial Linux masaüstü uygulaması.
 
 WebGPU ve Vulkan kullanarak 4K videoları kasma yapmadan oynatır. Native Wayland desteği var, yani modern sistemlerde (Hyprland, KDE 6 vs.) sorunsuz çalışıyor.
 
