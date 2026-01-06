@@ -20,27 +20,27 @@
   <screenshots>
     <screenshot type="default">
       <caption>OpenAnime Main Interface</caption>
-      <image>https://raw.githubusercontent.com/tuanapi/OpenAnime-Linux-Desktop-App/v1.0.4/screenshots/main.png</image>
+      <image>https://raw.githubusercontent.com/tuanapi/OpenAnime-Linux-Desktop-App/v1.0.5/screenshots/main.png</image>
     </screenshot>
     <screenshot>
       <caption>Recent Releases and Popular Content</caption>
-      <image>https://raw.githubusercontent.com/tuanapi/OpenAnime-Linux-Desktop-App/v1.0.4/screenshots/recent_releases.png</image>
+      <image>https://raw.githubusercontent.com/tuanapi/OpenAnime-Linux-Desktop-App/v1.0.5/screenshots/recent_releases.png</image>
     </screenshot>
     <screenshot>
       <caption>Search and Filter Anime</caption>
-      <image>https://raw.githubusercontent.com/tuanapi/OpenAnime-Linux-Desktop-App/v1.0.4/screenshots/search.png</image>
+      <image>https://raw.githubusercontent.com/tuanapi/OpenAnime-Linux-Desktop-App/v1.0.5/screenshots/search.png</image>
     </screenshot>
     <screenshot>
       <caption>Discover New Series</caption>
-      <image>https://raw.githubusercontent.com/tuanapi/OpenAnime-Linux-Desktop-App/v1.0.4/screenshots/discover.png</image>
+      <image>https://raw.githubusercontent.com/tuanapi/OpenAnime-Linux-Desktop-App/v1.0.5/screenshots/discover.png</image>
     </screenshot>
     <screenshot>
       <caption>Detailed Anime Information</caption>
-      <image>https://raw.githubusercontent.com/tuanapi/OpenAnime-Linux-Desktop-App/v1.0.4/screenshots/detail.png</image>
+      <image>https://raw.githubusercontent.com/tuanapi/OpenAnime-Linux-Desktop-App/v1.0.5/screenshots/detail.png</image>
     </screenshot>
     <screenshot>
       <caption>High Performance Player - Controls Interface</caption>
-      <image>https://raw.githubusercontent.com/tuanapi/OpenAnime-Linux-Desktop-App/v1.0.4/screenshots/player2.png</image>
+      <image>https://raw.githubusercontent.com/tuanapi/OpenAnime-Linux-Desktop-App/v1.0.5/screenshots/player2.png</image>
     </screenshot>
   </screenshots>
   <developer_name>tuanapi</developer_name>
@@ -49,6 +49,16 @@
   <url type="vcs-browser">https://github.com/tuanapi/OpenAnime-Linux-Desktop-App</url>
   <content_rating type="oars-1.1" />
   <releases>
+    <release version="1.0.5" date="2026-01-06">
+      <description>
+        <p>Stable release for Flathub with managed offline dependencies and critical fixes for keyboard navigation.</p>
+        <ul>
+          <li>Fixed WebGPU/Vulkan compatibility for NVIDIA/Wayland users via XWayland.</li>
+          <li>Optimized npm cache paths for deterministic offline builds.</li>
+          <li>Implemented Escape key for back navigation.</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.0.4" date="2026-01-03">
       <description>
         <p>Flatpak release candidate with complete offline dependency tree and consolidated manifest.</p>
