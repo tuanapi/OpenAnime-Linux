@@ -38,6 +38,7 @@ jobs:
         with:
           files: |
             dist/*.AppImage
+            dist/*.deb
             dist/*-portable.zip
             dist/*.yml
             dist/*.blockmap
@@ -50,4 +51,5 @@ jobs:
 
             ## İndirme
             - **AppImage:** Tek dosya, kurulum gerektirmez. İndir > Çalıştır.
+            - **Deb:** Debian, Ubuntu, Linux Mint vb. için kurulum paketi. `sudo dpkg -i` ile kurun.
             - **Portable Zip:** Arşivi aç, `linux-unpacked/openanime` dosyasını çalıştır.
