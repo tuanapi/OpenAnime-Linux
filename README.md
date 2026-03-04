@@ -78,8 +78,8 @@ npm run dist       # AppImage oluştur (dist/ klasörüne)
 
 ## Test Edilen Ortam
 
-*   **OS**: EndeavourOS (Kernel 6.18.2)
-*   **DE**: KDE Plasma 6.5.4 (Wayland)
+*   **OS**: EndeavourOS (Kernel 6.18.2), Arch Linux (Kernel 6.18.13-arch1-1) 
+*   **DE**: KDE Plasma 6.5.4-6.6.1 (Wayland)
 *   **GPU**: NVIDIA GeForce RTX 5070 Ti (Driver 590.48.01)
 
 ## Topluluk
