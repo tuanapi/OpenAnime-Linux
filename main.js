@@ -7,6 +7,8 @@ app.commandLine.appendSwitch("enable-features", "Vulkan,VaapiVideoDecoder,VaapiV
 app.commandLine.appendSwitch("enable-unsafe-webgpu");
 app.commandLine.appendSwitch("ignore-gpu-blocklist");
 app.commandLine.appendSwitch("ozone-platform-hint", "auto");
+app.commandLine.appendSwitch("disable-gpu-sandbox");
+app.commandLine.appendSwitch("gpu-preference", "high-performance");
 app.commandLine.appendSwitch("enable-gpu-rasterization");
 app.commandLine.appendSwitch("enable-zero-copy");
 app.commandLine.appendSwitch("enable-hardware-overlays");
