@@ -98,17 +98,19 @@ function createMainWindow() {
     return { action: "allow" };
   });
 
-  // If the app was launched with a deep link URL, use it; otherwise load the homepage
-  const startUrl = pendingUrl || URL;
+  // Consolidate start URL: check pendingUrl (from open-url) first, then process.argv
+  let startUrl = pendingUrl || URL;
   pendingUrl = null;
-  mainWindow.loadURL(startUrl);
 
-  // Also check argv for a protocol URL on first launch
-  const argUrl = process.argv.find(arg => arg.startsWith(PROTOCOL + "://"));
-  if (argUrl) {
-    const webUrl = protocolUrlToWebUrl(argUrl);
-    if (webUrl) mainWindow.loadURL(webUrl);
+  if (startUrl === URL) {
+    const argUrl = process.argv.find(arg => arg.startsWith(PROTOCOL + "://"));
+    if (argUrl) {
+      const webUrl = protocolUrlToWebUrl(argUrl);
+      if (webUrl) startUrl = webUrl;
+    }
   }
+
+  mainWindow.loadURL(startUrl);
 
   // Keyboard Shortcuts Handler
   mainWindow.webContents.on('before-input-event', (event, input) => {
