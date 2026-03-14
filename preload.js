@@ -76,9 +76,9 @@ window.addEventListener('DOMContentLoaded', () => {
     ipcRenderer.send('window-control', 'close');
   });
 
-  // Auto-hide on mouse inactivity (1.5s)
+  // Auto-hide on mouse inactivity (2s)
   let hideTimer = null;
-  const AUTO_HIDE_DELAY = 1500;
+  const AUTO_HIDE_DELAY = 2100;
 
   function showTitlebar() {
     titlebar.classList.remove('auto-hidden');
@@ -98,4 +98,13 @@ window.addEventListener('DOMContentLoaded', () => {
 
   // Start the initial hide timer
   scheduleHide();
+
+  // Keep titlebar visible during HTML5 Web Fullscreen (like the video player)
+  document.addEventListener('fullscreenchange', () => {
+    if (document.fullscreenElement) {
+      document.fullscreenElement.appendChild(titlebar);
+    } else {
+      document.body.appendChild(titlebar);
+    }
+  });
 });
