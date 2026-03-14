@@ -1,6 +1,6 @@
 {
-  "name": "OpenAnime",
-  "version": "1.0.6",
+  "name": "openanime",
+  "version": "1.0.7",
   "main": "main.js",
   "description": "OpenAnime için geliştirilmiş, resmi olmayan (unofficial), yerel WebGPU destekli Linux istemcisi.",
   "author": "tuanapi <tuanapi@proton.me>",

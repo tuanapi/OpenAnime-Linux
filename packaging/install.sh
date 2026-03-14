@@ -6,7 +6,7 @@
 
 APP_NAME="OpenAnime"
 ICON_NAME="openanime"
-APP_FILENAME="OpenAnime-1.0.3.AppImage"
+APP_FILENAME="OpenAnime-1.0.7.AppImage"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "📦 Installing $APP_NAME..."
@@ -69,11 +69,13 @@ Version=1.0
 Type=Application
 Name=$APP_NAME
 Comment=Stream Anime (WebGPU)
-Exec=$INSTALL_DIR/$APP_FILENAME
+Exec=$INSTALL_DIR/$APP_FILENAME %u
 Icon=$ICON_NAME
 Terminal=false
 Categories=AudioVideo;Video;Player;
+MimeType=x-scheme-handler/openanime;
 StartupWMClass=$APP_NAME
+PrefersNonDefaultGPU=true
 EOF
 chmod +x "$DESKTOP_DIR/openanime.desktop"
 echo "   -> Created desktop entry at $DESKTOP_DIR/openanime.desktop"

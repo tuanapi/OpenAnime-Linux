@@ -2,6 +2,7 @@ const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
 
 const URL = "https://openani.me";
+const PROTOCOL = "openanime";
 
 app.commandLine.appendSwitch("enable-features", "Vulkan,VaapiVideoDecoder,VaapiVideoEncoder,CanvasOopRasterization,UseMultiPlaneFormatForHardwareVideo,AcceleratedVideoDecodeLinuxGL");
 app.commandLine.appendSwitch("enable-unsafe-webgpu");
@@ -16,6 +17,60 @@ app.commandLine.appendSwitch("ignore-resolution-limits-for-acceleration");
 app.commandLine.appendSwitch("vaapi-ignore-driver-checks");
 
 let mainWindow = null;
+
+/**
+ * Convert an openanime:// URL to an https://openani.me URL.
+ * e.g. "openanime://anime/123" -> "https://openani.me/anime/123"
+ */
+function protocolUrlToWebUrl(protocolUrl) {
+  if (!protocolUrl || !protocolUrl.startsWith(PROTOCOL + "://")) return null;
+  const pathPart = protocolUrl.slice((PROTOCOL + "://").length);
+  return URL + "/" + pathPart;
+}
+
+/**
+ * Handle an incoming deep link URL.
+ * If the window exists, navigate it; otherwise store for later.
+ */
+let pendingUrl = null;
+
+function handleDeepLink(url) {
+  const webUrl = protocolUrlToWebUrl(url);
+  if (!webUrl) return;
+
+  if (mainWindow) {
+    mainWindow.loadURL(webUrl);
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.focus();
+  } else {
+    pendingUrl = webUrl;
+  }
+}
+
+// Enforce single instance — when a second instance is launched with a URL,
+// forward it to the existing instance.
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  app.quit();
+} else {
+  app.on("second-instance", (event, argv) => {
+    // On Linux the URL is passed as the last argv element
+    const url = argv.find(arg => arg.startsWith(PROTOCOL + "://"));
+    if (url) handleDeepLink(url);
+
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+    }
+  });
+
+  // macOS / some Linux DEs fire open-url instead
+  app.on("open-url", (event, url) => {
+    event.preventDefault();
+    handleDeepLink(url);
+  });
+}
 
 function createMainWindow() {
   mainWindow = new BrowserWindow({
@@ -43,7 +98,17 @@ function createMainWindow() {
     return { action: "allow" };
   });
 
-  mainWindow.loadURL(URL);
+  // If the app was launched with a deep link URL, use it; otherwise load the homepage
+  const startUrl = pendingUrl || URL;
+  pendingUrl = null;
+  mainWindow.loadURL(startUrl);
+
+  // Also check argv for a protocol URL on first launch
+  const argUrl = process.argv.find(arg => arg.startsWith(PROTOCOL + "://"));
+  if (argUrl) {
+    const webUrl = protocolUrlToWebUrl(argUrl);
+    if (webUrl) mainWindow.loadURL(webUrl);
+  }
 
   // Keyboard Shortcuts Handler
   mainWindow.webContents.on('before-input-event', (event, input) => {

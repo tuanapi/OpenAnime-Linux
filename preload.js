@@ -18,6 +18,10 @@ window.addEventListener('DOMContentLoaded', () => {
       opacity: 0;
       pointer-events: none;
     }
+    #custom-titlebar.auto-hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
     .win-btn {
       width: 14px;
       height: 14px;
@@ -72,12 +76,26 @@ window.addEventListener('DOMContentLoaded', () => {
     ipcRenderer.send('window-control', 'close');
   });
 
-  // Hiding logic
-  ipcRenderer.on('set-fullscreen', (event, isFullscreen) => {
-    if (isFullscreen) {
-      titlebar.classList.add('hidden');
-    } else {
-      titlebar.classList.remove('hidden');
-    }
+  // Auto-hide on mouse inactivity (1.5s)
+  let hideTimer = null;
+  const AUTO_HIDE_DELAY = 1500;
+
+  function showTitlebar() {
+    titlebar.classList.remove('auto-hidden');
+  }
+
+  function scheduleHide() {
+    clearTimeout(hideTimer);
+    hideTimer = setTimeout(() => {
+      titlebar.classList.add('auto-hidden');
+    }, AUTO_HIDE_DELAY);
+  }
+
+  document.addEventListener('mousemove', () => {
+    showTitlebar();
+    scheduleHide();
   });
+
+  // Start the initial hide timer
+  scheduleHide();
 });
