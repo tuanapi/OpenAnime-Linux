@@ -43,11 +43,10 @@ jobs:
             dist/*.yml
             dist/*.blockmap
           body: |
-            ## Yenilikler
-            - **Geri Tuşu:** ESC tuşuna basınca önceki sayfaya dönüyor.
-            - **Düzeltmeler:** F11 tuşu kaldırıldı (sorun çıkarıyordu).
-            - **Altyapı:** Electron 37.10.3 (En stabil sürüm).
-            - **Temizlik:** Gereksiz yorum satırları silindi.
+            ## Sürüm Notları (v1.0.7)
+            - **Derin Bağlantı Desteği:** `openanime://` protokolü sisteme eklendi. Tarayıcıdan uygulamanın açılmasını sağlar.
+            - **Dinamik Kontroller:** Pencere yönetim butonları (kapat/küçült) fare inaktif olduğunda otomatik kaybolur.
+            - **Performans:** Uygulama donanım hızlandırma için her zaman harici ekran kartını (dGPU) tercih edecek şekilde yapılandırıldı.
 
             ## İndirme
             - **AppImage:** Tek dosya, kurulum gerektirmez. İndir > Çalıştır.
