@@ -17,6 +17,44 @@ app.commandLine.appendSwitch("enable-hardware-overlays");
 app.commandLine.appendSwitch("ignore-resolution-limits-for-acceleration");
 app.commandLine.appendSwitch("vaapi-ignore-driver-checks");
 
+// --- dGPU (NVIDIA/AMD) Auto-Offload ---
+// This ensures AppImage/AUR users get dGPU performance even if they don't use start.sh
+if (process.platform === 'linux') {
+  const { execSync } = require('child_process');
+  const fs = require('fs');
+
+  try {
+    // 1. Check for NVIDIA
+    if (!process.env.__NV_PRIME_RENDER_OFFLOAD && fs.existsSync('/usr/share/vulkan/icd.d/nvidia_icd.json')) {
+      process.env.VK_ICD_FILENAMES = '/usr/share/vulkan/icd.d/nvidia_icd.json';
+      process.env.__NV_PRIME_RENDER_OFFLOAD = '1';
+      process.env.__VK_LAYER_NV_optimus = 'NVIDIA_only';
+      process.env.__GLX_VENDOR_LIBRARY_NAME = 'nvidia';
+    } 
+    // 2. Check for AMD or Intel dGPU (if not already offloading to NVIDIA)
+    else if (!process.env.DRI_PRIME) {
+      const lspci = execSync('lspci').toString();
+      // Look for a discrete VGA controller that isn't integrated
+      const hasDiscreteGPU = lspci.split('\n').some(line => {
+        const l = line.toLowerCase();
+        if (!l.includes('vga') && !l.includes('display')) return false;
+        
+        const isAMD = l.includes('amd') || l.includes('ati') || l.includes('radeon');
+        const isIntel = l.includes('intel') || l.includes('arc');
+        const isIntegrated = l.match(/integrated|raphael|renoir|cezanne|rembrandt|phoenix|iris|uhd|hd graphics/);
+        
+        return (isAMD || isIntel) && !isIntegrated;
+      });
+      
+      if (hasDiscreteGPU) {
+        process.env.DRI_PRIME = '1';
+      }
+    }
+  } catch (e) {
+    // Silently fail if lspci is missing or other issues
+  }
+}
+
 let mainWindow = null;
 
 /**
