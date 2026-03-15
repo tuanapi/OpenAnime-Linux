@@ -36,6 +36,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
         with:
+          name: ${{ github.ref_name }}
           files: |
             dist/*.AppImage
             dist/*.deb
@@ -43,10 +44,13 @@ jobs:
             dist/*.yml
             dist/*.blockmap
           body: |
-            ## Sürüm Notları (v1.0.7)
-            - **Derin Bağlantı Desteği:** `openanime://` protokolü sisteme eklendi. Tarayıcıdan uygulamanın açılmasını sağlar.
-            - **Dinamik Kontroller:** Pencere yönetim butonları (kapat/küçült) fare inaktif olduğunda otomatik kaybolur.
-            - **Performans:** Uygulama donanım hızlandırma için her zaman harici ekran kartını (dGPU) tercih edecek şekilde yapılandırıldı.
+            ## Sürüm Notları (${{ github.ref_name }})
+            
+            • **Discord Zengin Varlık (RPC):** Artık ne izlediğiniz profilde detaylı ve doğal bir Türkçe ile görünür.
+            • **Pencere Hafızası:** Uygulama kapandığı anki boyutunu ve konumunu hatırlar.
+            • **MacOS Tarzı Kontroller:** Sol üst köşeye alınan kontroller, otomatik gizlenme ve tıklama iyileştirmeleriyle optimize edildi.
+            • **Tam Ekran Koruma:** Bölüm geçişlerinde tam ekrandan çıkma sorunu giderildi.
+            • **Hata Düzeltmeleri:** Discord kapalıyken çökme sorunu giderildi ve bağlantı iyileştirmeleri yapıldı.
 
             ## İndirme
             - **AppImage:** Tek dosya, kurulum gerektirmez. İndir > Çalıştır.
