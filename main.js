@@ -1,5 +1,6 @@
 const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
+const DiscordRPC = require("discord-rpc");
 
 const URL = "https://openani.me";
 const PROTOCOL = "openanime";
@@ -73,13 +74,34 @@ if (!gotTheLock) {
 }
 
 function createMainWindow() {
+  // Read config to check if custom frame is enabled
+  let useCustomFrame = false;
+  let winBounds = { width: 1280, height: 800 };
+  let isMaximized = false;
+  let persistFullscreen = false;
+  try {
+    const fs = require('fs');
+    const configPath = path.join(app.getPath('userData'), 'config.json');
+    if (fs.existsSync(configPath)) {
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      if (config.useCustomFrame) useCustomFrame = true;
+      if (config.bounds) winBounds = config.bounds;
+      if (config.isMaximized) isMaximized = true; 
+      if (config.persistFullscreen === true) persistFullscreen = true;
+    }
+  } catch (e) {
+    console.error('Error reading config:', e);
+  }
+
   mainWindow = new BrowserWindow({
-    width: 1280,
-    height: 800,
+    width: winBounds.width || 1280,
+    height: winBounds.height || 800,
+    x: winBounds.x,
+    y: winBounds.y,
     minWidth: 800,
     minHeight: 600,
     icon: path.join(__dirname, "icon512.png"),
-    frame: false,
+    frame: !useCustomFrame,
     autoHideMenuBar: true,
     resizable: true,
     webPreferences: {
@@ -97,6 +119,29 @@ function createMainWindow() {
     if (!url.startsWith(URL)) return { action: "deny" };
     return { action: "allow" };
   });
+
+  if (isMaximized) {
+    mainWindow.maximize();
+  }
+
+  const saveBounds = () => {
+    try {
+      if (!mainWindow) return;
+      const fs = require('fs');
+      const configPath = path.join(app.getPath('userData'), 'config.json');
+      let config = {};
+      if (fs.existsSync(configPath)) {
+        config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      }
+      config.bounds = mainWindow.getNormalBounds();
+      config.isMaximized = mainWindow.isMaximized();
+      fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+    } catch (e) {
+      console.error('Error saving bounds:', e);
+    }
+  };
+
+  mainWindow.on('close', saveBounds);
 
   // Consolidate start URL: check pendingUrl (from open-url) first, then process.argv
   let startUrl = pendingUrl || URL;
@@ -116,19 +161,64 @@ function createMainWindow() {
   mainWindow.webContents.on('before-input-event', (event, input) => {
     if (input.type !== 'keyDown') return;
 
-    // ESC -> Go Back
+    // F11 -> Toggle Fullscreen
+    if (input.key === "F11") {
+      mainWindow.setFullScreen(!mainWindow.isFullScreen());
+      event.preventDefault();
+    }
+
+    // ESC -> Go Back or Exit Fullscreen
     if (input.key === "Escape") {
       if (mainWindow.isFullScreen()) {
         mainWindow.setFullScreen(false);
+        event.preventDefault();
       } else if (mainWindow.webContents.navigationHistory.canGoBack()) {
         mainWindow.webContents.navigationHistory.goBack();
+        event.preventDefault();
       }
     }
+  });
+
+  // Handle HTML5 Fullscreen (e.g. video player fullscreen button)
+  // When a website enters fullscreen, make the window fullscreen.
+  // When the user changes episode, the website might navigate, which causes
+  // the webContents to leave HTML5 fullscreen automatically.
+  // We can track if the user wanted fullscreen and keep the window fullscreen if needed,
+  // or let the native window Fullscreen persist.
+  let isHtmlFullscreen = false;
+  mainWindow.webContents.on('enter-html-full-screen', () => {
+    isHtmlFullscreen = true;
+  });
+  mainWindow.webContents.on('leave-html-full-screen', () => {
+    isHtmlFullscreen = false;
+  });
+
+  // If the window was fullscreen before navigation, we can re-apply it if desired,
+  // but usually F11 (native fullscreen) persists across navigation in Electron.
+  // The issue is that the user clicks the WEBSITE's fullscreen button (HTML5 fullscreen).
+  // When the video changes, it navigates, escaping HTML5 fullscreen.
+  // To fix: if we are in HTML5 fullscreen and navigate, we can automatically trigger native fullscreen?
+  mainWindow.webContents.on('did-start-navigation', (e, url, isInPlace, isMainFrame) => {
+    if (persistFullscreen && isMainFrame && (isHtmlFullscreen || mainWindow.isFullScreen())) {
+      // If we were in ANY fullscreen state (HTML5 or Native) during navigation,
+      // force Native Fullscreen to persist so the window doesn't shrink.
+      setTimeout(() => {
+        if (mainWindow && !mainWindow.isFullScreen()) {
+          mainWindow.setFullScreen(true);
+        }
+      }, 100); 
+    }
+  });
+
+  // Discord RPC Tracker
+  mainWindow.webContents.on('page-title-updated', (event, title) => {
+    updateDiscordRPC(title, mainWindow.webContents.getURL());
   });
 }
 
 app.whenReady().then(() => {
   createMainWindow();
+  initDiscordRPC();
 });
 
 // IPC for Window Controls
@@ -144,6 +234,192 @@ ipcMain.on('window-control', (event, action) => {
   }
 });
 
+ipcMain.on('get-config', (event, key) => {
+  let value = false;
+  try {
+    const fs = require('fs');
+    const configPath = path.join(app.getPath('userData'), 'config.json');
+    if (fs.existsSync(configPath)) {
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      value = config[key];
+    }
+  } catch (e) {
+    console.error('Error reading config via IPC:', e);
+  }
+  event.returnValue = value;
+});
+
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
 });
+
+// --- Discord RPC Setup ---
+const discordClientId = '1482661655975428156'; // Default Client ID (Wait for Official, or using a widely-known generic Anime RPC ID)
+let rpc;
+const startTimestamp = new Date();
+
+// Linux Flatpak/Snap Discord IPC Socket Fallback
+function applyDiscordIPCPatch() {
+  if (process.platform !== 'linux') return;
+  try {
+    const fs = require('fs');
+    const runtimeDir = process.env.XDG_RUNTIME_DIR || '/run/user/' + process.getuid();
+    const standardSocket = path.join(runtimeDir, 'discord-ipc-0');
+
+    if (fs.existsSync(standardSocket)) return; // Already exists
+
+    const flatpakSocket = path.join(runtimeDir, 'app/com.discordapp.Discord/discord-ipc-0');
+    const vesktopSocket = path.join(runtimeDir, 'app/dev.vencord.Vesktop/discord-ipc-0');
+    const snapSocket = path.join(runtimeDir, 'snap.discord/discord-ipc-0');
+
+    let targetSocket = null;
+    if (fs.existsSync(flatpakSocket)) targetSocket = flatpakSocket;
+    else if (fs.existsSync(vesktopSocket)) targetSocket = vesktopSocket;
+    else if (fs.existsSync(snapSocket)) targetSocket = snapSocket;
+
+    if (targetSocket) {
+      // Spawn background socat to bridge the unix sockets since Node proxy was unstable
+      const { spawn } = require('child_process');
+      const bridge = spawn('socat', [
+        `UNIX-LISTEN:${standardSocket},fork`,
+        `UNIX-CONNECT:${targetSocket}`
+      ], { detached: true, stdio: 'ignore' });
+      bridge.unref();
+
+      // Clean up the proxy socket when app closes
+      app.on('quit', () => {
+        try { fs.unlinkSync(standardSocket); } catch (e) {}
+        try { process.kill(-bridge.pid); } catch(e) {}
+      });
+      
+      // Wait a tiny bit for the socket to be created
+      const start = Date.now();
+      while (!fs.existsSync(standardSocket) && Date.now() - start < 1000) {
+        // block briefly to ensure it exists before IPC starts looking
+      }
+    }
+  } catch (err) {
+    console.error("IPC Patch failed:", err);
+  }
+}
+
+let currentActivityTitle = '';
+let activityStartTimestamp = new Date();
+
+function updateDiscordRPC(title, url) {
+  if (!rpc) return;
+
+  // Reset timer if title changed (new episode)
+  if (title && title !== currentActivityTitle) {
+    activityStartTimestamp = new Date();
+    currentActivityTitle = title;
+  }
+
+  let details = "OpenAnime'de";
+  let state = "Geziniyor";
+
+  if (title && title !== 'OpenAnime' && !title.includes('Just a moment')) {
+    // Clean up branding and split by | or -
+    const segments = title.split(/ \| | - /);
+    const cleanTitle = segments[0].trim();
+    
+    if (cleanTitle === 'Anasayfa' || cleanTitle === 'OpenAnime') {
+      details = "Anasayfada dolaşıyor";
+      state = undefined;
+    } else {
+      // Regex to split: Everything before patterns like "S01B01", "1. Sezon", "Episode 1"
+      const epRegex = / (S\d+B\d+|(\d+\.)? (Sezon|Bölüm|Episode))/i;
+      const match = cleanTitle.match(epRegex);
+
+      if (match) {
+        const animeName = cleanTitle.substring(0, match.index).trim();
+        const epInfo = cleanTitle.substring(match.index).trim();
+        
+        details = `${animeName} izliyor`;
+        
+        // Parse SxxBxx to Sezon x Bölüm x
+        const sxbxMatch = epInfo.match(/S(\d+)B(\d+)/i);
+        if (sxbxMatch) {
+          state = `Sezon ${parseInt(sxbxMatch[1])} Bölüm ${parseInt(sxbxMatch[2])}`;
+        } else {
+          state = epInfo;
+        }
+      } else {
+        details = `${cleanTitle} izliyor`;
+        state = 'Geziniyor';
+      }
+    }
+  }
+
+  const activity = {
+    details: details,
+    state: state,
+    startTimestamp: activityStartTimestamp,
+    largeImageKey: 'openanime', 
+    largeImageText: 'OpenAnime',
+    instance: false,
+  };
+
+  if (url && url.startsWith('https://openani.me/')) {
+    activity.buttons = [{ label: "OpenAnime'de İzle", url: url }];
+  }
+
+  try {
+    // Only set activity if the RPC client is actually ready/connected
+    if (rpcReady) {
+      rpc.setActivity(activity).catch(err => {
+        console.error('Discord RPC setActivity failed:', err);
+        rpcReady = false; // Mark as not ready if request fails
+      });
+      console.log(`Discord RPC Set: ${details}${state ? ' - ' + state : ''}`);
+    }
+  } catch (err) {
+    console.error('Failed to set Discord activity (sync):', err);
+  }
+}
+
+let isConnecting = false;
+let rpcReady = false;
+function initDiscordRPC() {
+  let discordEnabled = true;
+  try {
+    const fs = require('fs');
+    const configPath = path.join(app.getPath('userData'), 'config.json');
+    if (fs.existsSync(configPath)) {
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+      if (config.discordRPC === false) discordEnabled = false;
+    }
+  } catch (e) {}
+
+  if (!discordEnabled || isConnecting || rpcReady) return;
+
+  isConnecting = true;
+  applyDiscordIPCPatch();
+
+  if (!rpc) {
+    DiscordRPC.register(discordClientId);
+    rpc = new DiscordRPC.Client({ transport: 'ipc' });
+
+    rpc.on('ready', () => {
+      isConnecting = false;
+      rpcReady = true;
+      console.log('Discord RPC Connected!');
+      updateDiscordRPC(mainWindow ? mainWindow.getTitle() : 'OpenAnime', mainWindow ? mainWindow.webContents.getURL() : URL);
+    });
+
+    rpc.on('disconnected', () => {
+      console.log('Discord RPC Disconnected. Retrying in 15s...');
+      rpc = null;
+      isConnecting = false;
+      rpcReady = false;
+      setTimeout(initDiscordRPC, 15000);
+    });
+  }
+
+  rpc.login({ clientId: discordClientId }).catch(err => {
+    console.log('Discord RPC connection failed. Retrying in 15s...');
+    isConnecting = false;
+    rpcReady = false;
+    setTimeout(initDiscordRPC, 15000);
+  });
+}

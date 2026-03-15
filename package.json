@@ -1,12 +1,12 @@
 {
   "name": "openanime",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "main": "main.js",
   "description": "OpenAnime için geliştirilmiş, resmi olmayan (unofficial), yerel WebGPU destekli Linux istemcisi.",
   "author": "tuanapi <tuanapi@proton.me>",
   "license": "MIT",
   "scripts": {
-    "start": "electron .",
+    "start": "bash start.sh",
     "dist": "electron-builder"
   },
   "build": {
@@ -39,5 +39,9 @@
   "devDependencies": {
     "electron": "37.10.3",
     "electron-builder": "^26.0.12"
+  },
+  "dependencies": {
+    "discord-rich-presence": "^0.0.8",
+    "discord-rpc": "^4.0.1"
   }
 }

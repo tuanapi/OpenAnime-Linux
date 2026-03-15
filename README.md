@@ -4,10 +4,13 @@
 
 WebGPU ve Vulkan kullanarak 4K videoları kasma yapmadan oynatır. Native Wayland desteği var, yani modern sistemlerde (Hyprland, KDE 6 vs.) sorunsuz çalışıyor.
 
-### Sürüm 1.0.7 Yenilikleri
+### Sürüm 1.0.8 Yenilikleri
+- **Discord Rich Presence:** Artık ne izlediğiniz Discord profilinizde detaylı ve doğal bir Türkçe ile (örn: "To Your Eternity izliyor - Sezon 3 Bölüm 19") görünür.
+- **Pencere Hafızası:** Uygulama, kapandığı anki boyutunu ve konumunu hatırlar; bir sonraki açılışta aynı yerden devam eder.
+- **Üst Menü Kontrolleri:** Sol üst köşeye alınan MacOS tarzı kontrol butonları, site elemanlarıyla çakışmayacak şekilde ve otomatik gizlenme özelliğiyle optimize edildi.
 - **Derin Bağlantı (Deep Linking):** Web sitesindeki `openanime://` linklerine tıklayarak uygulamayı direkt açabilirsiniz.
-- **Otomatik Gizlenen Arayüz:** Üst menü butonları fare hareketsiz kaldığında (1.5 sn) otomatik gizlenir.
-- **Altyapı:** Ekran kartı tanımlama ve performans ayarlamaları yapıldı.
+- **Tam Ekran Koruma:** Bölüm geçişlerinde tam ekrandan çıkma sorunu giderildi (opsiyonel olarak kapatılabilir).
+- **Performans:** WebGPU tanımlama ve Vulkan render ayarları en üst seviyeye çıkarıldı.
 
 ![OpenAnime](icon512.png)
 
@@ -23,7 +26,7 @@ WebGPU ve Vulkan kullanarak 4K videoları kasma yapmadan oynatır. Native Waylan
 <summary><strong>Seçenek 1: AppImage (Önerilen)</strong></summary>
 
 1.  [Releases](../../releases) sayfasından `.AppImage` dosyasını indirin.
-2.  Dosyayı çalıştırılabilir yapın (örn: `OpenAnime-1.0.7.AppImage`).
+2.  Dosyayı çalıştırılabilir yapın (örn: `OpenAnime-1.0.8.AppImage`).
 3.  Çalıştırın!
 
 **Sistem Entegrasyonu (Masaüstü Kısayolu & İkon)**:

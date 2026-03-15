@@ -49,9 +49,16 @@
   <url type="vcs-browser">https://github.com/tuanapi/OpenAnime-Linux-Desktop-App</url>
   <content_rating type="oars-1.1" />
   <releases>
-    <release version="1.0.7" date="2026-03-14">
+    <release version="1.0.8" date="2026-03-15">
       <description>
-        <p>Added deep linking support with openanime:// URLs and auto-hiding window controls based on mouse inactivity.</p>
+        <p>Major update featuring Discord Rich Presence and improved window management.</p>
+        <ul>
+          <li>Integrated Discord Rich Presence with natural Turkish status parsing.</li>
+          <li>Implemented window state persistence (remembers size and position).</li>
+          <li>Optimized custom titlebar with auto-hiding and clickability fixes.</li>
+          <li>Added deep linking support for openanime:// URLs.</li>
+          <li>Fixed fullscreen exit issues during episode navigation.</li>
+        </ul>
       </description>
     </release>
     <release version="1.0.5" date="2026-01-06">

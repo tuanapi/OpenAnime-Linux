@@ -1,28 +1,40 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
+// Force WebGPU enabled — overrides the site's stored user preference
+localStorage.setItem('settings.useWebGPU', 'true');
+
 window.addEventListener('DOMContentLoaded', () => {
+
+  // Read config from main process using a synchronous IPC, or just check localStorage since it's renderer context?
+  // Actually, we can just use an IPC or we can check localStorage if we sync it.
+  // We'll read the same config.json directly from preload if nodeIntegration/fs is available? No, contextIsolation is true.
+  // So we will request config via IPC. Let's do it simply by sending an IPC sync message.
+  const customFrameEnabled = ipcRenderer.sendSync('get-config', 'useCustomFrame');
+
+  if (!customFrameEnabled) {
+    return; // Do nothing if custom frame is not enabled
+  }
+
   const style = document.createElement('style');
   style.textContent = `
     #custom-titlebar {
       position: fixed;
       top: 0;
-      right: 0;
+      right: 60px; /* Shifted left to avoid overlapping with top-right buttons on the website */
       display: flex;
-      z-index: 99999;
-      -webkit-app-region: no-drag; /* Buttons must be clickable */
+      pointer-events: none; /* Container is transparent to clicks */
       padding: 10px;
       gap: 8px;
       transition: opacity 0.3s;
     }
     #custom-titlebar.hidden {
       opacity: 0;
-      pointer-events: none;
     }
     #custom-titlebar.auto-hidden {
       opacity: 0;
-      pointer-events: none;
     }
     .win-btn {
+      pointer-events: auto; /* Buttons are clickable */
       width: 14px;
       height: 14px;
       border-radius: 50%;
