@@ -7,7 +7,7 @@ WebGPU ve Vulkan kullanarak 4K videoları kasma yapmadan oynatır. Native Waylan
 ### Sürüm 1.0.8 Yenilikleri
 - **Discord Rich Presence:** Artık ne izlediğiniz Discord profilinizde detaylı ve doğal bir Türkçe ile (örn: "To Your Eternity izliyor - Sezon 3 Bölüm 19") görünür.
 - **Pencere Hafızası:** Uygulama, kapandığı anki boyutunu ve konumunu hatırlar; bir sonraki açılışta aynı yerden devam eder.
-- **Üst Menü Kontrolleri:** Sol üst köşeye alınan MacOS tarzı kontrol butonları, site elemanlarıyla çakışmayacak şekilde ve otomatik gizlenme özelliğiyle optimize edildi.
+- **Üst Menü Kontrolleri:** Sağ üst köşeye alınan MacOS tarzı kontrol butonları, site elemanlarıyla çakışmayacak şekilde ve otomatik gizlenme özelliğiyle optimize edildi.
 - **Derin Bağlantı (Deep Linking):** Web sitesindeki `openanime://` linklerine tıklayarak uygulamayı direkt açabilirsiniz.
 - **Tam Ekran Koruma:** Bölüm geçişlerinde tam ekrandan çıkma sorunu giderildi (opsiyonel olarak kapatılabilir).
 - **Performans:** WebGPU tanımlama ve Vulkan render ayarları en üst seviyeye çıkarıldı.
@@ -84,7 +84,7 @@ npm run dist       # AppImage oluştur (dist/ klasörüne)
 
 *   **OS**: EndeavourOS (Kernel 6.18.2), Arch Linux (Kernel 6.18.13-arch1-1) 
 *   **DE**: KDE Plasma 6.5.4-6.6.1 (Wayland)
-*   **GPU**: NVIDIA GeForce RTX 5070 Ti (Driver 590.48.01)
+*   **GPU**: NVIDIA GeForce RTX 5070 Ti (Driver 590.48.01) - *1.0.8 sürümü hibrit (dGPU) ortamında bizzat test edilip doğrulanmıştır.*
 
 ## Topluluk
 Tartışmalara katılmak için [OpenAnime Discord](https://discord.gg/openanime) sunucusuna katılabilirsiniz.
