@@ -18,11 +18,12 @@ window.addEventListener('DOMContentLoaded', () => {
   // Load titlebar specific config
   const tbConfig = ipcRenderer.sendSync('get-config', 'titlebar') || {};
   const cfg = {
-    right: tbConfig.right !== undefined ? tbConfig.right : '80px', // Shifted a bit more left by default as requested
+    right: tbConfig.right !== undefined ? tbConfig.right : '90px', 
     top: tbConfig.top !== undefined ? tbConfig.top : '12px',
-    gap: tbConfig.gap !== undefined ? tbConfig.gap : '10px',
-    btnSize: tbConfig.btnSize !== undefined ? tbConfig.btnSize : '14px',
-    btnOpacity: tbConfig.btnOpacity !== undefined ? tbConfig.btnOpacity : '0.8'
+    gap: tbConfig.gap !== undefined ? tbConfig.gap : '12px',
+    btnSize: tbConfig.btnSize !== undefined ? tbConfig.btnSize : '16px',
+    btnOpacity: tbConfig.btnOpacity !== undefined ? tbConfig.btnOpacity : '0.8',
+    debug: tbConfig.debug === true
   };
 
   const style = document.createElement('style');
@@ -34,10 +35,13 @@ window.addEventListener('DOMContentLoaded', () => {
       right: ${cfg.right};
       display: flex;
       flex-direction: row;
-      pointer-events: none !important; 
+      pointer-events: auto !important; /* Allow container to receive events */
+      background: transparent;
       z-index: 2147483647 !important;
       transition: opacity 0.3s;
       gap: ${cfg.gap};
+      padding: 5px;
+      ${cfg.debug ? 'outline: 1px solid red !important;' : ''}
     }
     #custom-titlebar.hidden, #custom-titlebar.auto-hidden {
       opacity: 0;
@@ -57,6 +61,7 @@ window.addEventListener('DOMContentLoaded', () => {
       transition: all 0.2s ease;
       background-color: rgba(128, 128, 128, 0.4);
       opacity: ${cfg.btnOpacity};
+      -webkit-app-region: no-drag;
     }
     .win-btn:hover { opacity: 1; transform: scale(1.15); }
     .win-btn svg { 
@@ -91,15 +96,23 @@ window.addEventListener('DOMContentLoaded', () => {
   `;
   document.body.appendChild(titlebar);
 
-  // IPC Event Handlers with robust selection
-  titlebar.querySelector('.btn-minimize').addEventListener('click', () => {
-    ipcRenderer.send('window-control', 'minimize');
+  // Using mousedown for better reliability and adding logs
+  const handleControl = (action) => {
+    console.log('[Titlebar] Action:', action);
+    ipcRenderer.send('window-control', action);
+  };
+
+  titlebar.querySelector('.btn-minimize').addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    handleControl('minimize');
   });
-  titlebar.querySelector('.btn-maximize').addEventListener('click', () => {
-    ipcRenderer.send('window-control', 'maximize');
+  titlebar.querySelector('.btn-maximize').addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    handleControl('maximize');
   });
-  titlebar.querySelector('.btn-close').addEventListener('click', () => {
-    ipcRenderer.send('window-control', 'close');
+  titlebar.querySelector('.btn-close').addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    handleControl('close');
   });
 
   // Auto-hide on mouse inactivity (2.1s)

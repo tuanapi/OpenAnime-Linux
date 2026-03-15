@@ -114,7 +114,7 @@ if (!gotTheLock) {
 function createMainWindow() {
   // Read config to check if custom frame is enabled
   let useCustomFrame = false;
-  let winBounds = { width: 1280, height: 800 };
+  let winBounds = { width: 1360, height: 926 };
   let isMaximized = false;
   let persistFullscreen = false;
   try {
