@@ -17,9 +17,60 @@ app.commandLine.appendSwitch("enable-hardware-overlays");
 app.commandLine.appendSwitch("ignore-resolution-limits-for-acceleration");
 app.commandLine.appendSwitch("vaapi-ignore-driver-checks");
 
+// --- Configuration Loader ---
+const configPath = path.join(app.getPath('userData'), 'config.json');
+
+function createDefaultConfig() {
+  const defaultConfig = `{
+  "highPerformance": true,
+  "discordRPC": true,
+  "useCustomFrame": false,
+  "persistFullscreen": false,
+  "isMaximized": false,
+  "bounds": { "x": 253, "y": 83, "width": 1360, "height": 926 },
+  "titlebar": {
+    "right": "85px",
+    "top": "12px",
+    "gap": "15px",
+    "btnSize": "16px"
+  }
+}`;
+
+  try {
+    const fs = require('fs');
+    if (!fs.existsSync(path.dirname(configPath))) {
+      fs.mkdirSync(path.dirname(configPath), { recursive: true });
+    }
+    fs.writeFileSync(configPath, defaultConfig);
+    return JSON.parse(defaultConfig.replace(/\/\/.*|\/\*[\s\S]*?\*\//g, ''));
+  } catch (e) {
+    console.error('Failed to create default config:', e);
+    return {};
+  }
+}
+
+function loadConfig() {
+  try {
+    const fs = require('fs');
+    if (fs.existsSync(configPath)) {
+      let content = fs.readFileSync(configPath, 'utf8');
+      // Strip comments before parsing
+      content = content.replace(/\/\/.*|\/\*[\s\S]*?\*\//g, '');
+      return JSON.parse(content);
+    } else {
+      return createDefaultConfig();
+    }
+  } catch (e) {
+    console.error('Error reading config:', e);
+  }
+  return {};
+}
+
+const config = loadConfig();
+
 // --- dGPU (NVIDIA/AMD) Auto-Offload ---
 // This ensures AppImage/AUR users get dGPU performance even if they don't use start.sh
-if (process.platform === 'linux') {
+if (process.platform === 'linux' && config.highPerformance !== false) {
   const { execSync } = require('child_process');
   const fs = require('fs');
 
@@ -112,24 +163,11 @@ if (!gotTheLock) {
 }
 
 function createMainWindow() {
-  // Read config to check if custom frame is enabled
-  let useCustomFrame = false;
-  let winBounds = { width: 1360, height: 926 };
-  let isMaximized = false;
-  let persistFullscreen = false;
-  try {
-    const fs = require('fs');
-    const configPath = path.join(app.getPath('userData'), 'config.json');
-    if (fs.existsSync(configPath)) {
-      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-      if (config.useCustomFrame) useCustomFrame = true;
-      if (config.bounds) winBounds = config.bounds;
-      if (config.isMaximized) isMaximized = true; 
-      if (config.persistFullscreen === true) persistFullscreen = true;
-    }
-  } catch (e) {
-    console.error('Error reading config:', e);
-  }
+  // Use pre-loaded config
+  let useCustomFrame = config.useCustomFrame || false;
+  let winBounds = config.bounds || { width: 1280, height: 800 };
+  let isMaximized = config.isMaximized || false;
+  let persistFullscreen = config.persistFullscreen || false;
 
   mainWindow = new BrowserWindow({
     width: winBounds.width || 1280,
@@ -169,7 +207,10 @@ function createMainWindow() {
       const configPath = path.join(app.getPath('userData'), 'config.json');
       let config = {};
       if (fs.existsSync(configPath)) {
-        config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
+        let content = fs.readFileSync(configPath, 'utf8');
+        // Strip comments before parsing to avoid crash
+        content = content.replace(/\/\/.*|\/\*[\s\S]*?\*\//g, '');
+        config = JSON.parse(content);
       }
       config.bounds = mainWindow.getNormalBounds();
       config.isMaximized = mainWindow.isMaximized();
@@ -273,18 +314,7 @@ ipcMain.on('window-control', (event, action) => {
 });
 
 ipcMain.on('get-config', (event, key) => {
-  let value = false;
-  try {
-    const fs = require('fs');
-    const configPath = path.join(app.getPath('userData'), 'config.json');
-    if (fs.existsSync(configPath)) {
-      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-      value = config[key];
-    }
-  } catch (e) {
-    console.error('Error reading config via IPC:', e);
-  }
-  event.returnValue = value;
+  event.returnValue = config[key];
 });
 
 app.on("window-all-closed", () => {
@@ -419,16 +449,7 @@ function updateDiscordRPC(title, url) {
 let isConnecting = false;
 let rpcReady = false;
 function initDiscordRPC() {
-  let discordEnabled = true;
-  try {
-    const fs = require('fs');
-    const configPath = path.join(app.getPath('userData'), 'config.json');
-    if (fs.existsSync(configPath)) {
-      const config = JSON.parse(fs.readFileSync(configPath, 'utf8'));
-      if (config.discordRPC === false) discordEnabled = false;
-    }
-  } catch (e) {}
-
+  const discordEnabled = config.discordRPC !== false;
   if (!discordEnabled || isConnecting || rpcReady) return;
 
   isConnecting = true;

@@ -24,7 +24,10 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      - name: Build AppImage
+      - name: Install Build Tools
+        run: sudo apt-get update && sudo apt-get install -y rpm
+
+      - name: Build Packages
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: npm run dist -- --linux
@@ -40,19 +43,22 @@ jobs:
           files: |
             dist/*.AppImage
             dist/*.deb
+            dist/*.rpm
+            dist/*.tar.gz
             dist/*-portable.zip
             dist/*.yml
             dist/*.blockmap
           body: |
             ## Sürüm Notları (${{ github.ref_name }})
             
-            • **Discord Zengin Varlık (RPC):** Artık ne izlediğiniz profilde detaylı ve doğal bir Türkçe ile görünür.
-            • **Pencere Hafızası:** Uygulama kapandığı anki boyutunu ve konumunu hatırlar.
-            • **MacOS Tarzı Kontroller:** Sol üst köşeye alınan kontroller, otomatik gizlenme ve tıklama iyileştirmeleriyle optimize edildi.
-            • **Tam Ekran Koruma:** Bölüm geçişlerinde tam ekrandan çıkma sorunu giderildi.
-            • **Hata Düzeltmeleri:** Discord kapalıyken çökme sorunu giderildi ve bağlantı iyileştirmeleri yapıldı.
+            • **Gelişmiş Yapılandırma:** `config.json` dosyası artık daha düzenli ve stabil.
+            • **Yüksek Performans Modu:** Hibrit GPU/Eski PC sistemleri için `highPerformance` seçeneği eklendi.
+            • **Otomatik Yapılandırma:** Eksik config dosyası artık açıklamalarla birlikte otomatik oluşturuluyor.
+            • **Discord RPC:** Geliştirilmiş hata yönetimi ve bağlantı iyileştirmeleri.
+            • **Hata Düzeltmeleri:** Genel performans ve pencere yönetimi iyileştirmeleri.
 
             ## İndirme
-            - **AppImage:** Tek dosya, kurulum gerektirmez. İndir > Çalıştır.
-            - **Deb:** Debian, Ubuntu, Linux Mint vb. için kurulum paketi. `sudo dpkg -i` ile kurun.
+            - **AppImage:** Tek dosya, kurulum gerektirmez. (Arch, Fedora, Ubuntu vb.)
+            - **Deb:** Debian, Ubuntu, Linux Mint vb. için kurulum paketi.
+            - **RPM:** Fedora, RHEL, openSUSE vb. için kurulum paketi.
             - **Portable Zip:** Arşivi aç, `linux-unpacked/openanime` dosyasını çalıştır.

@@ -18,9 +18,9 @@ window.addEventListener('DOMContentLoaded', () => {
   // Load titlebar specific config
   const tbConfig = ipcRenderer.sendSync('get-config', 'titlebar') || {};
   const cfg = {
-    right: tbConfig.right !== undefined ? tbConfig.right : '90px', 
+    right: tbConfig.right !== undefined ? tbConfig.right : '85px', 
     top: tbConfig.top !== undefined ? tbConfig.top : '12px',
-    gap: tbConfig.gap !== undefined ? tbConfig.gap : '12px',
+    gap: tbConfig.gap !== undefined ? tbConfig.gap : '15px',
     btnSize: tbConfig.btnSize !== undefined ? tbConfig.btnSize : '16px',
     btnOpacity: tbConfig.btnOpacity !== undefined ? tbConfig.btnOpacity : '0.8',
     debug: tbConfig.debug === true

@@ -1,6 +1,6 @@
 {
   "name": "openanime",
-  "version": "1.0.8",
+  "version": "1.0.9",
   "main": "main.js",
   "description": "OpenAnime için geliştirilmiş, resmi olmayan (unofficial), yerel WebGPU destekli Linux istemcisi.",
   "author": "tuanapi <tuanapi@proton.me>",
@@ -15,7 +15,9 @@
     "linux": {
       "target": [
         "AppImage",
-        "deb"
+        "deb",
+        "rpm",
+        "tar.gz"
       ],
       "category": "Video",
       "icon": "icon512.png"

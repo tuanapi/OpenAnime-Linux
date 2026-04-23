@@ -6,7 +6,7 @@
 
 APP_NAME="OpenAnime"
 ICON_NAME="openanime"
-APP_FILENAME="OpenAnime-1.0.8.AppImage"
+APP_FILENAME="OpenAnime-1.0.9.AppImage"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "📦 Installing $APP_NAME..."

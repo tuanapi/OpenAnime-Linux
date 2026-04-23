@@ -4,13 +4,11 @@
 
 WebGPU ve Vulkan kullanarak 4K videoları kasma yapmadan oynatır. Native Wayland desteği var, yani modern sistemlerde (Hyprland, KDE 6 vs.) sorunsuz çalışıyor.
 
-### Sürüm 1.0.8 Yenilikleri
-- **Discord Rich Presence:** Artık ne izlediğiniz Discord profilinizde detaylı ve doğal bir Türkçe ile (örn: "To Your Eternity izliyor - Sezon 3 Bölüm 19") görünür.
-- **Pencere Hafızası:** Uygulama, kapandığı anki boyutunu ve konumunu hatırlar; bir sonraki açılışta aynı yerden devam eder.
-- **Üst Menü Kontrolleri:** Sağ üst köşeye alınan MacOS tarzı kontrol butonları, site elemanlarıyla çakışmayacak şekilde ve otomatik gizlenme özelliğiyle optimize edildi.
-- **Derin Bağlantı (Deep Linking):** Web sitesindeki `openanime://` linklerine tıklayarak uygulamayı direkt açabilirsiniz.
-- **Tam Ekran Koruma:** Bölüm geçişlerinde tam ekrandan çıkma sorunu giderildi (opsiyonel olarak kapatılabilir).
-- **Performans:** WebGPU tanımlama ve Vulkan render ayarları en üst seviyeye çıkarıldı.
+### Sürüm 1.0.9 Yenilikleri
+- **Gelişmiş Yapılandırma:** `config.json` dosyası artık daha düzenli ve stabil.
+- **Yüksek Performans Modu:** Hibrit ekran kartlı sistemler veya eski bilgisayarlar için dGPU kullanımını açıp kapatan `highPerformance` seçeneği eklendi.
+- **Otomatik Yapılandırma Oluşturma:** Eğer `config.json` dosyası yoksa, uygulama artık tüm ayarları ve açıklamaları içeren bir dosyayı otomatik olarak oluşturuyor.
+- **Hız ve Optimizasyon:** Ayarların yüklenme süreci optimize edildi ve genel kod yapısı iyileştirildi.
 
 ![OpenAnime](icon512.png)
 
@@ -26,7 +24,7 @@ WebGPU ve Vulkan kullanarak 4K videoları kasma yapmadan oynatır. Native Waylan
 <summary><strong>Seçenek 1: AppImage (Önerilen)</strong></summary>
 
 1.  [Releases](../../releases) sayfasından `.AppImage` dosyasını indirin.
-2.  Dosyayı çalıştırılabilir yapın (örn: `OpenAnime-1.0.8.AppImage`).
+2.  Dosyayı çalıştırılabilir yapın (örn: `OpenAnime-1.0.9.AppImage`).
 3.  Çalıştırın!
 
 **Sistem Entegrasyonu (Masaüstü Kısayolu & İkon)**:
@@ -64,7 +62,7 @@ flatpak install flathub io.github.tuanapi.OpenAnime
 | :---: | :---: |
 | ![Ana Sayfa](screenshots/main.png) | ![Detay](screenshots/detail.png) |
 | **Keşfet** | **Oynatıcı** |
-| ![Keşfet](screenshots/discover.png) | ![Oynatıcı](screenshots/player2.png) |
+| ![Keşfet](screenshots/discover.png) | ![Oynatıcı](screenshots/player.png) |
 
 ## Kaynaktan Derleme
 
@@ -80,11 +78,24 @@ npm start          # Geliştirici modu
 npm run dist       # AppImage oluştur (dist/ klasörüne)
 ```
 
+## Yapılandırma (config.json)
+
+Uygulama ayarlarını `~/.config/openanime/config.json` dosyasından manuel olarak düzenleyebilirsiniz. Mevcut tüm seçenekler şunlardır:
+
+| Seçenek | Varsayılan | Açıklama |
+| :--- | :--- | :--- |
+| `highPerformance` | `true` | Hibrit ekran kartlı sistemlerde (NVIDIA/AMD) dGPU kullanımını zorlar. Eski PC'lerde kapatılabilir. |
+| `discordRPC` | `true` | Discord'da "ne izliyor" durumunu gösterir. |
+| `useCustomFrame` | `false` | Uygulamanın kendi pencere butonlarını (MacOS stili) aktif eder. |
+| `persistFullscreen` | `false` | Bölüm geçişlerinde tam ekrandan çıkmamayı sağlar. |
+| `isMaximized` | `false` | Uygulamanın tam ekranda başlayıp başlamayacağını belirler. |
+| `titlebar` | `{...}` | Özel pencere butonlarının konum ve boyut ayarları. |
+
 ## Test Edilen Ortam
 
 *   **OS**: EndeavourOS (Kernel 6.18.2), Arch Linux (Kernel 6.18.13-arch1-1) 
 *   **DE**: KDE Plasma 6.5.4-6.6.1 (Wayland)
-*   **GPU**: NVIDIA GeForce RTX 5070 Ti (Driver 590.48.01) - *1.0.8 sürümü hibrit (dGPU) ortamında bizzat test edilip doğrulanmıştır.*
+*   **GPU**: NVIDIA GeForce RTX 5070 Ti (Driver 590.48.01) - *1.0.9 sürümü hibrit (dGPU) ortamında bizzat test edilip doğrulanmıştır.*
 
 ## Topluluk
 Tartışmalara katılmak için [OpenAnime Discord](https://discord.gg/openanime) sunucusuna katılabilirsiniz.

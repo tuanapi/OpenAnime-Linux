@@ -20,27 +20,19 @@
   <screenshots>
     <screenshot type="default">
       <caption>OpenAnime Main Interface</caption>
-      <image>https://raw.githubusercontent.com/tuanapi/OpenAnime-Linux-Desktop-App/v1.0.5/screenshots/main.png</image>
-    </screenshot>
-    <screenshot>
-      <caption>Recent Releases and Popular Content</caption>
-      <image>https://raw.githubusercontent.com/tuanapi/OpenAnime-Linux-Desktop-App/v1.0.5/screenshots/recent_releases.png</image>
-    </screenshot>
-    <screenshot>
-      <caption>Search and Filter Anime</caption>
-      <image>https://raw.githubusercontent.com/tuanapi/OpenAnime-Linux-Desktop-App/v1.0.5/screenshots/search.png</image>
+      <image>https://raw.githubusercontent.com/tuanapi/OpenAnime-Linux-Desktop-App/v1.0.9/screenshots/main.png</image>
     </screenshot>
     <screenshot>
       <caption>Discover New Series</caption>
-      <image>https://raw.githubusercontent.com/tuanapi/OpenAnime-Linux-Desktop-App/v1.0.5/screenshots/discover.png</image>
+      <image>https://raw.githubusercontent.com/tuanapi/OpenAnime-Linux-Desktop-App/v1.0.9/screenshots/discover.png</image>
     </screenshot>
     <screenshot>
       <caption>Detailed Anime Information</caption>
-      <image>https://raw.githubusercontent.com/tuanapi/OpenAnime-Linux-Desktop-App/v1.0.5/screenshots/detail.png</image>
+      <image>https://raw.githubusercontent.com/tuanapi/OpenAnime-Linux-Desktop-App/v1.0.9/screenshots/detail.png</image>
     </screenshot>
     <screenshot>
-      <caption>High Performance Player - Controls Interface</caption>
-      <image>https://raw.githubusercontent.com/tuanapi/OpenAnime-Linux-Desktop-App/v1.0.5/screenshots/player2.png</image>
+      <caption>High Performance Player</caption>
+      <image>https://raw.githubusercontent.com/tuanapi/OpenAnime-Linux-Desktop-App/v1.0.9/screenshots/player.png</image>
     </screenshot>
   </screenshots>
   <developer_name>tuanapi</developer_name>
@@ -49,6 +41,16 @@
   <url type="vcs-browser">https://github.com/tuanapi/OpenAnime-Linux-Desktop-App</url>
   <content_rating type="oars-1.1" />
   <releases>
+    <release version="1.0.9" date="2026-04-23">
+      <description>
+        <p>Performance optimization and configuration improvements.</p>
+        <ul>
+          <li>Implemented "highPerformance" toggle for hybrid GPU/old PC systems.</li>
+          <li>Auto-generation of clean config.json if missing.</li>
+          <li>Refactored internal config loading for better performance.</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.0.8" date="2026-03-15">
       <description>
         <p>Major update featuring Discord Rich Presence and improved window management.</p>
