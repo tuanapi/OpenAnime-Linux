@@ -51,7 +51,7 @@ yay -S openanime-bin
 </details>
 
 <details>
-<summary><strong>Seçenek 3: Flatpak</strong></summary>
+<summary><strong>Seçenek 3: Flatpak (Yakında)</strong></summary>
 
 ```bash
 flatpak install flathub io.github.tuanapi.OpenAnime
