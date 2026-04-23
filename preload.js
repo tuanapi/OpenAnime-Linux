@@ -1,14 +1,11 @@
 const { contextBridge, ipcRenderer } = require('electron');
 
-// Force WebGPU enabled — overrides the site's stored user preference
+// Force WebGPU on - ignores the site's own settings for better Linux support
 localStorage.setItem('settings.useWebGPU', 'true');
 
 window.addEventListener('DOMContentLoaded', () => {
 
-  // Read config from main process using a synchronous IPC, or just check localStorage since it's renderer context?
-  // Actually, we can just use an IPC or we can check localStorage if we sync it.
-  // We'll read the same config.json directly from preload if nodeIntegration/fs is available? No, contextIsolation is true.
-  // So we will request config via IPC. Let's do it simply by sending an IPC sync message.
+  // Grab config from the main process
   const customFrameEnabled = ipcRenderer.sendSync('get-config', 'useCustomFrame');
 
   if (!customFrameEnabled) {
@@ -18,7 +15,7 @@ window.addEventListener('DOMContentLoaded', () => {
   // Load titlebar specific config
   const tbConfig = ipcRenderer.sendSync('get-config', 'titlebar') || {};
   const cfg = {
-    right: tbConfig.right !== undefined ? tbConfig.right : '85px', 
+    right: tbConfig.right !== undefined ? tbConfig.right : '85px',
     top: tbConfig.top !== undefined ? tbConfig.top : '12px',
     gap: tbConfig.gap !== undefined ? tbConfig.gap : '15px',
     btnSize: tbConfig.btnSize !== undefined ? tbConfig.btnSize : '16px',
@@ -74,7 +71,7 @@ window.addEventListener('DOMContentLoaded', () => {
     }
     .win-btn:hover svg { opacity: 1; }
     
-    /* MacOS Style Colors (Only on Hover) */
+    /* MacOS button colors on hover */
     .btn-close:hover { background-color: #ff5f56 !important; }
     .btn-minimize:hover { background-color: #ffbd2e !important; }
     .btn-maximize:hover { background-color: #27c93f !important; }
@@ -96,7 +93,7 @@ window.addEventListener('DOMContentLoaded', () => {
   `;
   document.body.appendChild(titlebar);
 
-  // Using mousedown for better reliability and adding logs
+  // Mousedown is way more reliable for these controls
   const handleControl = (action) => {
     console.log('[Titlebar] Action:', action);
     ipcRenderer.send('window-control', action);
@@ -138,7 +135,7 @@ window.addEventListener('DOMContentLoaded', () => {
   // Start the initial hide timer
   scheduleHide();
 
-  // Keep titlebar visible during HTML5 Web Fullscreen (like the video player)
+  // Keep it visible in HTML5 fullscreen (for the player)
   document.addEventListener('fullscreenchange', () => {
     if (document.fullscreenElement) {
       document.fullscreenElement.appendChild(titlebar);

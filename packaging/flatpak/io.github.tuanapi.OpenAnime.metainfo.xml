@@ -1,44 +1,44 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>io.github.tuanapi.OpenAnime-Linux-Desktop-App</id>
+  <id>io.github.tuanapi.OpenAnime</id>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>MIT</project_license>
   <name>OpenAnime</name>
   <summary>Unofficial Linux desktop client for OpenAnime</summary>
   <description>
     <p>
-      OpenAnime is an unofficial desktop client for OpenAnime, specifically optimized for Linux. It features hardware acceleration for smooth 4K playback.
+      OpenAnime is a clean, performance-focused Linux client for watching your favorite series. It's built to be fast, using WebGPU and Vulkan for buttery smooth 4K playback.
     </p>
-    <p>Key Features:</p>
+    <p>What makes it great:</p>
     <ul>
-      <li><em>Hardware Acceleration:</em> Smooth 4K playback powered by WebGPU and Vulkan compatibility.</li>
-      <li><em>Frameless UI:</em> Custom window controls that auto-hide for an immersive viewing experience.</li>
-      <li><em>Linux Optimized:</em> specifically tuned for minimal resource usage and maximum performance on Linux desktops.</li>
+      <li><strong>Silky Smooth:</strong> Hardware acceleration that actually works on Linux.</li>
+      <li><strong>Immersive:</strong> A frameless UI that gets out of your way while you watch.</li>
+      <li><strong>Native Feel:</strong> Optimized for minimal resources and maximum performance on any desktop.</li>
     </ul>
   </description>
-  <launchable type="desktop-id">io.github.tuanapi.OpenAnime-Linux-Desktop-App.desktop</launchable>
+  <launchable type="desktop-id">io.github.tuanapi.OpenAnime.desktop</launchable>
   <screenshots>
     <screenshot type="default">
       <caption>OpenAnime Main Interface</caption>
-      <image>https://raw.githubusercontent.com/tuanapi/OpenAnime-Linux-Desktop-App/v1.0.9/screenshots/main.png</image>
+      <image>https://raw.githubusercontent.com/tuanapi/OpenAnime-Linux/v1.0.9/screenshots/main.png</image>
     </screenshot>
     <screenshot>
       <caption>Discover New Series</caption>
-      <image>https://raw.githubusercontent.com/tuanapi/OpenAnime-Linux-Desktop-App/v1.0.9/screenshots/discover.png</image>
+      <image>https://raw.githubusercontent.com/tuanapi/OpenAnime-Linux/v1.0.9/screenshots/discover.png</image>
     </screenshot>
     <screenshot>
       <caption>Detailed Anime Information</caption>
-      <image>https://raw.githubusercontent.com/tuanapi/OpenAnime-Linux-Desktop-App/v1.0.9/screenshots/detail.png</image>
+      <image>https://raw.githubusercontent.com/tuanapi/OpenAnime-Linux/v1.0.9/screenshots/detail.png</image>
     </screenshot>
     <screenshot>
       <caption>High Performance Player</caption>
-      <image>https://raw.githubusercontent.com/tuanapi/OpenAnime-Linux-Desktop-App/v1.0.9/screenshots/player.png</image>
+      <image>https://raw.githubusercontent.com/tuanapi/OpenAnime-Linux/v1.0.9/screenshots/player.png</image>
     </screenshot>
   </screenshots>
   <developer_name>tuanapi</developer_name>
-  <url type="homepage">https://github.com/tuanapi/OpenAnime-Linux-Desktop-App</url>
-  <url type="bugtracker">https://github.com/tuanapi/OpenAnime-Linux-Desktop-App/issues</url>
-  <url type="vcs-browser">https://github.com/tuanapi/OpenAnime-Linux-Desktop-App</url>
+  <url type="homepage">https://github.com/tuanapi/OpenAnime-Linux</url>
+  <url type="bugtracker">https://github.com/tuanapi/OpenAnime-Linux/issues</url>
+  <url type="vcs-browser">https://github.com/tuanapi/OpenAnime-Linux</url>
   <content_rating type="oars-1.1" />
   <releases>
     <release version="1.0.9" date="2026-04-23">

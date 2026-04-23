@@ -10,7 +10,7 @@
     "dist": "electron-builder"
   },
   "build": {
-    "appId": "com.openanime.app",
+    "appId": "io.github.tuanapi.OpenAnime",
     "productName": "OpenAnime",
     "linux": {
       "target": [

@@ -17,7 +17,7 @@ app.commandLine.appendSwitch("enable-hardware-overlays");
 app.commandLine.appendSwitch("ignore-resolution-limits-for-acceleration");
 app.commandLine.appendSwitch("vaapi-ignore-driver-checks");
 
-// --- Configuration Loader ---
+// handle the config file
 const configPath = path.join(app.getPath('userData'), 'config.json');
 
 function createDefaultConfig() {
@@ -68,35 +68,35 @@ function loadConfig() {
 
 const config = loadConfig();
 
-// --- dGPU (NVIDIA/AMD) Auto-Offload ---
-// This ensures AppImage/AUR users get dGPU performance even if they don't use start.sh
+// Auto GPU switching for Linux (NVIDIA/AMD)
+// Use the dGPU for better performance
 if (process.platform === 'linux' && config.highPerformance !== false) {
   const { execSync } = require('child_process');
   const fs = require('fs');
 
   try {
-    // 1. Check for NVIDIA
+    // Try NVIDIA offloading
     if (!process.env.__NV_PRIME_RENDER_OFFLOAD && fs.existsSync('/usr/share/vulkan/icd.d/nvidia_icd.json')) {
       process.env.VK_ICD_FILENAMES = '/usr/share/vulkan/icd.d/nvidia_icd.json';
       process.env.__NV_PRIME_RENDER_OFFLOAD = '1';
       process.env.__VK_LAYER_NV_optimus = 'NVIDIA_only';
       process.env.__GLX_VENDOR_LIBRARY_NAME = 'nvidia';
-    } 
-    // 2. Check for AMD or Intel dGPU (if not already offloading to NVIDIA)
+    }
+    // Fallback to AMD or Intel discrete chips
     else if (!process.env.DRI_PRIME) {
       const lspci = execSync('lspci').toString();
       // Look for a discrete VGA controller that isn't integrated
       const hasDiscreteGPU = lspci.split('\n').some(line => {
         const l = line.toLowerCase();
         if (!l.includes('vga') && !l.includes('display')) return false;
-        
+
         const isAMD = l.includes('amd') || l.includes('ati') || l.includes('radeon');
         const isIntel = l.includes('intel') || l.includes('arc');
         const isIntegrated = l.match(/integrated|raphael|renoir|cezanne|rembrandt|phoenix|iris|uhd|hd graphics/);
-        
+
         return (isAMD || isIntel) && !isIntegrated;
       });
-      
+
       if (hasDiscreteGPU) {
         process.env.DRI_PRIME = '1';
       }
@@ -108,20 +108,14 @@ if (process.platform === 'linux' && config.highPerformance !== false) {
 
 let mainWindow = null;
 
-/**
- * Convert an openanime:// URL to an https://openani.me URL.
- * e.g. "openanime://anime/123" -> "https://openani.me/anime/123"
- */
+// Map openanime:// links to the website URLs
 function protocolUrlToWebUrl(protocolUrl) {
   if (!protocolUrl || !protocolUrl.startsWith(PROTOCOL + "://")) return null;
   const pathPart = protocolUrl.slice((PROTOCOL + "://").length);
   return URL + "/" + pathPart;
 }
 
-/**
- * Handle an incoming deep link URL.
- * If the window exists, navigate it; otherwise store for later.
- */
+// Handle deep links - either navigate now or save for when the window opens
 let pendingUrl = null;
 
 function handleDeepLink(url) {
@@ -145,7 +139,7 @@ if (!gotTheLock) {
   app.quit();
 } else {
   app.on("second-instance", (event, argv) => {
-    // On Linux the URL is passed as the last argv element
+    // On Linux the URL usually comes in as the last argument
     const url = argv.find(arg => arg.startsWith(PROTOCOL + "://"));
     if (url) handleDeepLink(url);
 
@@ -155,7 +149,7 @@ if (!gotTheLock) {
     }
   });
 
-  // macOS / some Linux DEs fire open-url instead
+  // Catch URLs on macOS or some Linux desktops
   app.on("open-url", (event, url) => {
     event.preventDefault();
     handleDeepLink(url);
@@ -163,7 +157,7 @@ if (!gotTheLock) {
 }
 
 function createMainWindow() {
-  // Use pre-loaded config
+  // Pull config from earlier
   let useCustomFrame = config.useCustomFrame || false;
   let winBounds = config.bounds || { width: 1280, height: 800 };
   let isMaximized = config.isMaximized || false;
@@ -208,7 +202,6 @@ function createMainWindow() {
       let config = {};
       if (fs.existsSync(configPath)) {
         let content = fs.readFileSync(configPath, 'utf8');
-        // Strip comments before parsing to avoid crash
         content = content.replace(/\/\/.*|\/\*[\s\S]*?\*\//g, '');
         config = JSON.parse(content);
       }
@@ -222,7 +215,7 @@ function createMainWindow() {
 
   mainWindow.on('close', saveBounds);
 
-  // Consolidate start URL: check pendingUrl (from open-url) first, then process.argv
+  // Decide where to start: either a pending deep link or the home page
   let startUrl = pendingUrl || URL;
   pendingUrl = null;
 
@@ -236,7 +229,7 @@ function createMainWindow() {
 
   mainWindow.loadURL(startUrl);
 
-  // Keyboard Shortcuts Handler
+  // Hotkeys
   mainWindow.webContents.on('before-input-event', (event, input) => {
     if (input.type !== 'keyDown') return;
 
@@ -259,11 +252,6 @@ function createMainWindow() {
   });
 
   // Handle HTML5 Fullscreen (e.g. video player fullscreen button)
-  // When a website enters fullscreen, make the window fullscreen.
-  // When the user changes episode, the website might navigate, which causes
-  // the webContents to leave HTML5 fullscreen automatically.
-  // We can track if the user wanted fullscreen and keep the window fullscreen if needed,
-  // or let the native window Fullscreen persist.
   let isHtmlFullscreen = false;
   mainWindow.webContents.on('enter-html-full-screen', () => {
     isHtmlFullscreen = true;
@@ -272,24 +260,19 @@ function createMainWindow() {
     isHtmlFullscreen = false;
   });
 
-  // If the window was fullscreen before navigation, we can re-apply it if desired,
-  // but usually F11 (native fullscreen) persists across navigation in Electron.
-  // The issue is that the user clicks the WEBSITE's fullscreen button (HTML5 fullscreen).
-  // When the video changes, it navigates, escaping HTML5 fullscreen.
-  // To fix: if we are in HTML5 fullscreen and navigate, we can automatically trigger native fullscreen?
+  // Persist fullscreen across navigation (prevents shrinking between episodes)
   mainWindow.webContents.on('did-start-navigation', (e, url, isInPlace, isMainFrame) => {
     if (persistFullscreen && isMainFrame && (isHtmlFullscreen || mainWindow.isFullScreen())) {
-      // If we were in ANY fullscreen state (HTML5 or Native) during navigation,
-      // force Native Fullscreen to persist so the window doesn't shrink.
+      // Force native fullscreen so it doesn't pop out
       setTimeout(() => {
         if (mainWindow && !mainWindow.isFullScreen()) {
           mainWindow.setFullScreen(true);
         }
-      }, 100); 
+      }, 100);
     }
   });
 
-  // Discord RPC Tracker
+  // Discord status
   mainWindow.webContents.on('page-title-updated', (event, title) => {
     updateDiscordRPC(title, mainWindow.webContents.getURL());
   });
@@ -322,11 +305,11 @@ app.on("window-all-closed", () => {
 });
 
 // --- Discord RPC Setup ---
-const discordClientId = '1482661655975428156'; // Default Client ID (Wait for Official, or using a widely-known generic Anime RPC ID)
+const discordClientId = '1482661655975428156';
 let rpc;
 const startTimestamp = new Date();
 
-// Linux Flatpak/Snap Discord IPC Socket Fallback
+// Fix Discord RPC for Flatpak/Snap
 function applyDiscordIPCPatch() {
   if (process.platform !== 'linux') return;
   try {
@@ -346,7 +329,7 @@ function applyDiscordIPCPatch() {
     else if (fs.existsSync(snapSocket)) targetSocket = snapSocket;
 
     if (targetSocket) {
-      // Spawn background socat to bridge the unix sockets since Node proxy was unstable
+      // Bridge sockets with socat
       const { spawn } = require('child_process');
       const bridge = spawn('socat', [
         `UNIX-LISTEN:${standardSocket},fork`,
@@ -354,13 +337,13 @@ function applyDiscordIPCPatch() {
       ], { detached: true, stdio: 'ignore' });
       bridge.unref();
 
-      // Clean up the proxy socket when app closes
+      // Clean up proxy socket
       app.on('quit', () => {
-        try { fs.unlinkSync(standardSocket); } catch (e) {}
-        try { process.kill(-bridge.pid); } catch(e) {}
+        try { fs.unlinkSync(standardSocket); } catch (e) { }
+        try { process.kill(-bridge.pid); } catch (e) { }
       });
-      
-      // Wait a tiny bit for the socket to be created
+
+      // Wait for socket to exist
       const start = Date.now();
       while (!fs.existsSync(standardSocket) && Date.now() - start < 1000) {
         // block briefly to ensure it exists before IPC starts looking
@@ -377,7 +360,6 @@ let activityStartTimestamp = new Date();
 function updateDiscordRPC(title, url) {
   if (!rpc) return;
 
-  // Reset timer if title changed (new episode)
   if (title && title !== currentActivityTitle) {
     activityStartTimestamp = new Date();
     currentActivityTitle = title;
@@ -387,25 +369,22 @@ function updateDiscordRPC(title, url) {
   let state = "Geziniyor";
 
   if (title && title !== 'OpenAnime' && !title.includes('Just a moment')) {
-    // Clean up branding and split by | or -
     const segments = title.split(/ \| | - /);
     const cleanTitle = segments[0].trim();
-    
+
     if (cleanTitle === 'Anasayfa' || cleanTitle === 'OpenAnime') {
       details = "Anasayfada dolaşıyor";
       state = undefined;
     } else {
-      // Regex to split: Everything before patterns like "S01B01", "1. Sezon", "Episode 1"
       const epRegex = / (S\d+B\d+|(\d+\.)? (Sezon|Bölüm|Episode))/i;
       const match = cleanTitle.match(epRegex);
 
       if (match) {
         const animeName = cleanTitle.substring(0, match.index).trim();
         const epInfo = cleanTitle.substring(match.index).trim();
-        
+
         details = `${animeName} izliyor`;
-        
-        // Parse SxxBxx to Sezon x Bölüm x
+
         const sxbxMatch = epInfo.match(/S(\d+)B(\d+)/i);
         if (sxbxMatch) {
           state = `Sezon ${parseInt(sxbxMatch[1])} Bölüm ${parseInt(sxbxMatch[2])}`;
@@ -423,7 +402,7 @@ function updateDiscordRPC(title, url) {
     details: details,
     state: state,
     startTimestamp: activityStartTimestamp,
-    largeImageKey: 'openanime', 
+    largeImageKey: 'openanime',
     largeImageText: 'OpenAnime',
     instance: false,
   };
@@ -433,7 +412,7 @@ function updateDiscordRPC(title, url) {
   }
 
   try {
-    // Only set activity if the RPC client is actually ready/connected
+    // Update status if ready
     if (rpcReady) {
       rpc.setActivity(activity).catch(err => {
         console.error('Discord RPC setActivity failed:', err);

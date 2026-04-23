@@ -69,8 +69,8 @@ flatpak install flathub io.github.tuanapi.OpenAnime
 Gereksinimler: `node`, `npm`.
 
 ```bash
-git clone https://github.com/tuanapi/OpenAnime-Linux-Desktop-App.git
-cd OpenAnime-Linux-Desktop-App
+git clone https://github.com/tuanapi/OpenAnime-Linux.git
+cd OpenAnime-Linux
 npm install
 npm start          # Geliştirici modu
 ```

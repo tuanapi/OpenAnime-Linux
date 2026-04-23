@@ -1,4 +1,4 @@
-app-id: io.github.tuanapi.OpenAnime-Linux-Desktop-App
+app-id: io.github.tuanapi.OpenAnime
 runtime: org.freedesktop.Platform
 runtime-version: '25.08'
 sdk: org.freedesktop.Sdk
@@ -11,11 +11,15 @@ separate-locales: false
 finish-args:
   - --share=ipc
   - --socket=x11
+  - --socket=wayland
+  - --socket=fallback-x11
   - --device=dri
   - --share=network
   - --socket=pulseaudio
   - --talk-name=org.freedesktop.Notifications
   - --filesystem=xdg-run/pipewire-0
+  - --filesystem=xdg-run/app/com.discordapp.Discord:ro
+  - --filesystem=xdg-run/app/dev.vencord.Vesktop:ro
 build-options:
   append-path: /usr/lib/sdk/node24/bin
   env:
@@ -35,15 +39,15 @@ modules:
       - cp -r dist/linux*-unpacked/* /app/
       - install -D -m 755 openanime-wrapper /app/bin/openanime
       # Icons & Metadata
-      - install -D -m 644 icon512.png /app/share/icons/hicolor/512x512/apps/io.github.tuanapi.OpenAnime-Linux-Desktop-App.png
-      - install -D -m 644 packaging/flatpak/io.github.tuanapi.OpenAnime-Linux-Desktop-App.desktop /app/share/applications/io.github.tuanapi.OpenAnime-Linux-Desktop-App.desktop
-      - install -D -m 644 packaging/flatpak/io.github.tuanapi.OpenAnime-Linux-Desktop-App.metainfo.xml /app/share/metainfo/io.github.tuanapi.OpenAnime-Linux-Desktop-App.metainfo.xml
+      - install -D -m 644 icon512.png /app/share/icons/hicolor/512x512/apps/io.github.tuanapi.OpenAnime.png
+      - install -D -m 644 packaging/flatpak/io.github.tuanapi.OpenAnime.desktop /app/share/applications/io.github.tuanapi.OpenAnime.desktop
+      - install -D -m 644 packaging/flatpak/io.github.tuanapi.OpenAnime.metainfo.xml /app/share/metainfo/io.github.tuanapi.OpenAnime.metainfo.xml
     sources:
       - type: script
         dest-filename: openanime-wrapper
         commands:
           - exec /app/openanime --no-sandbox --ozone-platform=x11 --enable-features=Vulkan,WebGPU --enable-unsafe-webgpu --enable-gpu-rasterization --ignore-gpu-blocklist "$@"
       - type: git
-        url: https://github.com/tuanapi/OpenAnime-Linux-Desktop-App.git
+        url: https://github.com/tuanapi/OpenAnime-Linux.git
         tag: v1.0.9
       - generated-sources.json
