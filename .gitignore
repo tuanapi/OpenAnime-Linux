@@ -14,3 +14,7 @@ Thumbs.db
 .vscode/
 .idea/
 squashfs-root/
+packaging/aur/openanime/pkg/
+packaging/aur/openanime/src/
+packaging/aur/openanime/*.pkg.tar.zst
+packaging/aur/openanime/OpenAnime-Linux/
