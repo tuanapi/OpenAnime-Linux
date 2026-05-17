@@ -25,12 +25,12 @@ jobs:
         run: npm ci
 
       - name: Install Build Tools
-        run: sudo apt-get update && sudo apt-get install -y rpm
+        run: sudo apt-get update && sudo apt-get install -y rpm libarchive-tools
 
       - name: Build Packages
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm run dist -- --linux
+        run: npm run dist -- --linux AppImage deb rpm tar.gz pacman
 
       - name: Create Portable Zip
         run: cd dist && zip -r OpenAnime-${{ github.ref_name }}-portable.zip linux-unpacked/
@@ -44,6 +44,7 @@ jobs:
             dist/*.AppImage
             dist/*.deb
             dist/*.rpm
+            dist/*.pacman
             dist/*.tar.gz
             dist/*-portable.zip
             dist/*.yml
