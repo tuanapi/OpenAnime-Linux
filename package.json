@@ -17,10 +17,21 @@
         "AppImage",
         "deb",
         "rpm",
-        "tar.gz"
+        "tar.gz",
+        "pacman"
       ],
       "category": "Video",
       "icon": "icon512.png"
+    },
+    "pacman": {
+      "depends": [
+        "gtk3",
+        "nss",
+        "libxss",
+        "alsa-lib",
+        "libxtst",
+        "libxkbfile"
+      ]
     },
     "directories": {
       "output": "dist"
