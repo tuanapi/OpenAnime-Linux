@@ -24,7 +24,7 @@ WebGPU ve Vulkan kullanarak 4K videoları kasma yapmadan oynatır. Native Waylan
 <summary><strong>Seçenek 1: AppImage (Önerilen)</strong></summary>
 
 1.  [Releases](../../releases) sayfasından `.AppImage` dosyasını indirin.
-2.  Dosyayı çalıştırılabilir yapın (örn: `OpenAnime-1.0.9.AppImage`).
+2.  Dosyayı çalıştırılabilir yapın (örn: `chmod +x OpenAnime-1.0.9.AppImage`).
 3.  Çalıştırın!
 
 **Sistem Entegrasyonu (Masaüstü Kısayolu & İkon)**:
@@ -46,13 +46,25 @@ chmod +x uninstall.sh
 ```bash
 yay -S openanime-bin
 ```
+
+veya (.pacman dosyası ile):
+
+```bash
+sudo pacman -U openanime-1.0.9.pacman
+```
 </details>
 
 <details>
-<summary><strong>Seçenek 3: Flatpak (Yakında)</strong></summary>
-
+<summary><strong>Seçenek 3: Debian/Ubuntu</strong></summary>
 ```bash
-flatpak install flathub io.github.tuanapi.OpenAnime
+sudo apt install ./openanime_1.0.9_amd64.deb
+```
+</details>
+
+<details>
+<summary><strong>Seçenek 4: Fedora</strong></summary>
+```bash
+sudo rpm -ivh openanime-1.0.9.x86_64.rpm
 ```
 </details>
 
@@ -93,9 +105,9 @@ Uygulama ayarlarını `~/.config/openanime/config.json` dosyasından manuel olar
 
 ## Test Edilen Ortam
 
-*   **OS**: Arch Linux (Kernel 6.19.12-arch1-1) 
+*   **OS**: Arch Linux (Kernel 7.0.8-arch1-1) 
 *   **DE**: KDE Plasma 6.6.4 (Wayland)
-*   **GPU**: NVIDIA GeForce RTX 5070 Ti (Driver 595.58.03) - *1.0.9 sürümü hibrit (dGPU) ortamında bizzat test edilip doğrulanmıştır.*
+*   **GPU**: NVIDIA GeForce RTX 5070 Ti (Driver 595.71.05) - *1.0.9 sürümü hibrit (dGPU) ortamında bizzat test edilip doğrulanmıştır.*
 
 ## Topluluk
 Tartışmalara katılmak için [OpenAnime Discord](https://discord.gg/openanime) sunucusuna katılabilirsiniz.
