@@ -56,6 +56,7 @@ sudo pacman -U openanime-1.0.9.pacman
 
 <details>
 <summary><strong>Seçenek 3: Debian/Ubuntu</strong></summary>
+  
 ```bash
 sudo apt install ./openanime_1.0.9_amd64.deb
 ```
@@ -63,6 +64,7 @@ sudo apt install ./openanime_1.0.9_amd64.deb
 
 <details>
 <summary><strong>Seçenek 4: Fedora</strong></summary>
+  
 ```bash
 sudo rpm -ivh openanime-1.0.9.x86_64.rpm
 ```
