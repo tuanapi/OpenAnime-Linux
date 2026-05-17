@@ -18,3 +18,5 @@ packaging/aur/openanime/pkg/
 packaging/aur/openanime/src/
 packaging/aur/openanime/*.pkg.tar.zst
 packaging/aur/openanime/OpenAnime-Linux/
+aur_openanime_tmp/
+aur_openanime_bin_tmp/
