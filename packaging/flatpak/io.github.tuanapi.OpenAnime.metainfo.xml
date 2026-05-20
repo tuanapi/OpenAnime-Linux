@@ -20,19 +20,19 @@
   <screenshots>
     <screenshot type="default">
       <caption>OpenAnime Main Interface</caption>
-      <image>https://raw.githubusercontent.com/tuanapi/OpenAnime-Linux/v1.0.9/screenshots/main.png</image>
+      <image>https://raw.githubusercontent.com/tuanapi/OpenAnime-Linux/v1.1.0/screenshots/main.png</image>
     </screenshot>
     <screenshot>
       <caption>Discover New Series</caption>
-      <image>https://raw.githubusercontent.com/tuanapi/OpenAnime-Linux/v1.0.9/screenshots/discover.png</image>
+      <image>https://raw.githubusercontent.com/tuanapi/OpenAnime-Linux/v1.1.0/screenshots/discover.png</image>
     </screenshot>
     <screenshot>
       <caption>Detailed Anime Information</caption>
-      <image>https://raw.githubusercontent.com/tuanapi/OpenAnime-Linux/v1.0.9/screenshots/detail.png</image>
+      <image>https://raw.githubusercontent.com/tuanapi/OpenAnime-Linux/v1.1.0/screenshots/detail.png</image>
     </screenshot>
     <screenshot>
       <caption>High Performance Player</caption>
-      <image>https://raw.githubusercontent.com/tuanapi/OpenAnime-Linux/v1.0.9/screenshots/player.png</image>
+      <image>https://raw.githubusercontent.com/tuanapi/OpenAnime-Linux/v1.1.0/screenshots/player.png</image>
     </screenshot>
   </screenshots>
   <developer_name>tuanapi</developer_name>
@@ -41,6 +41,16 @@
   <url type="vcs-browser">https://github.com/tuanapi/OpenAnime-Linux</url>
   <content_rating type="oars-1.1" />
   <releases>
+    <release version="1.1.0" date="2026-05-20">
+      <description>
+        <p>Engine modernization and compatibility overhaul.</p>
+        <ul>
+          <li>Upgraded Electron core to latest v42.2.0 for vastly improved security, V8 speed and WebGPU integration.</li>
+          <li>Implemented advanced runtime boot launcher to resolve Electron 42 native Wayland timing and window creation issues.</li>
+          <li>Optimized Vulkan + XWayland bypass structure to secure crash-free hardware acceleration across all hybrid and NVIDIA setups.</li>
+        </ul>
+      </description>
+    </release>
     <release version="1.0.9" date="2026-04-23">
       <description>
         <p>Performance optimization and configuration improvements.</p>

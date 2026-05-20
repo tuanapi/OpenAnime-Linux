@@ -1,7 +1,7 @@
 {
   "name": "openanime",
-  "version": "1.0.9",
-  "main": "main.js",
+  "version": "1.1.0",
+  "main": "launcher.js",
   "description": "OpenAnime için geliştirilmiş, resmi olmayan (unofficial), yerel WebGPU destekli Linux istemcisi.",
   "author": "tuanapi <tuanapi@proton.me>",
   "license": "MIT",
@@ -37,6 +37,7 @@
       "output": "dist"
     },
     "files": [
+      "launcher.js",
       "main.js",
       "preload.js",
       "icon512.png",
@@ -50,7 +51,7 @@
     "asar": true
   },
   "devDependencies": {
-    "electron": "37.10.3",
+    "electron": "^42.2.0",
     "electron-builder": "^26.0.12"
   },
   "dependencies": {
