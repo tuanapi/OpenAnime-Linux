@@ -5,9 +5,9 @@
 WebGPU ve Vulkan kullanarak 4K videoları kasma yapmadan oynatır. Native Wayland desteği var, yani modern sistemlerde (Hyprland, KDE 6 vs.) sorunsuz çalışıyor.
 
 ### Sürüm 1.1.0 Yenilikleri
-- **Güncel Electron Motoru:** Electron v42.2.0 sürümüne yükseltilerek Chromium 132'nin tüm hız ve güvenlik geliştirmeleri dahil edildi.
+- **Güncel Electron Motoru:** Electron v37.x sürümünden 42.2.0 sürümüne güncellendi
 - **Wayland / XWayland Launcher:** Modern Electron'daki Wayland timing ve pencere oluşturma sorunlarını aşan kurşun geçirmez bir başlatıcı altyapısı kuruldu.
-- **Vulkan & WebGPU Kararlılığı:** NVIDIA kapalı kaynak sürücülerinde Wayland ortamında yaşanan Vulkan surface çökmeleri tamamen giderildi.
+- **Vulkan & WebGPU Kararlılığı:** NVIDIA kapalı kaynak sürücülerinde Wayland ortamında yaşanan Vulkan surface çökmeleri giderildi.
 
 ![OpenAnime](icon512.png)
 
