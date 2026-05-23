@@ -1,8 +1,8 @@
 # OpenAnime Linux
 
-[OpenAnime](https://openani.me) için yapılmış, unofficial Linux masaüstü uygulaması.
+[OpenAnime](https://openani.me) için yapılmış, gayriresmi Linux masaüstü uygulaması.
 
-WebGPU ve Vulkan kullanarak 4K videoları kasma yapmadan oynatır. Native Wayland desteği var, yani modern sistemlerde (Hyprland, KDE 6 vs.) sorunsuz çalışıyor.
+WebGPU ve Vulkan kullanarak 4K videoları kasma yapmadan oynatır. Modern sistemlerde (Hyprland, KDE 6 vs.) sorunsuz çalışıyor.
 
 ### Sürüm 1.1.0 Yenilikleri
 - **Güncel Electron Motoru:** Electron v37.x sürümünden 42.2.0 sürümüne güncellendi
@@ -20,7 +20,7 @@ WebGPU ve Vulkan kullanarak 4K videoları kasma yapmadan oynatır. Native Waylan
 ## Kurulum
 
 <details>
-<summary><strong>Seçenek 1: AppImage (Önerilen)</strong></summary>
+<summary><strong>Seçenek 1: AppImage (bütün distrolar)</strong></summary>
 
 1.  [Releases](../../releases) sayfasından `.AppImage` dosyasını indirin.
 2.  Dosyayı çalıştırılabilir yapın (örn: `chmod +x OpenAnime-1.1.0.AppImage`).
@@ -46,7 +46,13 @@ chmod +x uninstall.sh
 yay -S openanime-bin
 ```
 
-veya (.pacman dosyası ile):
+veya kaynaktan derleyin:
+
+```bash
+yay -S openanime
+```
+
+veya `.pacman` dosyası ile kurun:
 
 ```bash
 sudo pacman -U openanime-1.1.0.pacman
@@ -106,7 +112,7 @@ Uygulama ayarlarını `~/.config/openanime/config.json` dosyasından manuel olar
 
 ## Test Edilen Ortam
 
-*   **OS**: Arch Linux (Kernel 7.0.8-arch1-1) 
+*   **OS**: Arch Linux (Kernel 7.0.9-arch1-1) 
 *   **DE**: KDE Plasma 6.6.4 (Wayland)
 *   **GPU**: NVIDIA GeForce RTX 5070 Ti (Driver 595.71.05) - *1.1.0 sürümü hibrit (dGPU) ortamında bizzat test edilip doğrulanmıştır.*
 
