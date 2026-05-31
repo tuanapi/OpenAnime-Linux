@@ -113,9 +113,9 @@ Uygulama ayarlarını `~/.config/openanime/config.json` dosyasından manuel olar
 
 ## Test Edilen Ortam
 
-*   **OS**: Arch Linux (Kernel 7.0.9-arch1-1) 
-*   **DE**: KDE Plasma 6.6.4 (Wayland)
-*   **GPU**: NVIDIA GeForce RTX 5070 Ti (Driver 595.71.05) - *1.1.1 sürümü hibrit (dGPU) ortamında bizzat test edilip doğrulanmıştır.*
+*   **OS**: Arch Linux (Kernel 7.0.10-arch1-1) 
+*   **DE**: KDE Plasma 6.6.5 (Wayland)
+*   **GPU**: NVIDIA GeForce RTX 5070 Ti (nvidia-open-dkms 610.43.02) - *1.1.1 sürümü hibrit (dGPU) ortamında bizzat test edilip doğrulanmıştır.*
 
 ## Topluluk
 Tartışmalara katılmak için [OpenAnime Discord](https://discord.gg/openanime) sunucusuna katılabilirsiniz.
