@@ -1,9 +1,8 @@
 const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
-const DiscordRPC = require("discord-rpc");
+const { Client: DiscordRPCClient } = require("@xhayper/discord-rpc");
 
 const URL = "https://openani.me";
-const PROTOCOL = "openanime";
 
 app.commandLine.appendSwitch("enable-features", "Vulkan,VaapiVideoDecoder,VaapiVideoEncoder,CanvasOopRasterization,UseMultiPlaneFormatForHardwareVideo,AcceleratedVideoDecodeLinuxGL");
 app.commandLine.appendSwitch("enable-unsafe-webgpu");
@@ -107,51 +106,17 @@ if (process.platform === 'linux' && config.highPerformance !== false) {
 
 let mainWindow = null;
 
-// Map openanime:// links to the website URLs
-function protocolUrlToWebUrl(protocolUrl) {
-  if (!protocolUrl || !protocolUrl.startsWith(PROTOCOL + "://")) return null;
-  const pathPart = protocolUrl.slice((PROTOCOL + "://").length);
-  return URL + "/" + pathPart;
-}
-
-// Handle deep links - either navigate now or save for when the window opens
-let pendingUrl = null;
-
-function handleDeepLink(url) {
-  const webUrl = protocolUrlToWebUrl(url);
-  if (!webUrl) return;
-
-  if (mainWindow) {
-    mainWindow.loadURL(webUrl);
-    if (mainWindow.isMinimized()) mainWindow.restore();
-    mainWindow.focus();
-  } else {
-    pendingUrl = webUrl;
-  }
-}
-
-// Enforce single instance — when a second instance is launched with a URL,
-// forward it to the existing instance.
+// Enforce single instance — prevent multiple app windows from opening
 const gotTheLock = app.requestSingleInstanceLock();
 
 if (!gotTheLock) {
   app.quit();
 } else {
-  app.on("second-instance", (event, argv) => {
-    // On Linux the URL usually comes in as the last argument
-    const url = argv.find(arg => arg.startsWith(PROTOCOL + "://"));
-    if (url) handleDeepLink(url);
-
+  app.on("second-instance", () => {
     if (mainWindow) {
       if (mainWindow.isMinimized()) mainWindow.restore();
       mainWindow.focus();
     }
-  });
-
-  // Catch URLs on macOS or some Linux desktops
-  app.on("open-url", (event, url) => {
-    event.preventDefault();
-    handleDeepLink(url);
   });
 }
 
@@ -214,19 +179,11 @@ function createMainWindow() {
 
   mainWindow.on('close', saveBounds);
 
-  // Decide where to start: either a pending deep link or the home page
-  let startUrl = pendingUrl || URL;
-  pendingUrl = null;
-
-  if (startUrl === URL) {
-    const argUrl = process.argv.find(arg => arg.startsWith(PROTOCOL + "://"));
-    if (argUrl) {
-      const webUrl = protocolUrlToWebUrl(argUrl);
-      if (webUrl) startUrl = webUrl;
-    }
-  }
-
-  mainWindow.loadURL(startUrl);
+  // Clear HTTP cache before loading so we don't show stale/outdated pages.
+  // This only clears the HTTP cache — cookies, localStorage, and sessions are preserved.
+  mainWindow.webContents.session.clearCache().then(() => {
+    mainWindow.loadURL(URL);
+  });
 
   // Hotkeys
   mainWindow.webContents.on('before-input-event', (event, input) => {
@@ -306,7 +263,6 @@ app.on("window-all-closed", () => {
 // --- Discord RPC Setup ---
 const discordClientId = '1482661655975428156';
 let rpc;
-const startTimestamp = new Date();
 
 // Fix Discord RPC for Flatpak/Snap
 function applyDiscordIPCPatch() {
@@ -357,7 +313,7 @@ let currentActivityTitle = '';
 let activityStartTimestamp = new Date();
 
 function updateDiscordRPC(title, url) {
-  if (!rpc) return;
+  if (!rpc || !rpcReady) return;
 
   if (title && title !== currentActivityTitle) {
     activityStartTimestamp = new Date();
@@ -411,14 +367,11 @@ function updateDiscordRPC(title, url) {
   }
 
   try {
-    // Update status if ready
-    if (rpcReady) {
-      rpc.setActivity(activity).catch(err => {
-        console.error('Discord RPC setActivity failed:', err);
-        rpcReady = false; // Mark as not ready if request fails
-      });
-      console.log(`Discord RPC Set: ${details}${state ? ' - ' + state : ''}`);
-    }
+    rpc.user?.setActivity(activity).catch(err => {
+      console.error('Discord RPC setActivity failed:', err);
+      rpcReady = false;
+    });
+    console.log(`Discord RPC Set: ${details}${state ? ' - ' + state : ''}`);
   } catch (err) {
     console.error('Failed to set Discord activity (sync):', err);
   }
@@ -434,8 +387,7 @@ function initDiscordRPC() {
   applyDiscordIPCPatch();
 
   if (!rpc) {
-    DiscordRPC.register(discordClientId);
-    rpc = new DiscordRPC.Client({ transport: 'ipc' });
+    rpc = new DiscordRPCClient({ clientId: discordClientId });
 
     rpc.on('ready', () => {
       isConnecting = false;
@@ -453,10 +405,11 @@ function initDiscordRPC() {
     });
   }
 
-  rpc.login({ clientId: discordClientId }).catch(err => {
+  rpc.login().catch(err => {
     console.log('Discord RPC connection failed. Retrying in 15s...');
     isConnecting = false;
     rpcReady = false;
     setTimeout(initDiscordRPC, 15000);
   });
 }
+

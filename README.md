@@ -4,10 +4,13 @@
 
 WebGPU ve Vulkan kullanarak 4K videoları kasma yapmadan oynatır. Modern sistemlerde (Hyprland, KDE 6 vs.) sorunsuz çalışıyor.
 
-### Sürüm 1.1.0 Yenilikleri
-- **Güncel Electron Motoru:** Electron v37.x sürümünden 42.2.0 sürümüne güncellendi
-- **Wayland / XWayland Launcher:** Modern Electron'daki Wayland timing ve pencere oluşturma sorunlarını aşan kurşun geçirmez bir başlatıcı altyapısı kuruldu.
-- **Vulkan & WebGPU Kararlılığı:** NVIDIA kapalı kaynak sürücülerinde Wayland ortamında yaşanan Vulkan surface çökmeleri giderildi.
+### Sürüm 1.1.1 Yenilikleri
+- **Kaldırılan Özellikler:** Kullanılmayan `flatpak` yapılandırmaları ve `openanime://` protokol desteği projeden tamamen çıkarıldı.
+- **Discord RPC Yenilendi:** Eski ve güvenlik açıkları bulunduran paket temizlenip, aktif olarak korunan yeni bir kütüphaneye geçildi (`@xhayper/discord-rpc`).
+- **Önbellek (Cache) Temizliği:** Uygulama açılışında yaşanan güncel olmayan (eski) sayfa yüklenme sorunu giderildi; her açılışta güncel arayüz sağlanır.
+- **Electron Sürüm Yükseltmesi:** Electron v42.3.0 sürümüne geçiş yapıldı.
+- **Wayland / XWayland Başlatıcı:** Modern Electron sürümlerinde Wayland altında yaşanan timing ve pencere oluşturma sorunlarını gidermeye yardımcı olması için başlatıcı (launcher) altyapısı eklendi.
+- **Vulkan & WebGPU Uyumluluğu:** NVIDIA kapalı kaynak sürücülerinde ve Wayland ortamında yaşanan bazı Vulkan surface kaynaklı çökmeler ve siyah ekran sorunları iyileştirildi.
 
 ![OpenAnime](icon512.png)
 
@@ -23,7 +26,7 @@ WebGPU ve Vulkan kullanarak 4K videoları kasma yapmadan oynatır. Modern sistem
 <summary><strong>Seçenek 1: AppImage (bütün distrolar)</strong></summary>
 
 1.  [Releases](../../releases) sayfasından `.AppImage` dosyasını indirin.
-2.  Dosyayı çalıştırılabilir yapın (örn: `chmod +x OpenAnime-1.1.0.AppImage`).
+2.  Dosyayı çalıştırılabilir yapın (örn: `chmod +x OpenAnime-1.1.1.AppImage`).
 3.  Çalıştırın!
 
 **Sistem Entegrasyonu (Masaüstü Kısayolu & İkon)**:
@@ -55,7 +58,7 @@ yay -S openanime
 veya `.pacman` dosyası ile kurun:
 
 ```bash
-sudo pacman -U openanime-1.1.0.pacman
+sudo pacman -U openanime-1.1.1.pacman
 ```
 </details>
 
@@ -63,7 +66,7 @@ sudo pacman -U openanime-1.1.0.pacman
 <summary><strong>Seçenek 3: Debian/Ubuntu</strong></summary>
   
 ```bash
-sudo apt install ./openanime_1.1.0_amd64.deb
+sudo apt install ./openanime_1.1.1_amd64.deb
 ```
 </details>
 
@@ -71,7 +74,7 @@ sudo apt install ./openanime_1.1.0_amd64.deb
 <summary><strong>Seçenek 4: Fedora</strong></summary>
   
 ```bash
-sudo rpm -ivh openanime-1.1.0.x86_64.rpm
+sudo rpm -ivh openanime-1.1.1.x86_64.rpm
 ```
 </details>
 
@@ -114,7 +117,7 @@ Uygulama ayarlarını `~/.config/openanime/config.json` dosyasından manuel olar
 
 *   **OS**: Arch Linux (Kernel 7.0.9-arch1-1) 
 *   **DE**: KDE Plasma 6.6.4 (Wayland)
-*   **GPU**: NVIDIA GeForce RTX 5070 Ti (Driver 595.71.05) - *1.1.0 sürümü hibrit (dGPU) ortamında bizzat test edilip doğrulanmıştır.*
+*   **GPU**: NVIDIA GeForce RTX 5070 Ti (Driver 595.71.05) - *1.1.1 sürümü hibrit (dGPU) ortamında bizzat test edilip doğrulanmıştır.*
 
 ## Topluluk
 Tartışmalara katılmak için [OpenAnime Discord](https://discord.gg/openanime) sunucusuna katılabilirsiniz.

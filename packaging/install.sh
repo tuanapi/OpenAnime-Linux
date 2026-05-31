@@ -6,7 +6,7 @@
 
 APP_NAME="OpenAnime"
 ICON_NAME="openanime"
-APP_FILENAME="OpenAnime-1.1.0.AppImage"
+APP_FILENAME="OpenAnime-1.1.1.AppImage"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "📦 Installing $APP_NAME..."
@@ -73,7 +73,6 @@ Exec=$INSTALL_DIR/$APP_FILENAME %u
 Icon=$ICON_NAME
 Terminal=false
 Categories=AudioVideo;Video;Player;
-MimeType=x-scheme-handler/openanime;
 StartupWMClass=$APP_NAME
 PrefersNonDefaultGPU=true
 EOF
