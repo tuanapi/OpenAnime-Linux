@@ -9,8 +9,6 @@ WebGPU ve Vulkan kullanarak 4K videoları kasma yapmadan oynatır. Modern sistem
 - **Discord RPC Yenilendi:** Eski ve güvenlik açıkları bulunduran paket temizlenip, aktif olarak korunan yeni bir kütüphaneye geçildi (`@xhayper/discord-rpc`).
 - **Önbellek (Cache) Temizliği:** Uygulama açılışında yaşanan güncel olmayan (eski) sayfa yüklenme sorunu giderildi; her açılışta güncel arayüz sağlanır.
 - **Electron Sürüm Yükseltmesi:** Electron v42.3.0 sürümüne geçiş yapıldı.
-- **Wayland / XWayland Başlatıcı:** Modern Electron sürümlerinde Wayland altında yaşanan timing ve pencere oluşturma sorunlarını gidermeye yardımcı olması için başlatıcı (launcher) altyapısı eklendi.
-- **Vulkan & WebGPU Uyumluluğu:** NVIDIA kapalı kaynak sürücülerinde ve Wayland ortamında yaşanan bazı Vulkan surface kaynaklı çökmeler ve siyah ekran sorunları iyileştirildi.
 
 ![OpenAnime](icon512.png)
 
