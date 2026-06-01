@@ -7,6 +7,7 @@ WebGPU ve Vulkan kullanarak 4K videoları kasma yapmadan oynatır. Modern sistem
 ### Sürüm 1.1.2 Yenilikleri
 - **Klavye Kısayolları Temizliği:** İşletim sistemiyle çakışan ve sorun çıkaran özel klavye kısayolları (F11 ve Escape kontrolcüleri) tamamen kaldırıldı.
 - **Pencere Butonları Hizalaması:** Pencere kontrol butonlarının (titlebar) sağ kenar boşluğu `135px` değerine çekilerek görsel yerleşimi iyileştirildi.
+- **Önbellek Temizliği Kaldırıldı:** Sorun çıkardığı için otomatik HTTP önbellek (cache) temizleme özelliği tamamen kaldırıldı.
 
 
 ![OpenAnime](icon512.png)
