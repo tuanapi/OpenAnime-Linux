@@ -49,17 +49,15 @@ jobs:
             dist/*-portable.zip
             dist/*.yml
             dist/*.blockmap
+          generate_release_notes: true
           body: |
-            ## Sürüm Notları (${{ github.ref_name }})
-            
-            • **Gelişmiş Yapılandırma:** `config.json` dosyası artık daha düzenli ve stabil.
-            • **Yüksek Performans Modu:** Hibrit GPU/Eski PC sistemleri için `highPerformance` seçeneği eklendi.
-            • **Otomatik Yapılandırma:** Eksik config dosyası artık açıklamalarla birlikte otomatik oluşturuluyor.
-            • **Discord RPC:** Geliştirilmiş hata yönetimi ve bağlantı iyileştirmeleri.
-            • **Hata Düzeltmeleri:** Genel performans ve pencere yönetimi iyileştirmeleri.
+            ## Sürüm 1.1.2 Yenilikleri
+            - **Klavye Kısayolları Temizliği:** İşletim sistemiyle çakışan ve sorun çıkaran özel klavye kısayolları (F11 ve Escape kontrolcüleri) tamamen kaldırıldı.
+            - **Pencere Butonları Hizalaması:** Pencere kontrol butonlarının (titlebar) sağ kenar boşluğu `135px` değerine çekilerek görsel yerleşimi iyileştirildi.
 
-            ## İndirme
-            - **AppImage:** Tek dosya, kurulum gerektirmez. (Arch, Fedora, Ubuntu vb.)
-            - **Deb:** Debian, Ubuntu, Linux Mint vb. için kurulum paketi.
-            - **RPM:** Fedora, RHEL, openSUSE vb. için kurulum paketi.
-            - **Portable Zip:** Arşivi aç, `linux-unpacked/openanime` dosyasını çalıştır.
+            ## 📥 İndirme Seçenekleri
+            - **AppImage (`.AppImage`):** Tek tıkla çalışır, kurulum gerektirmez. (Tüm Linux dağıtımları için önerilir)
+            - **Arch Linux (`.pacman`):** Arch Linux, Manjaro, EndeavourOS vb. sistemler için yerel paket.
+            - **Debian/Ubuntu (`.deb`):** Debian, Ubuntu, Linux Mint, Pop!_OS vb. için kurulum paketi.
+            - **Fedora/RHEL (`.rpm`):** Fedora, openSUSE, RHEL tabanlı sistemler için kurulum paketi.
+            - **Portable (`.zip` / `.tar.gz`):** Arşivi klasöre çıkartın ve doğrudan `openanime` dosyasını çalıştırın.

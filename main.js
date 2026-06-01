@@ -2,7 +2,7 @@ const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
 const { Client: DiscordRPCClient } = require("@xhayper/discord-rpc");
 
-const URL = "https://openani.me";
+const MAIN_URL = "https://openani.me";
 
 app.commandLine.appendSwitch("enable-features", "Vulkan,VaapiVideoDecoder,VaapiVideoEncoder,CanvasOopRasterization,UseMultiPlaneFormatForHardwareVideo,AcceleratedVideoDecodeLinuxGL");
 app.commandLine.appendSwitch("enable-unsafe-webgpu");
@@ -27,7 +27,7 @@ function createDefaultConfig() {
   "isMaximized": false,
   "bounds": { "x": 253, "y": 83, "width": 1360, "height": 926 },
   "titlebar": {
-    "right": "85px",
+    "right": "135px",
     "top": "12px",
     "gap": "15px",
     "btnSize": "16px"
@@ -147,10 +147,10 @@ function createMainWindow() {
   });
 
   mainWindow.webContents.on("will-navigate", (e, url) => {
-    if (!url.startsWith(URL)) e.preventDefault();
+    if (!url.startsWith(MAIN_URL)) e.preventDefault();
   });
   mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (!url.startsWith(URL)) return { action: "deny" };
+    if (!url.startsWith(MAIN_URL)) return { action: "deny" };
     return { action: "allow" };
   });
 
@@ -179,33 +179,7 @@ function createMainWindow() {
 
   mainWindow.on('close', saveBounds);
 
-  // Clear HTTP cache before loading so we don't show stale/outdated pages.
-  // This only clears the HTTP cache — cookies, localStorage, and sessions are preserved.
-  mainWindow.webContents.session.clearCache().then(() => {
-    mainWindow.loadURL(URL);
-  });
-
-  // Hotkeys
-  mainWindow.webContents.on('before-input-event', (event, input) => {
-    if (input.type !== 'keyDown') return;
-
-    // F11 -> Toggle Fullscreen
-    if (input.key === "F11") {
-      mainWindow.setFullScreen(!mainWindow.isFullScreen());
-      event.preventDefault();
-    }
-
-    // ESC -> Go Back or Exit Fullscreen
-    if (input.key === "Escape") {
-      if (mainWindow.isFullScreen()) {
-        mainWindow.setFullScreen(false);
-        event.preventDefault();
-      } else if (mainWindow.webContents.navigationHistory.canGoBack()) {
-        mainWindow.webContents.navigationHistory.goBack();
-        event.preventDefault();
-      }
-    }
-  });
+mainWindow.loadURL(MAIN_URL);
 
   // Handle HTML5 Fullscreen (e.g. video player fullscreen button)
   let isHtmlFullscreen = false;
@@ -393,7 +367,7 @@ function initDiscordRPC() {
       isConnecting = false;
       rpcReady = true;
       console.log('Discord RPC Connected!');
-      updateDiscordRPC(mainWindow ? mainWindow.getTitle() : 'OpenAnime', mainWindow ? mainWindow.webContents.getURL() : URL);
+      updateDiscordRPC(mainWindow ? mainWindow.getTitle() : 'OpenAnime', mainWindow ? mainWindow.webContents.getURL() : MAIN_URL);
     });
 
     rpc.on('disconnected', () => {
@@ -412,4 +386,3 @@ function initDiscordRPC() {
     setTimeout(initDiscordRPC, 15000);
   });
 }
-
