@@ -15,7 +15,7 @@ app.commandLine.appendSwitch("enable-hardware-overlays");
 app.commandLine.appendSwitch("ignore-resolution-limits-for-acceleration");
 app.commandLine.appendSwitch("vaapi-ignore-driver-checks");
 
-// handle the config file
+// config
 const configPath = path.join(app.getPath('userData'), 'config.json');
 
 function createDefaultConfig() {
@@ -66,24 +66,23 @@ function loadConfig() {
 
 const config = loadConfig();
 
-// Auto GPU switching for Linux (NVIDIA/AMD)
-// Use the dGPU for better performance
+// auto gpu switcher for linux (nvidia/amd)
 if (process.platform === 'linux' && config.highPerformance !== false) {
   const { execSync } = require('child_process');
   const fs = require('fs');
 
   try {
-    // Try NVIDIA offloading
+    // try nvidia
     if (!process.env.__NV_PRIME_RENDER_OFFLOAD && fs.existsSync('/usr/share/vulkan/icd.d/nvidia_icd.json')) {
       process.env.VK_ICD_FILENAMES = '/usr/share/vulkan/icd.d/nvidia_icd.json';
       process.env.__NV_PRIME_RENDER_OFFLOAD = '1';
       process.env.__VK_LAYER_NV_optimus = 'NVIDIA_only';
       process.env.__GLX_VENDOR_LIBRARY_NAME = 'nvidia';
     }
-    // Fallback to AMD or Intel discrete chips
+    // fallback to amd/intel
     else if (!process.env.DRI_PRIME) {
       const lspci = execSync('lspci').toString();
-      // Look for a discrete VGA controller that isn't integrated
+      // find discrete gpu
       const hasDiscreteGPU = lspci.split('\n').some(line => {
         const l = line.toLowerCase();
         if (!l.includes('vga') && !l.includes('display')) return false;
@@ -100,13 +99,13 @@ if (process.platform === 'linux' && config.highPerformance !== false) {
       }
     }
   } catch (e) {
-    // Silently fail if lspci is missing or other issues
+    // ignore errors
   }
 }
 
 let mainWindow = null;
 
-// Enforce single instance — prevent multiple app windows from opening
+// single instance lock
 const gotTheLock = app.requestSingleInstanceLock();
 
 if (!gotTheLock) {
@@ -121,7 +120,7 @@ if (!gotTheLock) {
 }
 
 function createMainWindow() {
-  // Pull config from earlier
+  // read config
   let useCustomFrame = config.useCustomFrame || false;
   let winBounds = config.bounds || { width: 1280, height: 800 };
   let isMaximized = config.isMaximized || false;
@@ -181,7 +180,7 @@ function createMainWindow() {
 
 mainWindow.loadURL(MAIN_URL);
 
-  // Handle HTML5 Fullscreen (e.g. video player fullscreen button)
+  // html5 fullscreen
   let isHtmlFullscreen = false;
   mainWindow.webContents.on('enter-html-full-screen', () => {
     isHtmlFullscreen = true;
@@ -190,10 +189,10 @@ mainWindow.loadURL(MAIN_URL);
     isHtmlFullscreen = false;
   });
 
-  // Persist fullscreen across navigation (prevents shrinking between episodes)
+  // keep fullscreen when switching episodes
   mainWindow.webContents.on('did-start-navigation', (e, url, isInPlace, isMainFrame) => {
     if (persistFullscreen && isMainFrame && (isHtmlFullscreen || mainWindow.isFullScreen())) {
-      // Force native fullscreen so it doesn't pop out
+      // force native fullscreen
       setTimeout(() => {
         if (mainWindow && !mainWindow.isFullScreen()) {
           mainWindow.setFullScreen(true);
@@ -202,10 +201,40 @@ mainWindow.loadURL(MAIN_URL);
     }
   });
 
-  // Discord status
-  mainWindow.webContents.on('page-title-updated', (event, title) => {
-    updateDiscordRPC(title, mainWindow.webContents.getURL());
-  });
+
+
+  // poll premid for discord status
+  setInterval(async () => {
+    if (mainWindow && !mainWindow.isDestroyed() && rpcReady) {
+      try {
+        const premidData = await mainWindow.webContents.executeJavaScript(`
+          (() => {
+            const el = document.querySelector('premid-announcer');
+            return el ? el.textContent : null;
+          })()
+        `);
+        
+        if (premidData) {
+          let parsed;
+          try {
+            let clean = premidData.trim();
+            if (clean.startsWith('"') && clean.endsWith('"')) {
+              clean = JSON.parse(clean);
+            }
+            parsed = typeof clean === 'string' ? JSON.parse(clean) : clean;
+          } catch (e) {
+            // Failed to parse
+          }
+          
+          if (parsed && typeof parsed === 'object') {
+            updateDiscordRPCFromPremid(parsed);
+          }
+        }
+      } catch (err) {
+        // Ignored
+      }
+    }
+  }, 3000);
 }
 
 app.whenReady().then(() => {
@@ -213,7 +242,7 @@ app.whenReady().then(() => {
   initDiscordRPC();
 });
 
-// IPC for Window Controls
+// window controls
 ipcMain.on('window-control', (event, action) => {
   const webContents = event.sender;
   const win = BrowserWindow.fromWebContents(webContents);
@@ -234,11 +263,17 @@ app.on("window-all-closed", () => {
   if (process.platform !== "darwin") app.quit();
 });
 
+app.on("will-quit", () => {
+  if (rpc) {
+    try { rpc.destroy(); } catch(e) {}
+  }
+});
+
 // --- Discord RPC Setup ---
 const discordClientId = '1482661655975428156';
 let rpc;
 
-// Fix Discord RPC for Flatpak/Snap
+// flatpak/snap rpc fix
 function applyDiscordIPCPatch() {
   if (process.platform !== 'linux') return;
   try {
@@ -258,7 +293,7 @@ function applyDiscordIPCPatch() {
     else if (fs.existsSync(snapSocket)) targetSocket = snapSocket;
 
     if (targetSocket) {
-      // Bridge sockets with socat
+      // bridge via socat
       const { spawn } = require('child_process');
       const bridge = spawn('socat', [
         `UNIX-LISTEN:${standardSocket},fork`,
@@ -266,16 +301,16 @@ function applyDiscordIPCPatch() {
       ], { detached: true, stdio: 'ignore' });
       bridge.unref();
 
-      // Clean up proxy socket
+      // cleanup socket
       app.on('quit', () => {
         try { fs.unlinkSync(standardSocket); } catch (e) { }
         try { process.kill(-bridge.pid); } catch (e) { }
       });
 
-      // Wait for socket to exist
+      // wait for socket
       const start = Date.now();
       while (!fs.existsSync(standardSocket) && Date.now() - start < 1000) {
-        // block briefly to ensure it exists before IPC starts looking
+        // block slightly
       }
     }
   } catch (err) {
@@ -283,71 +318,80 @@ function applyDiscordIPCPatch() {
   }
 }
 
-let currentActivityTitle = '';
-let activityStartTimestamp = new Date();
+let lastPremidJson = '';
+let lastPremidTime = 0;
 
-function updateDiscordRPC(title, url) {
+
+
+let lastCalculatedStart = 0;
+
+function updateDiscordRPCFromPremid(data) {
   if (!rpc || !rpcReady) return;
 
-  if (title && title !== currentActivityTitle) {
-    activityStartTimestamp = new Date();
-    currentActivityTitle = title;
+  let currentStart = 0;
+  if (data.video && typeof data.video.currentTime === 'number' && !data.video.paused) {
+    currentStart = Date.now() - Math.floor(data.video.currentTime * 1000);
   }
 
-  let details = "OpenAnime'de";
-  let state = "Geziniyor";
-
-  if (title && title !== 'OpenAnime' && !title.includes('Just a moment')) {
-    const segments = title.split(/ \| | - /);
-    const cleanTitle = segments[0].trim();
-
-    if (cleanTitle === 'Anasayfa' || cleanTitle === 'OpenAnime') {
-      details = "Anasayfada dolaşıyor";
-      state = undefined;
+  // ignore video ticking to avoid rate limits
+  const dataForCheck = {
+    ...data,
+    video: data.video ? { ...data.video, currentTime: undefined } : undefined
+  };
+  const currentJson = JSON.stringify(dataForCheck);
+  
+  if (currentJson === lastPremidJson) {
+    if (currentStart > 0 && Math.abs(currentStart - lastCalculatedStart) > 4000) {
     } else {
-      const epRegex = / (S\d+B\d+|(\d+\.)? (Sezon|Bölüm|Episode))/i;
-      const match = cleanTitle.match(epRegex);
-
-      if (match) {
-        const animeName = cleanTitle.substring(0, match.index).trim();
-        const epInfo = cleanTitle.substring(match.index).trim();
-
-        details = `${animeName} izliyor`;
-
-        const sxbxMatch = epInfo.match(/S(\d+)B(\d+)/i);
-        if (sxbxMatch) {
-          state = `Sezon ${parseInt(sxbxMatch[1])} Bölüm ${parseInt(sxbxMatch[2])}`;
-        } else {
-          state = epInfo;
-        }
-      } else {
-        details = `${cleanTitle} izliyor`;
-        state = 'Geziniyor';
-      }
+      return;
     }
   }
 
+  lastPremidJson = currentJson;
+  lastCalculatedStart = currentStart;
+  lastPremidTime = Date.now();
+
   const activity = {
-    details: details,
-    state: state,
-    startTimestamp: activityStartTimestamp,
-    largeImageKey: 'openanime',
-    largeImageText: 'OpenAnime',
+    details: data.details || "OpenAnime'de",
+    state: data.state || "Geziniyor",
+    largeImageKey: data.largeImageKey || 'openanime',
+    largeImageText: data.largeImageText || 'OpenAnime',
+    smallImageKey: 'https://github.com/tuanapi/OpenAnime-Linux/blob/main/candy.png?raw=true',
+    smallImageText: data.smallImageText || 'OpenAnime',
     instance: false,
+    type: 3 // Watching
   };
 
+  if (data.smallImageKey !== 'play' && data.smallImageKey !== 'pause') {
+    delete activity.smallImageKey;
+    delete activity.smallImageText;
+  }
+
+  if (currentStart > 0) {
+    activity.startTimestamp = new Date(currentStart);
+    if (data.video && typeof data.video.duration === 'number') {
+      activity.endTimestamp = new Date(currentStart + Math.floor(data.video.duration * 1000));
+    }
+  } else if (data.startTimestamp) {
+    activity.startTimestamp = new Date(data.startTimestamp);
+    if (data.endTimestamp) {
+      activity.endTimestamp = new Date(data.endTimestamp);
+    }
+  }
+
+  const url = mainWindow ? mainWindow.webContents.getURL() : MAIN_URL;
   if (url && url.startsWith('https://openani.me/')) {
     activity.buttons = [{ label: "OpenAnime'de İzle", url: url }];
   }
 
   try {
     rpc.user?.setActivity(activity).catch(err => {
-      console.error('Discord RPC setActivity failed:', err);
+      console.error('Discord RPC setActivity failed (premid):', err);
       rpcReady = false;
     });
-    console.log(`Discord RPC Set: ${details}${state ? ' - ' + state : ''}`);
+    console.log(`Discord RPC Set (PreMid): ${activity.details} - ${activity.state}`);
   } catch (err) {
-    console.error('Failed to set Discord activity (sync):', err);
+    console.error('Failed to set Discord activity (premid sync):', err);
   }
 }
 
@@ -367,7 +411,6 @@ function initDiscordRPC() {
       isConnecting = false;
       rpcReady = true;
       console.log('Discord RPC Connected!');
-      updateDiscordRPC(mainWindow ? mainWindow.getTitle() : 'OpenAnime', mainWindow ? mainWindow.webContents.getURL() : MAIN_URL);
     });
 
     rpc.on('disconnected', () => {
