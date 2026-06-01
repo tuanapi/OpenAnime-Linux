@@ -321,16 +321,50 @@ function applyDiscordIPCPatch() {
 let lastPremidJson = '';
 let lastPremidTime = 0;
 
-
-
+let lastKnownVideoTime = 0;
+let lastKnownVideoTimeUpdated = 0;
+let stableStartTimestamp = 0;
+let lastPausedState = false;
 let lastCalculatedStart = 0;
 
 function updateDiscordRPCFromPremid(data) {
   if (!rpc || !rpcReady) return;
 
   let currentStart = 0;
-  if (data.video && typeof data.video.currentTime === 'number' && !data.video.paused) {
-    currentStart = Date.now() - Math.floor(data.video.currentTime * 1000);
+  if (data.video && typeof data.video.currentTime === 'number') {
+    const now = Date.now();
+    const paused = data.video.paused;
+    let isSeeked = false;
+
+    if (paused !== lastPausedState) {
+      isSeeked = true;
+      lastPausedState = paused;
+    }
+
+    if (lastKnownVideoTime > 0 && !isSeeked) {
+      const elapsedRealTime = (now - lastKnownVideoTimeUpdated) / 1000;
+      const expectedVideoTime = lastKnownVideoTime + (paused ? 0 : elapsedRealTime);
+      if (Math.abs(data.video.currentTime - expectedVideoTime) > 4) {
+        isSeeked = true;
+      }
+    } else {
+      isSeeked = true;
+    }
+
+    lastKnownVideoTime = data.video.currentTime;
+    lastKnownVideoTimeUpdated = now;
+
+    if (isSeeked || !stableStartTimestamp) {
+      stableStartTimestamp = now - Math.floor(data.video.currentTime * 1000);
+    }
+
+    if (!paused) {
+      currentStart = stableStartTimestamp;
+    }
+  } else {
+    lastKnownVideoTime = 0;
+    lastKnownVideoTimeUpdated = 0;
+    stableStartTimestamp = 0;
   }
 
   // ignore video ticking to avoid rate limits
@@ -340,11 +374,8 @@ function updateDiscordRPCFromPremid(data) {
   };
   const currentJson = JSON.stringify(dataForCheck);
   
-  if (currentJson === lastPremidJson) {
-    if (currentStart > 0 && Math.abs(currentStart - lastCalculatedStart) > 4000) {
-    } else {
-      return;
-    }
+  if (currentJson === lastPremidJson && currentStart === lastCalculatedStart) {
+    return;
   }
 
   lastPremidJson = currentJson;
@@ -356,16 +387,16 @@ function updateDiscordRPCFromPremid(data) {
     state: data.state || "Geziniyor",
     largeImageKey: data.largeImageKey || 'openanime',
     largeImageText: data.largeImageText || 'OpenAnime',
-    smallImageKey: 'https://github.com/tuanapi/OpenAnime-Linux/blob/main/candy.png?raw=true',
-    smallImageText: data.smallImageText || 'OpenAnime',
+    // smallImageKey: 'https://github.com/tuanapi/OpenAnime-Linux/blob/main/candy.png?raw=true',
+    // smallImageText: data.smallImageText || 'OpenAnime',
     instance: false,
     type: 3 // Watching
   };
 
-  if (data.smallImageKey !== 'play' && data.smallImageKey !== 'pause') {
-    delete activity.smallImageKey;
-    delete activity.smallImageText;
-  }
+  // if (data.smallImageKey !== 'play' && data.smallImageKey !== 'pause') {
+  //   delete activity.smallImageKey;
+  //   delete activity.smallImageText;
+  // }
 
   if (currentStart > 0) {
     activity.startTimestamp = new Date(currentStart);
