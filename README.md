@@ -8,11 +8,6 @@ WebGPU ve Vulkan kullanarak 4K videoları kasma yapmadan oynatır. Modern sistem
 - **Klavye Kısayolları Temizliği:** İşletim sistemiyle çakışan ve sorun çıkaran özel klavye kısayolları (F11 ve Escape kontrolcüleri) tamamen kaldırıldı.
 - **Pencere Butonları Hizalaması:** Pencere kontrol butonlarının (titlebar) sağ kenar boşluğu `135px` değerine çekilerek görsel yerleşimi iyileştirildi.
 
-### Sürüm 1.1.1 Yenilikleri
-- **Kaldırılan Özellikler:** Kullanılmayan `flatpak` yapılandırmaları ve `openanime://` protokol desteği projeden tamamen çıkarıldı.
-- **Discord RPC Yenilendi:** Eski ve güvenlik açıkları bulunduran paket temizlenip, aktif olarak korunan yeni bir kütüphaneye geçildi (`@xhayper/discord-rpc`).
-- **Önbellek (Cache) Temizliği:** Uygulama açılışında yaşanan güncel olmayan (eski) sayfa yüklenme sorunu giderildi; her açılışta güncel arayüz sağlanır.
-- **Electron Sürüm Yükseltmesi:** Electron v42.3.0 sürümüne geçiş yapıldı.
 
 ![OpenAnime](icon512.png)
 
