@@ -1,8 +1,17 @@
-const { app, BrowserWindow, ipcMain } = require("electron");
+const { app, BrowserWindow, ipcMain, Menu, shell, powerMonitor } = require("electron");
 const path = require("path");
 const { Client: DiscordRPCClient } = require("@xhayper/discord-rpc");
 
 const MAIN_URL = "https://openani.me";
+
+function isAllowedDomain(url) {
+  try {
+    const parsed = new URL(url);
+    return parsed.protocol === 'https:' && (parsed.hostname === 'openani.me' || parsed.hostname.endsWith('.openani.me'));
+  } catch (e) {
+    return false;
+  }
+}
 
 app.commandLine.appendSwitch("enable-features", "Vulkan,VaapiVideoDecoder,VaapiVideoEncoder,CanvasOopRasterization,UseMultiPlaneFormatForHardwareVideo,AcceleratedVideoDecodeLinuxGL");
 app.commandLine.appendSwitch("enable-unsafe-webgpu");
@@ -94,7 +103,12 @@ if (process.platform === 'linux' && config.highPerformance !== false) {
         return (isAMD || isIntel) && !isIntegrated;
       });
 
-      if (hasDiscreteGPU) {
+      let gpuCount = 0;
+      try {
+        gpuCount = fs.readdirSync('/dev/dri').filter(file => file.startsWith('renderD')).length;
+      } catch (e) {}
+
+      if (gpuCount > 1 && hasDiscreteGPU) {
         process.env.DRI_PRIME = '1';
       }
     }
@@ -119,7 +133,62 @@ if (!gotTheLock) {
   });
 }
 
+// shared protections for main + child windows
+function applyWindowProtections(win, lastOpenedTime, setLastOpenedTime) {
+  win.webContents.on("will-navigate", (e, url) => {
+    if (!isAllowedDomain(url)) {
+      e.preventDefault();
+      shell.openExternal(url);
+    }
+  });
+
+  win.webContents.setWindowOpenHandler(({ url }) => {
+    if (!isAllowedDomain(url)) {
+      shell.openExternal(url);
+      return { action: "deny" };
+    }
+
+    // prevent duplicate window opens within 350ms
+    const now = Date.now();
+    if (now - lastOpenedTime < 350) {
+      return { action: "deny" };
+    }
+    setLastOpenedTime(now);
+    lastOpenedTime = now;
+
+    const childWin = new BrowserWindow({
+      width: 1000,
+      height: 700,
+      minWidth: 800,
+      minHeight: 600,
+      icon: path.join(__dirname, "icon512.png"),
+      frame: true,
+      autoHideMenuBar: true,
+      webPreferences: {
+        contextIsolation: true,
+        preload: path.join(__dirname, "preload.js"),
+        sandbox: false,
+        partition: "persist:openanime"
+      }
+    });
+
+    childWin.setMenu(null);
+
+    // hide scrollbars
+    childWin.webContents.on('dom-ready', () => {
+      childWin.webContents.insertCSS('::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }');
+    });
+
+    // recursive — child windows get the same protections
+    applyWindowProtections(childWin, lastOpenedTime, setLastOpenedTime);
+
+    childWin.loadURL(url);
+    return { action: "deny" };
+  });
+}
+
 function createMainWindow() {
+  let lastOpenedTime = 0;
   // read config
   let useCustomFrame = config.useCustomFrame || false;
   let winBounds = config.bounds || { width: 1280, height: 800 };
@@ -145,13 +214,12 @@ function createMainWindow() {
     }
   });
 
-  mainWindow.webContents.on("will-navigate", (e, url) => {
-    if (!url.startsWith(MAIN_URL)) e.preventDefault();
+  // hide scrollbars at the chromium level — no DOM flash
+  mainWindow.webContents.on('dom-ready', () => {
+    mainWindow.webContents.insertCSS('::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }');
   });
-  mainWindow.webContents.setWindowOpenHandler(({ url }) => {
-    if (!url.startsWith(MAIN_URL)) return { action: "deny" };
-    return { action: "allow" };
-  });
+
+  applyWindowProtections(mainWindow, lastOpenedTime, (t) => { lastOpenedTime = t; });
 
   if (isMaximized) {
     mainWindow.maximize();
@@ -178,7 +246,8 @@ function createMainWindow() {
 
   mainWindow.on('close', saveBounds);
 
-mainWindow.loadURL(MAIN_URL);
+  mainWindow.loadURL(MAIN_URL);
+
 
   // html5 fullscreen
   let isHtmlFullscreen = false;
@@ -210,7 +279,20 @@ mainWindow.loadURL(MAIN_URL);
         const premidData = await mainWindow.webContents.executeJavaScript(`
           (() => {
             const el = document.querySelector('premid-announcer');
-            return el ? el.textContent : null;
+            if (!el) return null;
+            let dataStr = el.textContent;
+            try {
+              let clean = dataStr.trim();
+              if (clean.startsWith('"') && clean.endsWith('"')) clean = JSON.parse(clean);
+              let parsed = typeof clean === 'string' ? JSON.parse(clean) : clean;
+              const vid = document.querySelector('video');
+              if (vid && parsed && parsed.video) {
+                parsed.video.currentTime = vid.currentTime;
+                parsed.video.paused = vid.paused;
+              }
+              return JSON.stringify(parsed);
+            } catch(e) {}
+            return dataStr;
           })()
         `);
         
@@ -238,8 +320,14 @@ mainWindow.loadURL(MAIN_URL);
 }
 
 app.whenReady().then(() => {
+  Menu.setApplicationMenu(null);
   createMainWindow();
   initDiscordRPC();
+
+  // reconnect rpc after sleep
+  powerMonitor.on('resume', () => {
+    if (!rpcReady) initDiscordRPC();
+  });
 });
 
 // window controls
@@ -411,7 +499,7 @@ function updateDiscordRPCFromPremid(data) {
   }
 
   const url = mainWindow ? mainWindow.webContents.getURL() : MAIN_URL;
-  if (url && url.startsWith('https://openani.me/')) {
+  if (url && isAllowedDomain(url)) {
     activity.buttons = [{ label: "OpenAnime'de İzle", url: url }];
   }
 

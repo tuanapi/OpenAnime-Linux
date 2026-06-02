@@ -6,7 +6,7 @@
 
 APP_NAME="OpenAnime"
 ICON_NAME="openanime"
-APP_FILENAME="OpenAnime-1.1.3.AppImage"
+APP_FILENAME="OpenAnime-1.1.4.AppImage"
 
 echo "🗑️ Uninstalling $APP_NAME..."
 

@@ -4,9 +4,9 @@
 
 WebGPU ve Vulkan kullanarak 4K videoları kasma yapmadan oynatır. Modern sistemlerde (Hyprland, KDE 6 vs.) sorunsuz çalışıyor.
 
-### Sürüm 1.1.3 Yenilikleri
-- **Discord RPC İyileştirmeleri:** Discord "ne izliyor" durumundaki küçük ikon kaldırıldı, oynatma/duraklatma ve bölüm atlama zamanlayıcısının geriye sarma/sıfırlanma sorunu tamamen çözüldü, uygulama kapatılırken yaşanan donma giderildi.
-- **Yorumlar Düzenlendi:** Kod içindeki açıklama satırları sadeleştirildi.
+### Sürüm 1.1.4 Yenilikleri
+- **DRI_PRIME İyileştirmesi:** Tek GPU'lu sistemlerde `DRI_PRIME=1` set edildiğinde Mesa sürücüsünün verdiği "Inconsistent value" uyarısı giderildi. Artık sistemdeki GPU sayısı taranarak offload işlemi dinamik yapılıyor.
+- **Discord RPC İyileştirmeleri:** Ok tuşlarıyla (klavye) video ileri/geri sarıldığında Discord senkronizasyonunun bozulması sorunu çözüldü. Önceki sürümdeki tüm kararlılık düzeltmeleri korunuyor.
 
 ![OpenAnime](icon512.png)
 
@@ -22,7 +22,7 @@ WebGPU ve Vulkan kullanarak 4K videoları kasma yapmadan oynatır. Modern sistem
 <summary><strong>Seçenek 1: AppImage (bütün distrolar)</strong></summary>
 
 1.  [Releases](../../releases) sayfasından `.AppImage` dosyasını indirin.
-2.  Dosyayı çalıştırılabilir yapın (örn: `chmod +x OpenAnime-1.1.3.AppImage`).
+2.  Dosyayı çalıştırılabilir yapın (örn: `chmod +x OpenAnime-1.1.4.AppImage`).
 3.  Çalıştırın!
 
 **Sistem Entegrasyonu (Masaüstü Kısayolu & İkon)**:
@@ -54,7 +54,7 @@ yay -S openanime
 veya `.pacman` dosyası ile kurun:
 
 ```bash
-sudo pacman -U openanime-1.1.3.pacman
+sudo pacman -U openanime-1.1.4.pacman
 ```
 </details>
 
@@ -62,7 +62,7 @@ sudo pacman -U openanime-1.1.3.pacman
 <summary><strong>Seçenek 3: Debian/Ubuntu</strong></summary>
   
 ```bash
-sudo apt install ./openanime_1.1.3_amd64.deb
+sudo apt install ./openanime_1.1.4_amd64.deb
 ```
 </details>
 
@@ -70,7 +70,7 @@ sudo apt install ./openanime_1.1.3_amd64.deb
 <summary><strong>Seçenek 4: Fedora</strong></summary>
   
 ```bash
-sudo rpm -ivh openanime-1.1.3.x86_64.rpm
+sudo rpm -ivh openanime-1.1.4.x86_64.rpm
 ```
 </details>
 
@@ -113,7 +113,7 @@ Uygulama ayarlarını `~/.config/openanime/config.json` dosyasından manuel olar
 
 *   **OS**: Arch Linux (Kernel 7.0.10-arch1-1) 
 *   **DE**: KDE Plasma 6.6.5 (Wayland)
-*   **GPU**: NVIDIA GeForce RTX 5070 Ti (nvidia-open-dkms 610.43.02) - *1.1.3 sürümü hibrit (dGPU) ortamında bizzat test edilip doğrulanmıştır.*
+*   **GPU**: NVIDIA GeForce RTX 5070 Ti (nvidia-open-dkms 610.43.02) - *1.1.4 sürümü hibrit (dGPU) ortamında bizzat test edilip doğrulanmıştır.*
 
 ## Topluluk
 Tartışmalara katılmak için [OpenAnime Discord](https://discord.gg/openanime) sunucusuna katılabilirsiniz.
