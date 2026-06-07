@@ -33,50 +33,92 @@ app.commandLine.appendSwitch("vaapi-ignore-driver-checks");
 // config
 const configPath = path.join(app.getPath('userData'), 'config.json');
 
-function createDefaultConfig() {
-  const defaultConfig = `{
-  "highPerformance": true,
-  "discordRPC": true,
-  "useCustomFrame": false,
-  "persistFullscreen": false,
-  "isMaximized": false,
-  "bounds": { "x": 253, "y": 83, "width": 1360, "height": 926 },
-  "titlebar": {
-    "right": "135px",
-    "top": "12px",
-    "gap": "15px",
-    "btnSize": "16px"
-  }
-}`;
-
-  try {
-    const fs = require('fs');
-    if (!fs.existsSync(path.dirname(configPath))) {
-      fs.mkdirSync(path.dirname(configPath), { recursive: true });
+function createDefaultConfig(useSmartBounds = false) {
+  const defaultConfig = {
+    highPerformance: true,
+    discordRPC: true,
+    useCustomFrame: false,
+    persistFullscreen: false,
+    isMaximized: false,
+    bounds: {
+      width: 1360,
+      height: 900
+    },
+    titlebar: {
+      right: "135px",
+      top: "12px",
+      gap: "15px",
+      btnSize: "16px",
+      btnOpacity: "0.8",
+      debug: false
     }
-    fs.writeFileSync(configPath, defaultConfig);
-    return JSON.parse(defaultConfig.replace(/\/\/.*|\/\*[\s\S]*?\*\//g, ''));
-  } catch (e) {
-    console.error('Failed to create default config:', e);
-    return {};
+  };
+
+  if (useSmartBounds) {
+    try {
+      const { screen } = require('electron');
+      const primaryDisplay = screen.getPrimaryDisplay();
+      if (primaryDisplay && primaryDisplay.workArea) {
+        const { width: workWidth, height: workHeight, x: workX, y: workY } = primaryDisplay.workArea;
+        defaultConfig.bounds.x = Math.round(workX + (workWidth - 1360) / 2);
+        defaultConfig.bounds.y = Math.round(workY + (workHeight - 900) / 2);
+      }
+    } catch (err) {
+      console.error('Failed to calculate smart bounds:', err);
+    }
   }
+
+  return defaultConfig;
 }
 
 function loadConfig() {
+  const defaults = createDefaultConfig(false);
   try {
     const fs = require('fs');
     if (fs.existsSync(configPath)) {
-      let content = fs.readFileSync(configPath, 'utf8');
-      // Strip comments before parsing
-      content = content.replace(/\/\/.*|\/\*[\s\S]*?\*\//g, '');
-      return JSON.parse(content);
-    } else {
-      return createDefaultConfig();
+      const content = fs.readFileSync(configPath, 'utf8');
+      const parsed = JSON.parse(content);
+      const merged = {
+        ...defaults,
+        ...parsed,
+        bounds: {
+          ...defaults.bounds,
+          ...(parsed.bounds || {})
+        },
+        titlebar: {
+          ...defaults.titlebar,
+          ...(parsed.titlebar || {})
+        }
+      };
+
+      // Calculate smart bounds if x or y is missing and screen is ready
+      if (merged.bounds.x === undefined || merged.bounds.y === undefined) {
+        try {
+          const { screen } = require('electron');
+          const primaryDisplay = screen.getPrimaryDisplay();
+          if (primaryDisplay && primaryDisplay.workArea) {
+            const { width: workWidth, height: workHeight, x: workX, y: workY } = primaryDisplay.workArea;
+            // clamp window size to screen (respect minWidth/minHeight)
+            const minW = 800, minH = 600;
+            merged.bounds.width = Math.max(minW, Math.min(merged.bounds.width || 1360, workWidth));
+            merged.bounds.height = Math.max(minH, Math.min(merged.bounds.height || 900, workHeight));
+            if (merged.bounds.x === undefined) {
+              merged.bounds.x = Math.max(workX, Math.round(workX + (workWidth - merged.bounds.width) / 2));
+            }
+            if (merged.bounds.y === undefined) {
+              merged.bounds.y = Math.max(workY, Math.round(workY + (workHeight - merged.bounds.height) / 2));
+            }
+          }
+        } catch (e) {
+          // screen API not ready yet
+        }
+      }
+      return merged;
     }
   } catch (e) {
     console.error('Error reading config:', e);
   }
-  return {};
+  return defaults;
 }
 
 const config = loadConfig();
@@ -172,7 +214,6 @@ function applyWindowProtections(win, lastOpenedTime, setLastOpenedTime) {
       autoHideMenuBar: true,
       webPreferences: {
         contextIsolation: true,
-        preload: path.join(__dirname, "preload.js"),
         sandbox: false,
         partition: "persist:openanime"
       }
@@ -223,6 +264,17 @@ function createMainWindow() {
   // hide scrollbars at the chromium level — no DOM flash
   mainWindow.webContents.on('dom-ready', () => {
     mainWindow.webContents.insertCSS('::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }');
+
+    // debug: red outlines on clickable elements
+    if (config.titlebar && config.titlebar.debug === true) {
+      mainWindow.webContents.insertCSS(`
+        a, button, [role="button"], [onclick], input[type="submit"], input[type="button"],
+        label[for], select, [tabindex]:not([tabindex="-1"]), .clickable, [data-href] {
+          outline: 1px solid red !important;
+          outline-offset: -1px !important;
+        }
+      `);
+    }
   });
 
   applyWindowProtections(mainWindow, lastOpenedTime, (t) => { lastOpenedTime = t; });
@@ -239,7 +291,6 @@ function createMainWindow() {
       let config = {};
       if (fs.existsSync(configPath)) {
         let content = fs.readFileSync(configPath, 'utf8');
-        content = content.replace(/\/\/.*|\/\*[\s\S]*?\*\//g, '');
         config = JSON.parse(content);
       }
       config.bounds = mainWindow.getNormalBounds();
@@ -254,6 +305,22 @@ function createMainWindow() {
 
   mainWindow.loadURL(MAIN_URL);
 
+  // global keyboard shortcuts (F5, F11, Ctrl+Shift+I)
+  mainWindow.webContents.on('before-input-event', (event, input) => {
+    if (input.type !== 'keyDown') return;
+    if (input.key === 'F5') {
+      mainWindow.webContents.reload();
+      event.preventDefault();
+    }
+    if (input.key === 'F11') {
+      mainWindow.setFullScreen(!mainWindow.isFullScreen());
+      event.preventDefault();
+    }
+    if (input.control && input.shift && input.key.toLowerCase() === 'i') {
+      mainWindow.webContents.toggleDevTools();
+      event.preventDefault();
+    }
+  });
 
   // html5 fullscreen
   let isHtmlFullscreen = false;
@@ -326,6 +393,29 @@ function createMainWindow() {
 }
 
 app.whenReady().then(() => {
+  const fs = require('fs');
+  try {
+    let needsWrite = !fs.existsSync(configPath);
+    let currentConfig;
+    if (needsWrite) {
+      currentConfig = createDefaultConfig(true);
+    } else {
+      currentConfig = loadConfig();
+      // Always rewrite on startup to ensure any missing properties are updated and written back
+      needsWrite = true;
+    }
+
+    if (needsWrite) {
+      if (!fs.existsSync(path.dirname(configPath))) {
+        fs.mkdirSync(path.dirname(configPath), { recursive: true });
+      }
+      fs.writeFileSync(configPath, JSON.stringify(currentConfig, null, 2));
+      Object.assign(config, currentConfig);
+    }
+  } catch (e) {
+    console.error('Error writing/syncing config on startup:', e);
+  }
+
   Menu.setApplicationMenu(null);
   createMainWindow();
   initDiscordRPC();
