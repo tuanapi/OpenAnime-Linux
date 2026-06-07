@@ -16,6 +16,12 @@ function isAllowedDomain(url) {
 app.commandLine.appendSwitch("enable-features", "Vulkan,VaapiVideoDecoder,VaapiVideoEncoder,CanvasOopRasterization,UseMultiPlaneFormatForHardwareVideo,AcceleratedVideoDecodeLinuxGL");
 app.commandLine.appendSwitch("enable-unsafe-webgpu");
 app.commandLine.appendSwitch("ignore-gpu-blocklist");
+const isWayland = (process.env.XDG_SESSION_TYPE || '').toLowerCase() === 'wayland';
+if (isWayland) {
+  app.commandLine.appendSwitch("ozone-platform", "x11");
+} else {
+  app.commandLine.appendSwitch("ozone-platform-hint", "auto");
+}
 app.commandLine.appendSwitch("disable-gpu-sandbox");
 app.commandLine.appendSwitch("gpu-preference", "high-performance");
 app.commandLine.appendSwitch("enable-gpu-rasterization");

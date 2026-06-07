@@ -4,7 +4,8 @@
 
 WebGPU ve Vulkan kullanarak 4K videoları kasma yapmadan oynatır. Modern sistemlerde (Hyprland, KDE 6 vs.) sorunsuz çalışıyor.
 
-### Sürüm 1.1.4 Yenilikleri
+### Sürüm 1.1.4-2 Yenilikleri
+- **Ozone Platform Düzeltmesi:** Wayland altında Vulkan uyumluluğu için `ozone-platform` parametresinin `x11` olarak zorlanması özelliği geri eklendi.
 - **DRI_PRIME İyileştirmesi:** Tek GPU'lu sistemlerde `DRI_PRIME=1` set edildiğinde Mesa sürücüsünün verdiği "Inconsistent value" uyarısı giderildi. Artık sistemdeki GPU sayısı taranarak offload işlemi dinamik yapılıyor.
 - **Discord RPC İyileştirmeleri:** Ok tuşlarıyla (klavye) video ileri/geri sarıldığında Discord senkronizasyonunun bozulması sorunu çözüldü. Önceki sürümdeki tüm kararlılık düzeltmeleri korunuyor.
 
