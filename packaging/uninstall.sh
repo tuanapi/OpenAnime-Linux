@@ -6,7 +6,7 @@
 
 APP_NAME="OpenAnime"
 ICON_NAME="openanime"
-APP_FILENAME="OpenAnime-1.1.4.AppImage"
+APP_FILENAME="OpenAnime-1.1.6.AppImage"
 
 echo "🗑️ Uninstalling $APP_NAME..."
 
@@ -46,7 +46,7 @@ else
 fi
 
 # 4. Remove config (optional)
-CONFIG_DIR="$HOME/.config/OpenAnime"
+CONFIG_DIR="$HOME/.config/openanime"
 if [ -d "$CONFIG_DIR" ]; then
     read -p "   Remove config/cache data? (y/N): " confirm
     if [[ "$confirm" =~ ^[Yy]$ ]]; then

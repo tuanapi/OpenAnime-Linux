@@ -51,18 +51,45 @@ jobs:
             dist/*.blockmap
           generate_release_notes: true
           body: |
-            ## Sürüm 1.1.5 Yenilikleri
-            - **Akıllı Pencere Konumlandırması:** Uygulama ilk açıldığında pencere artık ekranınıza tam ortalanmış olarak gelir. İşletim sisteminizin çalışma alanı sınırları otomatik olarak tanınır.
-            - **Dinamik Yapılandırma (Config) Yönetimi:** `config.json` artık çok daha akıllı. Dosyanızdaki eksik ayarlar varsayılanlarla harmanlanarak (merge) tamamlanır ve kırılgan regex yorum satırı silme mantığı kaldırılarak tamamen standart JSON parse işlemine geçildi.
-            - **Hata Ayıklama (Debug) Modu:** `config.json` içine `titlebar.debug` ayarı eklendi. Özel buton kullanırken tıklanabilir alanları görmek için `true` yapabilirsiniz.
-            - **Geliştirici Araçları Kısayolu:** Herhangi bir sayfada `Ctrl+Shift+I` ile geliştirici seçeneklerini açabilir, `F5` ile sayfayı yenileyebilirsiniz.
+            ## Sürüm 1.1.6 Yenilikleri
+            - **GPU Algılama Yenilendi:** Wayland altında X11'e zorlama artık kör bir varsayım değil. İlk açılışta NVIDIA ise otomatik açık geliyor, ama artık `config.json` içinde `forceX11` ile (NVIDIA dahil) istediğiniz zaman değiştirebileceğiniz normal bir ayar.
+            - **AMD/Intel Çift GPU Bozulma Düzeltmesi:** `DRI_PRIME` zorlaması artık varsayılan kapalı — bazı çift GPU'lu sistemlerde video bozulmasına sebep oluyordu. `forcePrimeOffload` ile isteğe bağlı açılabilir.
+            - **NVIDIA + Doğrudan Bağlı Monitör Düzeltmesi:** Monitör kablosu doğrudan ayrık NVIDIA GPU'ya bağlıysa artık gereksiz PRIME offload zorlanmıyor.
+            - **Çevrimdışı Sayfa Sorunu:** Her açılışta beliren "çevrimdışı" sayfası giderildi.
+            - **Native Pencere Kontrolleri:** `useCustomFrame` artık Electron'un native Window Controls Overlay özelliğini kullanıyor.
+            - **Discord RPC:** Flatpak/Vesktop soket köprüsü artık `socat`'a bağımlı değil.
+            - **Nix/NixOS Desteği:** `flake.nix` eklendi — `nix run github:tuanapi/OpenAnime-Linux`.
+            - **Güvenlik:** Bağımlılıklar güncellendi — bilinen 15 güvenlik açığının tamamı giderildi.
+
+            ⚠️ *Bu sürümdeki GPU/ekran algılama değişiklikleri henüz geniş kullanıcı kitlesinde doğrulanmadı. Sorun yaşarsanız lütfen bildirin.*
 
             ### Bilinen Sorunlar (Known Issues)
-            - **Tıklama Donması (Click Freeze):** Bölüm geçişlerinde (sonraki bölüme geçerken) bazen uygulamanın tıklamalara yanıt vermediği rapor edilmiştir (fare üzerine gelince hover animasyonları çalışmasına rağmen). Bu durumun Chromium/WebGPU veya site tabanlı bir durum mu olduğu henüz kesinleşmemiştir. Eğer bu durumla karşılaşırsanız, `Ctrl+Shift+I` ile DevTools'u açıp konsoldaki hataları bildirebilir veya `config.json` üzerinden `"debug": true` yaparak gizli katmanların tıklamaları engelleyip engellemediğini test edebilirsiniz.
+            - **Tıklama Donması (Click Freeze):** Önceki sürümlerde bölüm geçişlerinde bazen tıklamaların çalışmadığı rapor edilmişti. Sebebinin Wayland altında zorla X11'e geçişten kaynaklanan bir koordinat kayması olduğunu düşünüyoruz; 1.1.6'da bu davranış GPU üreticisine göre değiştirildi. Gerçek kullanıcı geri bildirimiyle henüz doğrulanmadı.
 
             ## 📥 İndirme Seçenekleri
             - **AppImage (`.AppImage`):** Tek tıkla çalışır, kurulum gerektirmez. (Tüm Linux dağıtımları için önerilir)
             - **Arch Linux (`.pacman`):** Arch Linux, Manjaro, EndeavourOS vb. sistemler için yerel paket.
             - **Debian/Ubuntu (`.deb`):** Debian, Ubuntu, Linux Mint, Pop!_OS vb. için kurulum paketi.
             - **Fedora/RHEL (`.rpm`):** Fedora, openSUSE, RHEL tabanlı sistemler için kurulum paketi.
+            - **Nix/NixOS:** `nix run github:tuanapi/OpenAnime-Linux` — ayrı indirme gerekmez, `flake.nix` repoda.
             - **Portable (`.zip` / `.tar.gz`):** Arşivi klasöre çıkartın ve doğrudan `openanime` dosyasını çalıştırın.
+
+  nix-check:
+    runs-on: ubuntu-latest
+    # Doesn't block or gate the release above — Nix support is new and this
+    # job exists to surface breakage visibly, not to hold up the AppImage/
+    # deb/rpm release (the primary distribution path) if the flake breaks.
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Nix
+        uses: cachix/install-nix-action@v31
+        with:
+          github_access_token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check flake
+        run: nix flake check
+
+      - name: Build Nix package
+        run: nix build .#default -L

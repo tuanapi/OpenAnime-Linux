@@ -1,124 +1,105 @@
-# OpenAnime Linux
+<div align="center">
+  <img src="icon512.png" width="120" alt="OpenAnime Linux" />
 
-[OpenAnime](https://openani.me) için yapılmış, gayriresmi Linux masaüstü uygulaması.
+  # OpenAnime Linux
 
-WebGPU ve Vulkan kullanarak 4K videoları kasma yapmadan oynatır. Modern sistemlerde (Hyprland, KDE 6 vs.) sorunsuz çalışıyor.
+  OpenAnime için gayriresmi Linux masaüstü istemcisi — WebGPU/Vulkan ile 4K'da kasmadan oynatma.
 
-### Sürüm 1.1.5 Yenilikleri
-- **Akıllı Pencere Konumlandırması:** Uygulama ilk açıldığında pencere artık ekranınıza tam ortalanmış olarak gelir. İşletim sisteminizin çalışma alanı sınırları otomatik olarak tanınır.
-- **Dinamik Yapılandırma (Config) Yönetimi:** `config.json` artık çok daha akıllı. Dosyanızdaki eksik ayarlar varsayılanlarla harmanlanarak (merge) tamamlanır ve kırılgan regex yorum satırı silme mantığı kaldırılarak tamamen standart JSON parse işlemine geçildi.
-- **Hata Ayıklama (Debug) Modu:** `config.json` içine `titlebar.debug` ayarı eklendi. Özel buton kullanırken tıklanabilir alanları görmek için `true` yapabilirsiniz.
-- **Geliştirici Araçları Kısayolu:** Herhangi bir sayfada `Ctrl+Shift+I` ile geliştirici seçeneklerini açabilir, `F5` ile sayfayı yenileyebilirsiniz.
+  [![Top Language](https://img.shields.io/github/languages/top/tuanapi/OpenAnime-Linux)](https://github.com/tuanapi/OpenAnime-Linux)
+  [![License](https://img.shields.io/github/license/tuanapi/OpenAnime-Linux)](LICENSE)
+  [![Downloads](https://img.shields.io/github/downloads/tuanapi/OpenAnime-Linux/total)](https://github.com/tuanapi/OpenAnime-Linux/releases)
+  [![Latest Release](https://img.shields.io/github/v/release/tuanapi/OpenAnime-Linux)](https://github.com/tuanapi/OpenAnime-Linux/releases/latest)
+</div>
 
-### Bilinen Sorunlar (Known Issues)
-- **Tıklama Donması (Click Freeze):** Bölüm geçişlerinde (sonraki bölüme geçerken) bazen uygulamanın tıklamalara yanıt vermediği rapor edilmiştir (fare üzerine gelince hover animasyonları çalışmasına rağmen). Bu durumun Chromium/WebGPU veya site tabanlı bir durum mu olduğu henüz kesinleşmemiştir. Eğer bu durumla karşılaşırsanız, `Ctrl+Shift+I` ile DevTools'u açıp konsoldaki hataları bildirebilir veya `config.json` üzerinden `"debug": true` yaparak gizli katmanların tıklamaları engelleyip engellemediğini test edebilirsiniz.
-
-![OpenAnime](icon512.png)
+---
 
 ## Özellikler
 
-*   **Performans:** WebGPU/Vulkan sayesinde 4K oynatma.
-*   **Arayüz:** Pencere kenarlığı yok (Frameless). Kontroller sadece fareyi götürünce çıkıyor.
-*   **Portable:** Kurulum derdi yok. İndir çalıştır.
+- **Performans** – WebGPU/Vulkan sayesinde 4K'da akıcı oynatma.
+- **Arayüz** – Pencere kenarlığı yok, kontroller fareyle geliyor.
+- **Taşınabilir** – Kurulum gerekmez, indir çalıştır.
+
+---
 
 ## Kurulum
 
-<details>
-<summary><strong>Seçenek 1: AppImage (bütün distrolar)</strong></summary>
-
-1.  [Releases](../../releases) sayfasından `.AppImage` dosyasını indirin.
-2.  Dosyayı çalıştırılabilir yapın (örn: `chmod +x OpenAnime-1.1.5.AppImage`).
-3.  Çalıştırın!
-
-**Sistem Entegrasyonu (Masaüstü Kısayolu & İkon)**:
+### AppImage (tüm dağıtımlar)
 ```bash
-chmod +x install.sh
-./install.sh
+chmod +x OpenAnime-*.AppImage
+./OpenAnime-*.AppImage
 ```
+İsteğe bağlı: `./install.sh` ile masaüstü entegrasyonu.
 
-**Kaldırma**:
+### Arch Linux (AUR)
 ```bash
-chmod +x uninstall.sh
-./uninstall.sh
-```
-</details>
-
-<details>
-<summary><strong>Seçenek 2: AUR (Arch Linux)</strong></summary>
-
-```bash
-yay -S openanime-bin
-```
-
-veya kaynaktan derleyin:
-
-```bash
+yay -S openanime-bin     # hazır binary
+# veya kaynaktan derle:
 yay -S openanime
 ```
 
-veya `.pacman` dosyası ile kurun:
-
+### Debian / Ubuntu
 ```bash
-sudo pacman -U openanime-1.1.5.pacman
+sudo apt install ./openanime_*.deb
 ```
-</details>
 
-<details>
-<summary><strong>Seçenek 3: Debian/Ubuntu</strong></summary>
-  
+### Fedora / RHEL
 ```bash
-sudo apt install ./openanime_1.1.5_amd64.deb
+sudo rpm -ivh openanime-*.rpm
 ```
-</details>
 
-<details>
-<summary><strong>Seçenek 4: Fedora</strong></summary>
-  
+### Nix / NixOS
 ```bash
-sudo rpm -ivh openanime-1.1.5.x86_64.rpm
+nix run github:tuanapi/OpenAnime-Linux
+# kalıcı kurulum:
+nix profile install github:tuanapi/OpenAnime-Linux
 ```
-</details>
 
-## Ekran Görüntüleri
-
-| Ana Sayfa | Detay Görünümü |
-| :---: | :---: |
-| ![Ana Sayfa](screenshots/main.png) | ![Detay](screenshots/detail.png) |
-| **Keşfet** | **Oynatıcı** |
-| ![Keşfet](screenshots/discover.png) | ![Oynatıcı](screenshots/player.png) |
+---
 
 ## Kaynaktan Derleme
-
-Gereksinimler: `node`, `npm`.
 
 ```bash
 git clone https://github.com/tuanapi/OpenAnime-Linux.git
 cd OpenAnime-Linux
 npm install
-npm start          # Geliştirici modu
-```
-```bash
-npm run dist       # AppImage oluştur (dist/ klasörüne)
+npm start          # geliştirici modu
+npm run dist       # paketleri oluştur (AppImage, deb, rpm, pacman, tar.gz)
 ```
 
-## Yapılandırma (config.json)
+---
 
-Uygulama ayarlarını `~/.config/openanime/config.json` dosyasından manuel olarak düzenleyebilirsiniz. Mevcut tüm seçenekler şunlardır:
+## Yapılandırma
+
+Ayarları `~/.config/openanime/config.json` dosyasından düzenleyebilirsiniz.
 
 | Seçenek | Varsayılan | Açıklama |
 | :--- | :--- | :--- |
-| `highPerformance` | `true` | Hibrit ekran kartlı sistemlerde (NVIDIA/AMD) dGPU kullanımını zorlar. Eski PC'lerde kapatılabilir. |
-| `discordRPC` | `true` | Discord'da "ne izliyor" durumunu gösterir. |
-| `useCustomFrame` | `false` | Uygulamanın kendi pencere butonlarını (MacOS stili) aktif eder. |
-| `persistFullscreen` | `false` | Bölüm geçişlerinde tam ekrandan çıkmamayı sağlar. |
-| `isMaximized` | `false` | Uygulamanın tam ekranda başlayıp başlamayacağını belirler. |
-| `titlebar` | `{...}` | Özel pencere butonlarının konum ve boyut ayarları. |
+| `highPerformance` | `true` | Hibrit sistemlerde ayrık GPU kullan. |
+| `discordRPC` | `true` | Discord'da "izliyor" durumunu göster. |
+| `useCustomFrame` | `false` | Electron'un Window Controls Overlay'ini kullan. |
+| `persistFullscreen` | `false` | Bölüm geçişlerinde tam ekranda kal. |
+| `forceWebGPU` | `true` | Sitenin WebGPU ayarını geçersiz kıl. |
+| `forceX11` | `otomatik` | X11'i zorla (NVIDIA için `true` olarak ayarlanır). |
+| `forcePrimeOffload` | `false` | AMD/Intel hibrit sistemlerde DRI_PRIME zorla. |
+| `debugOutlines` | `false` | Tıklanabilir elemanların etrafına kırmızı çerçeve çiz. |
+| `titlebar` | `{...}` | Özel başlık çubuğu görünümü. |
 
-## Test Edilen Ortam
+---
 
-*   **OS**: Arch Linux (Kernel 7.0.10-arch1-1) 
-*   **DE**: KDE Plasma 6.6.5 (Wayland)
-*   **GPU**: NVIDIA GeForce RTX 5070 Ti (nvidia-open-dkms 610.43.02) - *1.1.5 sürümü hibrit (dGPU) ortamında bizzat test edilip doğrulanmıştır.*
+## Bilinen Sorunlar
+
+- **Tıklama Donması** – Nadiren bölüm geçişlerinde tıklamalar çalışmaz; X11'de koordinat kayması şüphesi. 1.1.6'da NVIDIA dışı GPU'larda native Wayland kullanılır. Karşılaşırsanız [issue açın](https://github.com/tuanapi/OpenAnime-Linux/issues).
+
+---
+
+## Ekran Görüntüleri
+
+| Ana Sayfa | Detay | Keşfet | Oynatıcı |
+| :---: | :---: | :---: | :---: |
+| ![Ana Sayfa](screenshots/main.png) | ![Detay](screenshots/detail.png) | ![Keşfet](screenshots/discover.png) | ![Oynatıcı](screenshots/player.png) |
+
+---
 
 ## Topluluk
-Tartışmalara katılmak için [OpenAnime Discord](https://discord.gg/openanime) sunucusuna katılabilirsiniz.
+
+Tartışmalar ve destek için [OpenAnime Discord](https://discord.gg/openanime) sunucusuna katılın.
