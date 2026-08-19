@@ -140,24 +140,19 @@ let featureList = [
   "VaapiVideoEncoder",
   "CanvasOopRasterization",
   "UseMultiPlaneFormatForHardwareVideo",
-  "AcceleratedVideoDecodeLinuxGL"
+  "AcceleratedVideoDecodeLinuxGL",
+  "PlatformHEVCDecoderSupport"
 ];
 
 const forceX11 = config.forceX11 === true || (hasNvidiaHardware && !hasNvidiaVulkan);
 
 if (forceX11) {
   app.commandLine.appendSwitch("ozone-platform", "x11");
-  // If legacy NVIDIA, also force OpenGL
   if (hasNvidiaHardware && !hasNvidiaVulkan) {
     app.commandLine.appendSwitch("use-angle", "gl");
-    // Remove Vulkan features
     const vulkanFeatures = ['VulkanFromANGLE', 'DefaultANGLEVulkan'];
     featureList = featureList.filter(f => !vulkanFeatures.includes(f));
   }
-} else {
-  // Non‑NVIDIA or NVIDIA with Vulkan (if user forced Wayland) – but config defaults to X11 for NVIDIA
-  featureList.push("VulkanFromANGLE", "DefaultANGLEVulkan");
-  app.commandLine.appendSwitch("use-angle", "vulkan");
 }
 
 // Enables VA-API on NVIDIA — needed regardless of the ozone-platform choice above
