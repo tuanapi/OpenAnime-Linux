@@ -134,7 +134,7 @@ app.commandLine.appendSwitch("enable-unsafe-webgpu");
 app.commandLine.appendSwitch("ignore-gpu-blocklist");
 
 // Sets Wayland/X11 platform and Vulkan/ANGLE feature flags based on config.forceX11
-const featureList = [
+let featureList = [
   "Vulkan",
   "VaapiVideoDecoder",
   "VaapiVideoEncoder",
