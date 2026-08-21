@@ -135,7 +135,6 @@ app.commandLine.appendSwitch("ignore-gpu-blocklist");
 
 // Sets Wayland/X11 platform and Vulkan/ANGLE feature flags based on config.forceX11
 let featureList = [
-  "Vulkan",
   "VaapiVideoDecoder",
   "VaapiVideoEncoder",
   "CanvasOopRasterization",
@@ -144,15 +143,10 @@ let featureList = [
   "PlatformHEVCDecoderSupport"
 ];
 
-const forceX11 = config.forceX11 === true || (hasNvidiaHardware && !hasNvidiaVulkan);
-
-if (forceX11) {
-  app.commandLine.appendSwitch("ozone-platform", "x11");
-  if (hasNvidiaHardware && !hasNvidiaVulkan) {
-    app.commandLine.appendSwitch("use-angle", "gl");
-    const vulkanFeatures = ['VulkanFromANGLE', 'DefaultANGLEVulkan'];
-    featureList = featureList.filter(f => !vulkanFeatures.includes(f));
-  }
+if (hasNvidiaHardware && !hasNvidiaVulkan) {
+  app.commandLine.appendSwitch("use-angle", "gl");
+  const vulkanFeatures = ['VulkanFromANGLE', 'DefaultANGLEVulkan'];
+  featureList = featureList.filter(f => !vulkanFeatures.includes(f));
 }
 
 // Enables VA-API on NVIDIA — needed regardless of the ozone-platform choice above
