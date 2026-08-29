@@ -44,7 +44,6 @@ function createDefaultConfig(useSmartBounds = false) {
     persistFullscreen: false,
     isMaximized: false,
     forceWebGPU: true,
-    forceX11: hasNvidiaHardware,
     forcePrimeOffload: false,
     debugOutlines: false,
     bounds: {
@@ -133,7 +132,6 @@ const config = loadConfig();
 app.commandLine.appendSwitch("enable-unsafe-webgpu");
 app.commandLine.appendSwitch("ignore-gpu-blocklist");
 
-// Sets Wayland/X11 platform and Vulkan/ANGLE feature flags based on config.forceX11
 let featureList = [
   "VaapiVideoDecoder",
   "VaapiVideoEncoder",
