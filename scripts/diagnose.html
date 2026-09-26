@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>OpenAnime GPU Diagnose</title>
+<style>
+  body { font-family: monospace; background: #111; color: #eee; padding: 24px; margin: 0; }
+  h1 { font-size: 18px; }
+  pre { white-space: pre-wrap; word-break: break-all; }
+  canvas { display: none; }
+  #status { color: #8f8; }
+</style>
+</head>
+<body>
+<h1>OpenAnime GPU Probe</h1>
+<pre id="status">running…</pre>
+<pre id="out"></pre>
+<canvas id="c" width="320" height="180"></canvas>
+<canvas id="w" width="320" height="180"></canvas>
+<script>
+(async () => {
+  const out = {};
+  const errs = [];
+  const canvas = document.getElementById('c');
+  const wcanvas = document.getElementById('w');
+
+  // WebGL2 renderer string (masked on modern Chromium for fingerprinting)
+  try {
+    const gl = canvas.getContext('webgl2');
+    out.webgl2 = gl
+      ? `${gl.getParameter(gl.VENDOR)} / ${gl.getParameter(gl.RENDERER)}`
+      : 'no webgl2';
+  } catch (e) { errs.push('webgl2: ' + e.message); }
+
+  // WebGPU adapter — the one Chromium actually allocated
+  let device = null;
+  try {
+    const adapter = await navigator.gpu.requestAdapter({ powerPreference: 'high-performance' });
+    if (!adapter) {
+      out.webgpu = 'NO ADAPTER (null)';
+    } else {
+      // Chromium 152: requestAdapterInfo() is gone; adapter.info is a property.
+      const info = (adapter.info && typeof adapter.info !== 'function') ? adapter.info
+                 : await adapter.requestAdapterInfo();
+      out.webgpu = JSON.stringify({
+        vendor: info.vendor,
+        architecture: info.architecture,
+        device: info.device,
+        description: info.description,
+        isFallback: info.isFallback ? 'YES' : 'no',
+      });
+      device = await adapter.requestDevice();
+      const module = device.createShaderModule({ code: `@compute @workgroup_size(1) fn m() {}` });
+      const pipeline = device.createComputePipeline({ layout: 'auto', compute: { module, entryPoint: 'm' } });
+      const enc = device.createCommandEncoder();
+      const pass = enc.beginComputePass();
+      pass.setPipeline(pipeline);
+      pass.dispatchWorkgroups(1);
+      pass.end();
+      device.queue.submit([enc.finish()]);
+      await device.queue.onSubmittedWorkDone();
+      out.webgpuPipelineOK = true;
+    }
+  } catch (e) { errs.push('webgpu: ' + e.message); }
+
+  // rAF presentation fps (3s) — plain page
+  out.rafFps = await new Promise((res) => {
+    let n = 0; const t0 = performance.now();
+    const step = () => {
+      n++;
+      const el = performance.now() - t0;
+      if (el < 3000) requestAnimationFrame(step);
+      else res(Math.round((n / el) * 1000));
+    };
+    requestAnimationFrame(step);
+  });
+
+  // WebGPU-under-load fps (3s): a real clear->present loop through the GPU.
+  // This is the number that matters for the player's realtime pipeline.
+  if (device) {
+    try {
+      const ctx = wcanvas.getContext('webgpu');
+      ctx.configure({ device, format: 'bgra8unorm', alphaMode: 'opaque' });
+      out.webgpuFps = await new Promise((res) => {
+        let frames = 0;
+        const t0 = performance.now();
+        const step = () => {
+          const tex = ctx.getCurrentTexture();
+          const enc = device.createCommandEncoder();
+          const pass = enc.beginRenderPass({
+            colorAttachments: [{ view: tex.createView(), clearValue: { r: 0.1, g: 0.2, b: 0.6, a: 1 }, loadOp: 'clear', storeOp: 'store' }],
+          });
+          pass.end();
+          device.queue.submit([enc.finish()]);
+          frames++;
+          const el = performance.now() - t0;
+          if (el < 3000) requestAnimationFrame(step);
+          else res(Math.round((frames / el) * 1000));
+        };
+        requestAnimationFrame(step);
+      });
+    } catch (e) {
+      out.webgpuFps = 'ERR ' + e.message;
+      errs.push('webgpu-fps: ' + e.message);
+    }
+  }
+
+  out.errors = errs;
+  window.__diag = out;
+  document.getElementById('out').textContent = JSON.stringify(out, null, 2);
+  document.getElementById('status').textContent = 'done';
+})();
+</script>
+</body>
+</html>

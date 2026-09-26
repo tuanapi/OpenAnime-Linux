@@ -1,4 +1,16 @@
 const { app, BrowserWindow, ipcMain, Menu, shell, powerMonitor, session } = require("electron");
+const hasNvidiaHardware = global.__hasNvidiaHardware;
+const iGpuDrivesDisplay = global.__iGpuDrivesDisplay;
+const ozoneArgv = (() => {
+  if (process.argv.includes('--ozone-platform=x11')) return 'x11';
+  const oi = process.argv.indexOf('--ozone-platform');
+  if (oi !== -1 && typeof process.argv[oi + 1] === 'string') return process.argv[oi + 1];
+  return null;
+})();
+// argv, not env, tells which ozone is running after relaunch.
+const isX11 = global.__isX11 === true || ozoneArgv === 'x11';
+const hasNvidiaVulkan = global.__hasNvidiaVulkan !== false;
+const isHybrid = global.__isHybrid === true;
 const path = require("path");
 const { Client: DiscordRPCClient } = require("@xhayper/discord-rpc");
 
@@ -13,26 +25,6 @@ function isAllowedDomain(url) {
   }
 }
 
-// Detect NVIDIA hardware (driver installed)
-const hasNvidiaHardware = (() => {
-  try {
-    const fs = require('fs');
-    return fs.existsSync('/proc/driver/nvidia/version') ||
-           fs.existsSync('/sys/module/nvidia/version');
-  } catch (e) {
-    return false;
-  }
-})();
-
-// Detect Vulkan ICD (for modern NVIDIA)
-const hasNvidiaVulkan = (() => {
-  try {
-    return require('fs').existsSync('/usr/share/vulkan/icd.d/nvidia_icd.json');
-  } catch (e) {
-    return false;
-  }
-})();
-
 // config
 const configPath = path.join(app.getPath('userData'), 'config.json');
 
@@ -44,7 +36,6 @@ function createDefaultConfig(useSmartBounds = false) {
     persistFullscreen: false,
     isMaximized: false,
     forceWebGPU: true,
-    forceX11: hasNvidiaHardware,
     forcePrimeOffload: false,
     debugOutlines: false,
     bounds: {
@@ -129,145 +120,59 @@ function loadConfig() {
 
 const config = loadConfig();
 
-// --- GPU / rendering command line switches ---
+// GPU / rendering command line switches
 app.commandLine.appendSwitch("enable-unsafe-webgpu");
 app.commandLine.appendSwitch("ignore-gpu-blocklist");
 
-// Sets Wayland/X11 platform and Vulkan/ANGLE feature flags based on config.forceX11
+// Single-adapter selection onto the dGPU.
+app.commandLine.appendSwitch("force-high-performance-gpu");
+
 let featureList = [
-  "Vulkan",
-  "VaapiVideoDecoder",
-  "VaapiVideoEncoder",
   "CanvasOopRasterization",
-  "UseMultiPlaneFormatForHardwareVideo",
-  "AcceleratedVideoDecodeLinuxGL",
-  "PlatformHEVCDecoderSupport"
+  "UseMultiPlaneFormatForHardwareVideo"
 ];
 
-const forceX11 = config.forceX11 === true || (hasNvidiaHardware && !hasNvidiaVulkan);
+// No HW decode on Wayland iGPU+NVIDIA (gallium SEGV); X11 keeps it.
+const hwDecodeOK = !(hasNvidiaHardware && iGpuDrivesDisplay && !isX11);
+if (hwDecodeOK) {
+  featureList.push(
+    "VaapiVideoDecoder",
+    "VaapiVideoEncoder",
+    "AcceleratedVideoDecodeLinuxGL",
+    "PlatformHEVCDecoderSupport"
+  );
 
-if (forceX11) {
-  app.commandLine.appendSwitch("ozone-platform", "x11");
-  if (hasNvidiaHardware && !hasNvidiaVulkan) {
-    app.commandLine.appendSwitch("use-angle", "gl");
-    const vulkanFeatures = ['VulkanFromANGLE', 'DefaultANGLEVulkan'];
-    featureList = featureList.filter(f => !vulkanFeatures.includes(f));
+  if (hasNvidiaHardware) {
+    featureList.push("VaapiOnNvidiaGPUs", "VaapiIgnoreDriverChecks");
   }
+} else {
+  console.log('[GPU] iGPU display + NVIDIA: hardware video decode OFF (software fallback); WebGPU stays on dGPU');
 }
 
-// Enables VA-API on NVIDIA — needed regardless of the ozone-platform choice above
-if (hasNvidiaHardware) {
-  featureList.push("VaapiOnNvidiaGPUs", "VaapiIgnoreDriverChecks");
+// X11: Vulkan feature on; ANGLE GL only without NVIDIA ICD.
+if (isX11 && hasNvidiaHardware) {
+  if (!featureList.includes("Vulkan")) featureList.unshift("Vulkan");
+  if (!hasNvidiaVulkan) {
+    app.commandLine.appendSwitch("use-angle", "gl");
+    const vulkanAngleBits = ['VulkanFromANGLE', 'DefaultANGLEVulkan'];
+    featureList = featureList.filter(f => !vulkanAngleBits.includes(f));
+  }
 }
 
 app.commandLine.appendSwitch("enable-features", featureList.join(","));
+
 app.commandLine.appendSwitch("disable-gpu-sandbox");
-app.commandLine.appendSwitch("gpu-preference", "high-performance");
 app.commandLine.appendSwitch("enable-gpu-rasterization");
-if (config.forcePrimeOffload !== true) {
-  app.commandLine.appendSwitch("enable-zero-copy");
-  app.commandLine.appendSwitch("enable-hardware-overlays");
-}
+
+app.commandLine.appendSwitch("enable-zero-copy");
+
+if (isX11) app.commandLine.appendSwitch("enable-hardware-overlays");
+
 app.commandLine.appendSwitch("ignore-resolution-limits-for-acceleration");
 app.commandLine.appendSwitch("vaapi-ignore-driver-checks");
 
-// Sets GPU render-offload environment variables for hybrid graphics
-function getConnectedDisplayPciAddresses() {
-  try {
-    const fs = require('fs');
-    const drmDir = '/sys/class/drm';
-    const connectedCards = new Set();
-    for (const entry of fs.readdirSync(drmDir)) {
-      if (!/^card\d+-/.test(entry)) continue;
-      let status;
-      try {
-        status = fs.readFileSync(`${drmDir}/${entry}/status`, 'utf8').trim();
-      } catch (e) {
-        continue;
-      }
-      if (status === 'connected') connectedCards.add(entry.split('-')[0]);
-    }
-    const addresses = new Set();
-    for (const card of connectedCards) {
-      try {
-        const devicePath = fs.realpathSync(`${drmDir}/${card}/device`);
-        addresses.add(devicePath.split('/').pop());
-      } catch (e) {}
-    }
-    return addresses.size > 0 ? addresses : null;
-  } catch (e) {
-    return null;
-  }
-}
-
-// Whether the PCI device at this address matches a given PCI vendor ID hex
-function pciAddressHasVendor(pciAddr, vendorHex) {
-  try {
-    const fs = require('fs');
-    const uevent = fs.readFileSync(`/sys/bus/pci/devices/${pciAddr}/uevent`, 'utf8');
-    return new RegExp(`PCI_ID=${vendorHex}:`, 'i').test(uevent);
-  } catch (e) {
-    return false;
-  }
-}
-
-function nvidiaAlreadyDrivesDisplay() {
-  const connected = getConnectedDisplayPciAddresses();
-  if (!connected) return null;
-  for (const addr of connected) {
-    if (pciAddressHasVendor(addr, '10DE')) return true; // 10DE = NVIDIA's PCI vendor ID
-  }
-  return false;
-}
-
-let gpuPrimeReady = Promise.resolve();
-if (process.platform === 'linux' && config.highPerformance !== false) {
-  const fs = require('fs');
-  let gpuCount = 0;
-  try {
-    gpuCount = fs.readdirSync('/dev/dri').filter(file => file.startsWith('renderD')).length;
-  } catch (e) {}
-
-  if (gpuCount > 1 && hasNvidiaHardware && !process.env.__NV_PRIME_RENDER_OFFLOAD && nvidiaAlreadyDrivesDisplay() === false) {
-  process.env.VK_ICD_FILENAMES = '/usr/share/vulkan/icd.d/nvidia_icd.json';
-    process.env.__NV_PRIME_RENDER_OFFLOAD = '1';
-    process.env.__VK_LAYER_NV_optimus = 'NVIDIA_only';
-    process.env.__GLX_VENDOR_LIBRARY_NAME = 'nvidia';
-  } else if (gpuCount > 1 && !hasNvidiaHardware && !process.env.DRI_PRIME && config.forcePrimeOffload === true) {
-    gpuPrimeReady = new Promise((resolve) => {
-      require('child_process').execFile('lspci', { timeout: 3000 }, (err, stdout) => {
-        if (!err && stdout) {
-          let hasDiscreteGPU = false;
-          let hasDiscreteAMD = false;
-          let discreteGpuPciAddr = null;
-          stdout.split('\n').forEach(line => {
-            const l = line.toLowerCase();
-            if (!l.includes('vga') && !l.includes('display')) return;
-            const isAMD = /\b(amd|ati|radeon)\b/.test(l);
-            const isIntel = /\b(intel|arc)\b/.test(l);
-            const isIntegrated = /\b(integrated|raphael|renoir|cezanne|rembrandt|phoenix|iris|uhd|hd graphics)\b/.test(l);
-            if ((isAMD || isIntel) && !isIntegrated) {
-              hasDiscreteGPU = true;
-              if (isAMD) hasDiscreteAMD = true;
-              const pciMatch = line.match(/^([0-9a-fA-F]{4}:[0-9a-fA-F]{2}:[0-9a-fA-F]{2}\.[0-9a-fA-F])/);
-              if (pciMatch) discreteGpuPciAddr = pciMatch[1];
-            }
-          });
-          const connected = getConnectedDisplayPciAddresses();
-          const discreteAlreadyDrivesDisplay = !!(connected && discreteGpuPciAddr && connected.has(discreteGpuPciAddr));
-          if (hasDiscreteGPU && !discreteAlreadyDrivesDisplay) {
-            process.env.DRI_PRIME = '1';
-            if (hasDiscreteAMD) {
-              process.env.RADV_DEBUG = [process.env.RADV_DEBUG, 'nodcc'].filter(Boolean).join(',');
-              process.env.AMD_DEBUG = [process.env.AMD_DEBUG, 'nodcc'].filter(Boolean).join(',');
-            }
-          }
-        }
-        resolve();
-      });
-    });
-  }
-}
+console.log(`[GPU] display=${iGpuDrivesDisplay ? "integrated" : "discrete"} ` +
+  `hybrid=${isHybrid} zeroCopy=on angle=${isX11 && hasNvidiaHardware && !hasNvidiaVulkan ? "gl" : "default"} wayland=${isX11 ? "no" : "yes"}`);
 
 if (hasNvidiaHardware) {
   const fs = require('fs');
@@ -506,7 +411,7 @@ app.whenReady().then(async () => {
   }
 
   Menu.setApplicationMenu(null);
-  await gpuPrimeReady; // make sure DRI_PRIME (if any) is set before the GPU process spawns
+  await global.__gpuPrimeReady;
   createMainWindow();
   initDiscordRPC();
 
@@ -534,7 +439,7 @@ app.on("will-quit", () => {
   }
 });
 
-// --- Discord RPC Setup ---
+// Discord RPC Setup
 const discordClientId = '1482661655975428156';
 let rpc;
 

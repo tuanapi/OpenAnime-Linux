@@ -15,8 +15,8 @@
 
 ## Özellikler
 
-- **Performans** – WebGPU/Vulkan sayesinde 4K'da akıcı oynatma.
-- **Arayüz** – Pencere kenarlığı yok, kontroller fareyle geliyor.
+- **Performans** – WebGPU sayesinde 4K'da akıcı oynatma.
+- **Arayüz** – Özelleştirilebilir pencere kenarlığı.
 - **Taşınabilir** – Kurulum gerekmez, indir çalıştır.
 
 ---
@@ -74,21 +74,55 @@ Ayarları `~/.config/openanime/config.json` dosyasından düzenleyebilirsiniz.
 
 | Seçenek | Varsayılan | Açıklama |
 | :--- | :--- | :--- |
-| `highPerformance` | `true` | Hibrit sistemlerde ayrık GPU kullan. |
+| `highPerformance` | `true` | Hibrit sistemlerde ayrık GPU kullan. `false` yapılırsa PRIME/DRI_PRIME devre dışı kalır (güç tasarrufu). |
 | `discordRPC` | `true` | Discord'da "izliyor" durumunu göster. |
 | `useCustomFrame` | `false` | Electron'un Window Controls Overlay'ini kullan. |
 | `persistFullscreen` | `false` | Bölüm geçişlerinde tam ekranda kal. |
 | `forceWebGPU` | `true` | Sitenin WebGPU ayarını geçersiz kıl. |
-| `forceX11` | `otomatik` | X11'i zorla (NVIDIA için `true` olarak ayarlanır). |
-| `forcePrimeOffload` | `false` | AMD/Intel hibrit sistemlerde DRI_PRIME zorla. |
+| `forcePrimeOffload` | `false` | AMD/Intel hibrit sistemlerde DRI_PRIME'ı zorla. |
+| `gpuDisplayOverride` | `null` | GPU algılamasını elle ez: `"integrated"` veya `"discrete"`. |
 | `debugOutlines` | `false` | Tıklanabilir elemanların etrafına kırmızı çerçeve çiz. |
 | `titlebar` | `{...}` | Özel başlık çubuğu görünümü. |
 
 ---
 
+## GPU Desteği (WebGPU)
+
+Uygulama, hangi GPU'nun görüntüyü çizdiğini otomatik algılar ve her topolojide
+WebGPU'yu ayrık GPU'ya taşır. Algılamayı doğrulamak için:
+
+```bash
+OpenAnime --diagnose    # paketli sürüm
+npm run diagnose        # kaynak sürüm
+```
+
+Çıktıda `webgpu adapter` satırı hangi GPU'nun WebGPU'yu çalıştırdığını, `webgpu fps (load)`
+satırı gerçek oynatma tarzı yük altındaki kare hızını gösterir. Sorun bildirirken
+`DIAG_JSON=...` satırını issue'ya yapıştırın.
+
+| Topoloji | Yapılan | Neden |
+| :--- | :--- | :--- |
+| Tek GPU (AMD/Intel/NVIDIA) | Hiçbir şey değiştirilmez | Varsayılan zaten doğru. |
+| NVIDIA + iGPU (ekran iGPU'da) | Otomatik X11'e geçiş (XWayland): `__NV_PRIME_RENDER_OFFLOAD`, GLX vendor, `VK_ICD_FILENAMES=nvidia_icd.json`; `--force-high-performance-gpu` + `Vulkan` özelliği | Wayland'de GBM cihazı iGPU'yu, Vulkan NVIDIA'yı kullanır → tek GPU sürecinde iki sürücü (gallium SEGV ile çöker). X11'de GLX offload ile GL de NVIDIA'ya taşınır: tek cihaz, stabil video. |
+| NVIDIA + iGPU (ekran NVIDIA'da) | Aynı env değişkenleri, native Wayland | Zaten doğru olan yol bozulmaz; donanım decode çalışır. |
+| AMD/Intel + iGPU (ekran iGPU'da) | `DRI_PRIME=1` (+ gerekirse `RADV_DEBUG=nodcc`) | GL tabanlı yolları ayrık GPU'ya yöneltir. |
+| NVIDIA + iGPU, ekran hem iGPU hem NVIDIA'da (karışık) | Ekranı süren GPU'ya göre yukarıdaki iki satırdan biri otomatik seçilir | Chromium tek GPU kullanır; seçim monitörün bağlı olduğu GPU'ya göre yapılır. |
+
+Not: `force-high-performance-gpu`, Chromium'un WebGL, WebGPU ve kompozitör için
+tek başına seçtiği GPU'yu belirler; `powerPreference` tarayıcıda yok sayılır.
+Wayland'de (ekran ayrık GPU'da) ANGLE'nin Vulkan arka ucu kullanılır; X11 yolunda
+(NVIDIA + iGPU ekran) `Vulkan` özelliği açıktır, ANGLE varsayılan arka ucu kullanır
+(NVIDIA Vulkan ICD yoksa GL arka ucuna düşer).
+
+---
+
 ## Bilinen Sorunlar
 
-- **Tıklama Donması** – Nadiren bölüm geçişlerinde tıklamalar çalışmaz; X11'de koordinat kayması şüphesi. 1.1.6'da NVIDIA dışı GPU'larda native Wayland kullanılır. Karşılaşırsanız [issue açın](https://github.com/tuanapi/OpenAnime-Linux/issues).
+- **iGPU ekranında kare düşmesi / gecikme** – Monitör iGPU'ya takılıyken (NVIDIA
+  hibrit), uygulama otomatik olarak X11 (XWayland) altında çalışır ve GL'i de
+  NVIDIA'ya taşır. Hâlâ takılıyorsa `OpenAnime --diagnose` çıktısını ve
+  `journalctl -k | grep -i nvidia_drm` (NVIDIA sistemlerinde) çıktısını
+  [issue](https://github.com/tuanapi/OpenAnime-Linux/issues) olarak açın.
 
 ---
 
@@ -103,3 +137,4 @@ Ayarları `~/.config/openanime/config.json` dosyasından düzenleyebilirsiniz.
 ## Topluluk
 
 Tartışmalar ve destek için [OpenAnime Discord](https://discord.gg/openanime) sunucusuna katılın.
+Bir sorun ile karşılaşırsanız beni etiketleyebilirsiniz: **@tuanapi**

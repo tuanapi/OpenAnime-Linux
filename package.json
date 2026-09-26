@@ -1,13 +1,15 @@
 {
   "name": "openanime",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "main": "launcher.js",
   "description": "OpenAnime için geliştirilmiş, resmi olmayan (unofficial), yerel WebGPU destekli Linux istemcisi.",
   "author": "tuanapi <tuanapi@proton.me>",
   "license": "MIT",
   "scripts": {
     "start": "bash start.sh",
-    "dist": "electron-builder"
+    "dist": "electron-builder",
+    "diagnose": "electron . --diagnose",
+    "gpu-detect": "node scripts/gpu-detect.js --self-test"
   },
   "build": {
     "appId": "io.github.tuanapi.OpenAnime",
@@ -40,6 +42,7 @@
       "launcher.js",
       "main.js",
       "preload.js",
+      "scripts/",
       "icon512.png",
       "screenshots/",
       "package.json",
@@ -49,7 +52,7 @@
     "asar": true
   },
   "devDependencies": {
-    "electron": "^43.4.0",
+    "electron": "^44.4.5",
     "electron-builder": "^26.15.3"
   },
   "dependencies": {
