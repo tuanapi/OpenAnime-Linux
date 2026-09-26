@@ -355,6 +355,23 @@ async function createMainWindow() {
 
   mainWindow.loadURL(MAIN_URL);
 
+  // Recover from a stale offline page on first load.
+  let firstLoadDone = false;
+  let failCount = 0;
+  mainWindow.webContents.on('did-finish-load', () => {
+    if (firstLoadDone || !mainWindow) return;
+    firstLoadDone = true;
+    if (mainWindow.webContents.getURL().startsWith(MAIN_URL)) {
+      mainWindow.webContents.reload();
+    }
+  });
+  mainWindow.webContents.on('did-fail-load', (e, code, desc, url, isMainFrame) => {
+    if (isMainFrame && mainWindow && failCount < 3) {
+      failCount++;
+      mainWindow.webContents.reload();
+    }
+  });
+
   // global keyboard shortcuts (F5, F11, Ctrl+Shift+I)
   mainWindow.webContents.on('before-input-event', (event, input) => {
     if (input.type !== 'keyDown') return;
