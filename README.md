@@ -102,26 +102,30 @@ satırı gerçek oynatma tarzı yük altındaki kare hızını gösterir. Sorun 
 
 | Topoloji | Yapılan | Neden |
 | :--- | :--- | :--- |
-| Tek GPU (AMD/Intel/NVIDIA) | Hiçbir şey değiştirilmez | Varsayılan zaten doğru. |
-| NVIDIA + iGPU (ekran iGPU'da) | Otomatik X11'e geçiş (XWayland): `__NV_PRIME_RENDER_OFFLOAD`, GLX vendor, `VK_ICD_FILENAMES=nvidia_icd.json`; `--force-high-performance-gpu` + `Vulkan` özelliği | Wayland'de GBM cihazı iGPU'yu, Vulkan NVIDIA'yı kullanır → tek GPU sürecinde iki sürücü (gallium SEGV ile çöker). X11'de GLX offload ile GL de NVIDIA'ya taşınır: tek cihaz, stabil video. |
-| NVIDIA + iGPU (ekran NVIDIA'da) | Aynı env değişkenleri, native Wayland | Zaten doğru olan yol bozulmaz; donanım decode çalışır. |
-| AMD/Intel + iGPU (ekran iGPU'da) | `DRI_PRIME=1` (+ gerekirse `RADV_DEBUG=nodcc`) | GL tabanlı yolları ayrık GPU'ya yöneltir. |
-| NVIDIA + iGPU, ekran hem iGPU hem NVIDIA'da (karışık) | Ekranı süren GPU'ya göre yukarıdaki iki satırdan biri otomatik seçilir | Chromium tek GPU kullanır; seçim monitörün bağlı olduğu GPU'ya göre yapılır. |
+| Tek GPU (Intel / AMD / NVIDIA) | Hiçbir şey değiştirilmez | Varsayılan zaten doğru GPU'yu kullanır. |
+| Çift GPU, ekran ayrık GPU'da (NVIDIA veya AMD) | Ayrık GPU'ya yönlendirme (NVIDIA: PRIME + Vulkan sabitleme; AMD/Intel: `DRI_PRIME=1`), native oturum | Ekran zaten güçlü GPU'da; video + WebGPU tek cihazda. |
+| Çift GPU, ekran iGPU'da + NVIDIA ayrık | Otomatik X11'e geçiş (XWayland) + GLX offload | Wayland'de arabellek (iGPU) ile Vulkan (NVIDIA) iki sürücüye bölünüp video oynatırken çöker; X11'de her şey tek cihazda. |
+| Çift GPU, ekran iGPU'da, NVIDIA yok (AMD/Intel) | `DRI_PRIME=1` (+ AMD'de gerekirse `RADV_DEBUG=nodcc`) | GL tabanlı yolları ayrık GPU'ya yöneltir. |
+| Karışık (ekran hem iGPU hem ayrık GPU'da) | Ekranı süren GPU'ya göre yukarıdaki satırlardan biri otomatik seçilir | Seçim monitörün bağlı olduğu GPU'ya göre yapılır. |
 
 Not: `force-high-performance-gpu`, Chromium'un WebGL, WebGPU ve kompozitör için
-tek başına seçtiği GPU'yu belirler; `powerPreference` tarayıcıda yok sayılır.
-Wayland'de (ekran ayrık GPU'da) ANGLE'nin Vulkan arka ucu kullanılır; X11 yolunda
-(NVIDIA + iGPU ekran) `Vulkan` özelliği açıktır, ANGLE varsayılan arka ucu kullanır
-(NVIDIA Vulkan ICD yoksa GL arka ucuna düşer).
+tek GPU seçmesini sağlar; `powerPreference` tarayıcıda yok sayılır.
+
+Sorun bildirirken şunları ekleyin: `OpenAnime --diagnose` (veya `npm run diagnose`)
+çıktısındaki `DIAG_JSON=...` satırı + `journalctl -k` içinde GPU sürücünüze ait
+satırlar (`nvidia_drm`, `amdgpu` ya da `i915`):
+
+```bash
+journalctl -k | grep -iE 'nvidia_drm|amdgpu|i915' | tail -20
+```
 
 ---
 
 ## Bilinen Sorunlar
 
-- **iGPU ekranında kare düşmesi / gecikme** – Monitör iGPU'ya takılıyken (NVIDIA
-  hibrit), uygulama otomatik olarak X11 (XWayland) altında çalışır ve GL'i de
-  NVIDIA'ya taşır. Hâlâ takılıyorsa `OpenAnime --diagnose` çıktısını ve
-  `journalctl -k | grep -i nvidia_drm` (NVIDIA sistemlerinde) çıktısını
+- **Kare düşmesi / gecikme** – Önce `OpenAnime --diagnose` çalıştırıp `webgpu adapter`
+  satırının doğru GPU'yu gösterdiğini doğrulayın. Hâlâ takılıyorsa `DIAG_JSON=...`
+  satırını ve `journalctl -k` çıktısını
   [issue](https://github.com/tuanapi/OpenAnime-Linux/issues) olarak açın.
 
 ---
