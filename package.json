@@ -4,6 +4,7 @@
   "main": "launcher.js",
   "description": "OpenAnime için geliştirilmiş, resmi olmayan (unofficial), yerel WebGPU destekli Linux istemcisi.",
   "author": "tuanapi <tuanapi@proton.me>",
+  "homepage": "https://github.com/tuanapi/OpenAnime-Linux",
   "license": "MIT",
   "scripts": {
     "start": "bash start.sh",

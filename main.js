@@ -355,16 +355,23 @@ async function createMainWindow() {
 
   mainWindow.loadURL(MAIN_URL);
 
-  // Recover from a stale offline page on first load.
-  let firstLoadDone = false;
+  // Stale SW offline page fix: probe net once, reload if up.
   let failCount = 0;
-  mainWindow.webContents.on('did-finish-load', () => {
-    if (firstLoadDone || !mainWindow) return;
-    firstLoadDone = true;
-    if (mainWindow.webContents.getURL().startsWith(MAIN_URL)) {
-      mainWindow.webContents.reload();
-    }
+  let reloadedOnce = false;
+  const net = require('net');
+  const netOk = () => new Promise(res => {
+    const s = net.connect({ host: '1.1.1.1', port: 443, timeout: 2000 });
+    s.once('connect', () => { s.destroy(); res(true); });
+    s.once('timeout', () => { s.destroy(); res(false); });
+    s.once('error', () => res(false));
   });
+  (async () => {
+    if (reloadedOnce || !mainWindow || mainWindow.isDestroyed()) return;
+    if (await netOk()) {
+      reloadedOnce = true;
+      if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.reload();
+    }
+  })();
   mainWindow.webContents.on('did-fail-load', (e, code, desc, url, isMainFrame) => {
     if (isMainFrame && mainWindow && failCount < 3) {
       failCount++;
