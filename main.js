@@ -429,6 +429,9 @@ app.whenReady().then(async () => {
 
   Menu.setApplicationMenu(null);
   await global.__gpuPrimeReady;
+  // GPU init window passed; restore cores for later crashes.
+  const { execFile } = require('child_process');
+  execFile('prlimit', ['--pid', String(process.pid), '--core=unlimited'], () => {});
   createMainWindow();
   initDiscordRPC();
 

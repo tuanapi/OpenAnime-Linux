@@ -107,7 +107,9 @@ if (goingX11) {
   console.log('[GPU] iGPU display + NVIDIA on Wayland -> relaunching under X11 (XWayland)');
   try {
     const { spawn } = require('child_process');
-    const child = spawn(process.execPath, ['--ozone-platform=x11', ...process.argv.slice(1)], {
+    // Child: core-silent during init (TRAP recovers, core trips popups).
+    const child = spawn('/bin/sh', ['-c', 'ulimit -c 0; exec "$0" "$@"',
+      process.execPath, '--ozone-platform=x11', ...process.argv.slice(1)], {
       stdio: 'inherit',
       env: process.env,
     });
