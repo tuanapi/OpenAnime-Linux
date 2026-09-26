@@ -14,11 +14,11 @@
       {
         packages.default = pkgs.buildNpmPackage rec {
           pname = "openanime";
-          version = "1.1.6";
+          version = "1.1.7";
 
           src = ./.;
 
-          npmDepsHash = "sha256-TeQXMtVFjIQHs5FDrqfyLs9z5Jix2ZJhyapnLNKZIcg=";
+          npmDepsHash = "sha256-9/2Ru9WODiFPwTMuJT3W2zZbEpIeF8m7ehGP03ck81I=";
 
           # Runtime only needs @xhayper/discord-rpc — electron and
           # electron-builder are devDependencies for the AppImage/deb/rpm
@@ -33,7 +33,7 @@
             runHook preInstall
 
             mkdir -p $out/share/openanime $out/bin
-            cp -r launcher.js main.js preload.js icon512.png package.json node_modules $out/share/openanime/
+            cp -r launcher.js main.js preload.js scripts icon512.png package.json node_modules $out/share/openanime/
 
             makeWrapper ${pkgs.electron}/bin/electron $out/bin/openanime \
               --add-flags $out/share/openanime/launcher.js
