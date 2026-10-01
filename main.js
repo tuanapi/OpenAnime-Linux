@@ -32,6 +32,7 @@ function createDefaultConfig(useSmartBounds = false) {
   const defaultConfig = {
     highPerformance: true,
     discordRPC: true,
+    pauseDropMinutes: 5,
     useCustomFrame: false,
     persistFullscreen: false,
     isMaximized: false,
@@ -471,6 +472,15 @@ const discordClientId = '1482661655975428156';
 
 const PLAY_BADGE_URL = "https://raw.githubusercontent.com/tuanapi/OpenAnime-Linux/main/assets/discord/play.png";
 const PAUSE_BADGE_URL = "https://raw.githubusercontent.com/tuanapi/OpenAnime-Linux/main/assets/discord/pause.png";
+
+// Minutes of paused video before presence clears, from config.pauseDropMinutes.
+// OA_PAUSE_DROP_MS overrides with an exact millisecond value (testing).
+function getPauseDropMs() {
+  const envMs = Number(process.env.OA_PAUSE_DROP_MS);
+  if (envMs > 0) return envMs;
+  const minutes = Number(config && config.pauseDropMinutes) || 5;
+  return minutes * 60 * 1000;
+}
 let rpc;
 
 // Path to the standard Discord IPC socket
@@ -521,6 +531,8 @@ let lastKnownVideoTimeUpdated = 0;
 let stableStartTimestamp = 0;
 let lastPausedState = false;
 let lastCalculatedStart = 0;
+let pauseDropTimer = null;
+let presenceDropped = false;
 
 function updateDiscordRPCFromPremid(data) {
   if (!rpc || !rpcReady) return;
@@ -578,6 +590,33 @@ function updateDiscordRPCFromPremid(data) {
 
   const watchingVideo = !!(data.video && typeof data.video.currentTime === 'number');
   const pausedNow = !!(data.video && data.video.paused);
+
+  // video paused: clear presence after a while; anything else brings it back
+  if (watchingVideo && pausedNow) {
+    if (presenceDropped) {
+      // activity changed while paused: re-show it and start the countdown over
+      presenceDropped = false;
+    }
+    if (!pauseDropTimer) {
+      pauseDropTimer = setTimeout(async () => {
+        pauseDropTimer = null;
+        if (!rpc || !rpc.user) return;
+        try {
+          await rpc.user.clearActivity();
+          presenceDropped = true;
+          console.log('Discord RPC cleared: paused too long');
+        } catch (err) {
+          console.error('Discord RPC clearActivity failed (premid):', err);
+        }
+      }, getPauseDropMs());
+    }
+  } else {
+    if (pauseDropTimer) {
+      clearTimeout(pauseDropTimer);
+      pauseDropTimer = null;
+    }
+    presenceDropped = false;
+  }
 
   const activity = {
     details: data.details || "OpenAnime'de",
