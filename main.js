@@ -468,6 +468,9 @@ app.on("will-quit", () => {
 
 // Discord RPC Setup
 const discordClientId = '1482661655975428156';
+
+const PLAY_BADGE_URL = "https://raw.githubusercontent.com/tuanapi/OpenAnime-Linux/main/assets/discord/play.png";
+const PAUSE_BADGE_URL = "https://raw.githubusercontent.com/tuanapi/OpenAnime-Linux/main/assets/discord/pause.png";
 let rpc;
 
 // Path to the standard Discord IPC socket
@@ -573,11 +576,16 @@ function updateDiscordRPCFromPremid(data) {
   lastPremidJson = currentJson;
   lastCalculatedStart = currentStart;
 
+  const watchingVideo = !!(data.video && typeof data.video.currentTime === 'number');
+  const pausedNow = !!(data.video && data.video.paused);
+
   const activity = {
     details: data.details || "OpenAnime'de",
     state: data.state || "Geziniyor",
     largeImageKey: data.largeImageKey || 'openanime',
     largeImageText: data.largeImageText || 'OpenAnime',
+    smallImageKey: watchingVideo ? (pausedNow ? PAUSE_BADGE_URL : PLAY_BADGE_URL) : undefined,
+    smallImageText: watchingVideo ? (pausedNow ? 'Duraklatıldı' : 'İzliyor') : undefined,
     instance: false,
     type: 3 // Watching
   };
