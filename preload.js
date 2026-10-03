@@ -2,7 +2,7 @@ const { ipcRenderer, contextBridge, webFrame } = require('electron');
 
 const forceWebGPU = ipcRenderer.sendSync('get-config', 'forceWebGPU');
 try {
-  if (forceWebGPU !== false && localStorage.getItem('settings.useWebGPU') === null) {
+  if (forceWebGPU === true && localStorage.getItem('settings.useWebGPU') !== 'true') {
     localStorage.setItem('settings.useWebGPU', 'true');
   }
 } catch (e) {}

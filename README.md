@@ -15,7 +15,8 @@
 
 ## Özellikler
 
-- **Performans** – WebGPU, sitenin kendi tercihi yoksa varsayılan olarak açılır.
+- **Performans** – WebGPU, `forceWebGPU` açıkken sitenin tercihi ezilerek etkin
+  tutulur.
 - **Arayüz** – Özelleştirilebilir pencere kenarlığı.
 - **Uygulama içi ayarlar** – Discord RPC ve pencere ayarları, sitenin kendi `/settings`
   sayfasındaki kartlar içinden yönetilir.
@@ -57,9 +58,9 @@ bir hata sayfası gösterilir.
   ile açılıyor.
 - **`get-config` config.json'daki her anahtarı renderer'a veriyordu.** Okuma
   listesiyle sınırlandı.
-- **WebGPU tercihi her açılışta sitenin kendi ayarını eziyordu.**
-  `settings.useWebGPU` koşulu sorulmadan yazılıyordu; artık yalnızca anahtar
-  yoksa yazılıyor, sitenin tercihi varsa dokunulmuyor.
+- **WebGPU tercihi her açılışta yeniden yazılıyordu.** `settings.useWebGPU`
+  koşulu sorulmadan, her açılışta üzerine yazılıyordu. Artık yalnızca
+  gerçekten farklıysa yazılır; `forceWebGPU` `false` ise hiç dokunulmaz.
 - **config.json yazımı atomik değildi.** Yazma sırasında bir çökme dosyayı
   kırpıyordu. Artık `config.json.tmp` üzerine yazılıp `rename` ile yerine
   konuyor, kapanışta da boşaltılıyor.
@@ -69,16 +70,6 @@ bir hata sayfası gösterilir.
   doğrudan bağlıyor; `deb` / `rpm` / `pacman` ve kaynak AUR paketinde bağımlılık
   olarak tanımlı değildi. `-bin` AUR paketinde `libxkbfile` ve `libxtst` de
   eksikti. Üçü de artık tüm paketlerde tanımlı.
-
-### Bakım
-
-- Electron 44.5.1, `@xhayper/discord-rpc` 1.5.1.
-- Paketlenmiş ekran görüntüleri (`screenshots/`) dağıtım paketlerine dahil edilmiyor.
-
-### Bu sürümde dokunulmayanlar
-
-GPU ortam değişkenleri (`DRI_PRIME`, `RADV_DEBUG=nodcc`, Vulkan ICD) bu sürümde
-**bilinçli olarak değiştirilmedi** — çalışıyor ve test edilmiş durumda.
 
 ---
 
@@ -146,25 +137,11 @@ kartlardan yönetilir. Aşağıdaki dosya elle düzenleme veya geri yükleme iç
 | `persistFullscreen` | `false` | Bölüm geçişlerinde tam ekranda kal. |
 | `isMaximized` | `false` | Son açılışta pencere maksimize miydi. |
 | `bounds` | `{...}` | Son pencere konumu ve boyutu. Konum ekranın dışındaysa yeniden ortalanır. |
-| `forceWebGPU` | `true` | Sitenin WebGPU ayarını geçersiz kıl. Sitenin kendi tercihi varsa dokunulmaz. |
+| `forceWebGPU` | `true` | `true` ise sitenin WebGPU tercihi ezilir; `false` ise hiç dokunulmaz. |
 | `forcePrimeOffload` | `false` | AMD/Intel hibrit sistemlerde DRI_PRIME'ı zorla. |
 | `gpuDisplayOverride` | `null` | GPU algılamasını elle ez: `"integrated"` veya `"discrete"`. |
 | `debugOutlines` | `false` | Tıklanabilir elemanların etrafına kırmızı çerçeve çiz. |
 | `titlebar` | `{...}` | Özel başlık çubuğu görünümü. |
-
-### Discord durumunda ne gönderilir
-
-Discord RPC varsayılan olarak **açıktır**. Etkinleştirildiğinde izlenen animenin adı,
-bölüm metni, oynatma/duraklatma durumu ve zaman damgaları yerel Discord istemcisi
-üzerinden Discord'a iletilir. Durum, izlenen sayfanın tam adresine tıklanabilir bir
-bağlantı da içerir. Uygulama bu veriyi kendisi saklamaz veya başka bir yere
-göndermez; iletim tamamen Discord'un kendi altyapısı üzerinden yapılır. Kapatmak için
-`/settings` kartındaki **Discord RPC** anahtarını kapatmak ya da `discordRPC`'u
-`false` yapmak yeterlidir.
-
-Uygulama kendi tarafında hiçbir telemetri, analitik veya otomatik güncelleme
-sorgusu yapmaz. Siteyi tarayıcıda ziyaret ederken oluşan üçüncü taraf istekleri
-(video CDN'leri, analitik) bir masaüstü istemcisinde de aynen gerçekleşir.
 
 ---
 

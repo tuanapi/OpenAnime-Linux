@@ -33,9 +33,9 @@ bir hata sayfası gösterilir.
   açılıyor.
 - **`get-config` config.json'daki her anahtarı renderer'a veriyordu.** Okuma listesiyle
   sınırlandı.
-- **WebGPU tercihi her açılışta sitenin kendi ayarını eziyordu.** `settings.useWebGPU`
-  koşulu sorulmadan yazılıyordu; artık yalnızca anahtar yoksa yazılıyor, sitenin
-  tercihi varsa dokunulmuyor.
+- **WebGPU tercihi her açılışta yeniden yazılıyordu.** `settings.useWebGPU` koşulu
+  sorulmadan, her açılışta üzerine yazılıyordu. Artık yalnızca gerçekten farklıysa
+  yazılır; `forceWebGPU` `false` ise hiç dokunulmaz.
 - **config.json yazımı atomik değildi.** Yazma sırasında bir çökme dosyayı kırpıyordu.
   Artık `config.json.tmp` üzerine yazılıp `rename` ile yerine konuyor, kapanışta da
   boşaltılıyor.
@@ -45,11 +45,6 @@ bir hata sayfası gösterilir.
   bağlıyor; bu kütüphane `deb` / `rpm` / `pacman` ve kaynak AUR paketinde bağımlılık
   olarak tanımlı değildi. `-bin` AUR paketinde ayrıca `libxkbfile` ve `libxtst` de
   eksikti. Üçü de artık tüm paketlerde tanımlı.
-
-## Bakım
-
-- Electron 44.5.1, `@xhayper/discord-rpc` 1.5.1.
-- Paketlenmiş ekran görüntüleri (`screenshots/`) dağıtım paketlerine dahil edilmiyor.
 
 ## 📥 İndirme Seçenekleri
 
