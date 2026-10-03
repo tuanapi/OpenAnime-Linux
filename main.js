@@ -394,11 +394,11 @@ async function createMainWindow() {
     (async () => {
       if (reloadedOnce || !mainWindow || mainWindow.isDestroyed()) return;
       reloadedOnce = true;
-      // SW controls the page but no app root rendered => stale offline shell.
-      const stale = await mainWindow.webContents.executeJavaScript(
-        "!!(navigator.serviceWorker && navigator.serviceWorker.controller) && !document.querySelector('#sveltekit, #app, [data-sveltekit-preload-data]')"
+      // SW in control => it may serve a stale cached shell. Net up => reload past it.
+      const hasSW = await mainWindow.webContents.executeJavaScript(
+        '!!(navigator.serviceWorker && navigator.serviceWorker.controller)'
       ).catch(() => false);
-      if (!stale) return;
+      if (!hasSW) return;
       if (await netOk()) mainWindow.webContents.reload();
     })();
   });
