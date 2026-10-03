@@ -17,7 +17,66 @@
 
 - **Performans** – WebGPU sayesinde 4K'da akıcı oynatma.
 - **Arayüz** – Özelleştirilebilir pencere kenarlığı.
+- **Uygulama içi ayarlar** – Discord RPC ve pencere ayarları, sitenin kendi `/settings`
+  sayfasındaki kartlar içinden yönetilir.
 - **Taşınabilir** – Kurulum gerekmez, indir çalıştır.
+
+---
+
+## Sürüm 1.1.8
+
+### Yeni
+
+**Uygulama içi ayar kartları.** Discord RPC ve Pencere ayarları artık sitenin kendi
+`/settings` sayfasında, sitenin gerçek Expander bileşenine bağlanan iki kart olarak
+görünür. Kartlar yerel site kartlarıyla aynı şekilde açılır, animasyonu ve klavye
+davranışıdır.
+
+- **Discord RPC** – aç/kapa, **RPC Görünürlüğü** (`Herşey` / `İzlenen`), **Zaman Aşımı**
+  (1–60 dk).
+- **Pencere** – **Özel Pencere Çerçevesi**, **Tam Ekranı Koru**, **Açılışta Pencereyi Büyüt**.
+
+**Discord oynatıyor rozetleri.** Oynatıyor / duraklatıldı durumları kendi ikonlarını kullanır.
+
+**Zaman aşımı ayarı.** `pauseDropMinutes` ile duraklatıldıktan kaç dakika sonra Discord
+durumunun temizleneceği belirlenebilir.
+
+**Hata sayfası.** Sayfa üç kez yüklenemezse boş pencere yerine ne olduğunu söyleyen
+bir hata sayfası gösterilir.
+
+### Düzeltilenler
+
+- **Ağ kontrolü yanlış adrese gidiyordu.** "İnternet var mı" testi `1.1.1.1:443`
+  (Cloudflare) ile kuruluyordu; o adres engellendiğinde test başarısız dönüyor ve
+  eski sayfayı yenileme hiç çalışmıyordu. Artık `openani.me` kullanılıyor.
+- **Kayıtlı pencere konumu geçersiz kalınca uygulama görünmez açılıyordu.**
+  Monitörü değiştirince ya da çözünürlüğü oynatınca eski konum olduğu gibi
+  kullanılıyordu. Konum ve boyut artık bağlı bulunduğu ekrana sığdırılıyor;
+  sığmıyorsa pencere ortalanıyor.
+- **Pencereler sandbox'sız çalışıyordu.** Ana ve alt pencere artık `sandbox: true`
+  ile açılıyor.
+- **`get-config` config.json'daki her anahtarı renderer'a veriyordu.** Okuma
+  listesiyle sınırlandı.
+- **WebGPU tercihi her açılışta sitenin kendi ayarını eziyordu.**
+  `settings.useWebGPU` koşulu sorulmadan yazılıyordu; artık yalnızca anahtar
+  yoksa yazılıyor, sitenin tercihi varsa dokunulmuyor.
+- **config.json yazımı atomik değildi.** Yazma sırasında bir çökme dosyayı
+  kırpıyordu. Artık `config.json.tmp` üzerine yazılıp `rename` ile yerine
+  konuyor, kapanışta da boşaltılıyor.
+- **X11'e geçişte ebeveyn süreç uygulama boyunca yanıp duruyordu.** Artık 3
+  saniyelik el sıkışmanın ardından çıkıyor.
+- **AUR paketi açılmıyordu.** Electron'un X11'de `dlopen()`ladığı `libxtst` ve
+  `libxkbfile` bağımlılıklarında eksikti.
+
+### Bakım
+
+- Electron 44.5.1, `@xhayper/discord-rpc` 1.5.1.
+- Paket boyutu ~8.7 MB azaldı (paketlenmiş ekran görüntüleri çıkarıldı).
+
+### Bu sürümde dokunulmayanlar
+
+GPU seçim mantığı ve GPU ortam değişkenleri (`DRI_PRIME`, `RADV_DEBUG=nodcc`, Vulkan ICD)
+bu sürümde **bilinçli olarak değiştirilmedi** — çalışıyor ve test edilmiş durumda.
 
 ---
 
@@ -70,15 +129,22 @@ npm run dist       # paketleri oluştur (AppImage, deb, rpm, pacman, tar.gz)
 
 ## Yapılandırma
 
-Ayarları `~/.config/openanime/config.json` dosyasından düzenleyebilirsiniz.
+Discord RPC ve pencere ayarları uygulama içinden, sitenin `/settings` sayfasındaki
+kartlardan yönetilir. Aşağıdaki dosya elle düzenleme veya geri yükleme içindir.
+
+`~/.config/openanime/config.json`
 
 | Seçenek | Varsayılan | Açıklama |
 | :--- | :--- | :--- |
 | `highPerformance` | `true` | Hibrit sistemlerde ayrık GPU kullan. `false` yapılırsa PRIME/DRI_PRIME devre dışı kalır (güç tasarrufu). |
 | `discordRPC` | `true` | Discord'da "izliyor" durumunu göster. |
+| `rpcVisibility` | `"all"` | `all` = her durumda göster. `watch_only` = yalnızca video oynatılırken göster. |
+| `pauseDropMinutes` | `5` | Video duraklatıldıktan kaç dakika sonra Discord durumu temizlensin. |
 | `useCustomFrame` | `false` | Electron'un Window Controls Overlay'ini kullan. |
 | `persistFullscreen` | `false` | Bölüm geçişlerinde tam ekranda kal. |
-| `forceWebGPU` | `true` | Sitenin WebGPU ayarını geçersiz kıl. |
+| `isMaximized` | `false` | Son açılışta pencere maksimize miydi. |
+| `bounds` | `{...}` | Son pencere konumu ve boyutu. Konum ekranın dışındaysa yeniden ortalanır. |
+| `forceWebGPU` | `true` | Sitenin WebGPU ayarını geçersiz kıl. Sitenin kendi tercihi varsa dokunulmaz. |
 | `forcePrimeOffload` | `false` | AMD/Intel hibrit sistemlerde DRI_PRIME'ı zorla. |
 | `gpuDisplayOverride` | `null` | GPU algılamasını elle ez: `"integrated"` veya `"discrete"`. |
 | `debugOutlines` | `false` | Tıklanabilir elemanların etrafına kırmızı çerçeve çiz. |
