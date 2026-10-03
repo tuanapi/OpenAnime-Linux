@@ -6,18 +6,22 @@
 
 APP_NAME="OpenAnime"
 ICON_NAME="openanime"
-APP_FILENAME="OpenAnime-1.1.6.AppImage"
 
 echo "🗑️ Uninstalling $APP_NAME..."
 
 # 1. Remove AppImage
 INSTALL_DIR="$HOME/.local/bin"
-if [ -f "$INSTALL_DIR/$APP_FILENAME" ]; then
-    rm -f "$INSTALL_DIR/$APP_FILENAME"
-    echo "   -> Removed AppImage from $INSTALL_DIR"
+shopt -s nullglob
+installed=("$INSTALL_DIR/$APP_NAME-"*.AppImage)
+if [ ${#installed[@]} -gt 0 ]; then
+    for f in "${installed[@]}"; do
+        rm -f "$f"
+        echo "   -> Removed $(basename "$f")"
+    done
 else
     echo "   -> AppImage not found in $INSTALL_DIR (already removed?)"
 fi
+shopt -u nullglob
 
 # 2. Remove Icon
 ICON_PATH="$HOME/.local/share/icons/hicolor/512x512/apps/$ICON_NAME.png"

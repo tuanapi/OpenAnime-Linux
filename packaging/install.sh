@@ -6,26 +6,27 @@
 
 APP_NAME="OpenAnime"
 ICON_NAME="openanime"
-APP_FILENAME="OpenAnime-1.1.6.AppImage"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 echo "📦 Installing $APP_NAME..."
 
 # 1. Verify files exist
 APP_PATH=""
-if [ -f "$SCRIPT_DIR/../../dist/$APP_FILENAME" ]; then
-    APP_PATH="$SCRIPT_DIR/../../dist/$APP_FILENAME"
-elif [ -f "$SCRIPT_DIR/../dist/$APP_FILENAME" ]; then
-    APP_PATH="$SCRIPT_DIR/../dist/$APP_FILENAME"
-elif [ -f "$SCRIPT_DIR/$APP_FILENAME" ]; then
-    APP_PATH="$SCRIPT_DIR/$APP_FILENAME"
-fi
+for d in "$SCRIPT_DIR/../../dist" "$SCRIPT_DIR/../dist" "$SCRIPT_DIR"; do
+  if compgen -G "$d/$APP_NAME-*.AppImage" > /dev/null 2>&1; then
+    APP_PATH="$(ls -1 "$d/$APP_NAME-"*.AppImage 2>/dev/null | sort -V | tail -n1)"
+    break
+  fi
+done
 
 if [ -z "$APP_PATH" ]; then
-    echo "❌ Error: Could not find '$APP_FILENAME'."
+    echo "❌ Error: Could not find $APP_NAME-*.AppImage."
     echo "   Checked: ../dist/, ../../dist/, and ./ "
     exit 1
 fi
+
+APP_FILENAME="$(basename "$APP_PATH")"
+echo "   -> Found $APP_FILENAME"
 
 ICON_PATH=""
 if [ -f "$SCRIPT_DIR/../../icon512.png" ]; then

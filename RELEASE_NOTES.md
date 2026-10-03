@@ -41,15 +41,15 @@ bir hata sayfası gösterilir.
   boşaltılıyor.
 - **X11'e geçişte ebeveyn süreç uygulama boyunca yanıp duruyordu.** Artık 3 saniyelik
   el sıkışmanın ardından çıkıyor.
-- **Paketler açılmıyordu.** Electron `libxkbcommon`'u doğrudan bağlıyor, `libxkbfile`'ı
-  X11'de çalışma anında `dlopen()`lıyor; ikisi de paket bağımlılıklarında yoktu.
-  `libxtst`, `libxkbfile` ve `libxkbcommon` artık tüm paketlerde ve AUR'da
-  tanımlı.
+- **Paket bağımlılıklarında `libxkbcommon` eksikti.** Electron `libxkbcommon`'u doğrudan
+  bağlıyor; bu kütüphane `deb` / `rpm` / `pacman` ve kaynak AUR paketinde bağımlılık
+  olarak tanımlı değildi. `-bin` AUR paketinde ayrıca `libxkbfile` ve `libxtst` de
+  eksikti. Üçü de artık tüm paketlerde tanımlı.
 
 ## Bakım
 
 - Electron 44.5.1, `@xhayper/discord-rpc` 1.5.1.
-- Paket boyutu ~8.7 MB azaldı (paketlenmiş ekran görüntüleri çıkarıldı).
+- Paketlenmiş ekran görüntüleri (`screenshots/`) dağıtım paketlerine dahil edilmiyor.
 
 ## 📥 İndirme Seçenekleri
 

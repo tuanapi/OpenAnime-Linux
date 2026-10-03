@@ -3,7 +3,7 @@
 
   # OpenAnime Linux
 
-  OpenAnime için gayriresmi Linux masaüstü istemcisi — WebGPU/Vulkan ile 4K'da kasmadan oynatma.
+  OpenAnime için gayriresmi Linux masaüstü istemcisi — WebGPU etkin, çerçevesiz pencere.
 
   [![Top Language](https://img.shields.io/github/languages/top/tuanapi/OpenAnime-Linux)](https://github.com/tuanapi/OpenAnime-Linux)
   [![License](https://img.shields.io/github/license/tuanapi/OpenAnime-Linux)](LICENSE)
@@ -15,7 +15,7 @@
 
 ## Özellikler
 
-- **Performans** – WebGPU sayesinde 4K'da akıcı oynatma.
+- **Performans** – WebGPU, sitenin kendi tercihi yoksa varsayılan olarak açılır.
 - **Arayüz** – Özelleştirilebilir pencere kenarlığı.
 - **Uygulama içi ayarlar** – Discord RPC ve pencere ayarları, sitenin kendi `/settings`
   sayfasındaki kartlar içinden yönetilir.
@@ -65,18 +65,20 @@ bir hata sayfası gösterilir.
   konuyor, kapanışta da boşaltılıyor.
 - **X11'e geçişte ebeveyn süreç uygulama boyunca yanıp duruyordu.** Artık 3
   saniyelik el sıkışmanın ardından çıkıyor.
-- **AUR paketi açılmıyordu.** Electron'un X11'de `dlopen()`ladığı `libxtst` ve
-  `libxkbfile` bağımlılıklarında eksikti.
+- **Paket bağımlılıklarında `libxkbcommon` eksikti.** Electron bu kütüphaneyi
+  doğrudan bağlıyor; `deb` / `rpm` / `pacman` ve kaynak AUR paketinde bağımlılık
+  olarak tanımlı değildi. `-bin` AUR paketinde `libxkbfile` ve `libxtst` de
+  eksikti. Üçü de artık tüm paketlerde tanımlı.
 
 ### Bakım
 
 - Electron 44.5.1, `@xhayper/discord-rpc` 1.5.1.
-- Paket boyutu ~8.7 MB azaldı (paketlenmiş ekran görüntüleri çıkarıldı).
+- Paketlenmiş ekran görüntüleri (`screenshots/`) dağıtım paketlerine dahil edilmiyor.
 
 ### Bu sürümde dokunulmayanlar
 
-GPU seçim mantığı ve GPU ortam değişkenleri (`DRI_PRIME`, `RADV_DEBUG=nodcc`, Vulkan ICD)
-bu sürümde **bilinçli olarak değiştirilmedi** — çalışıyor ve test edilmiş durumda.
+GPU ortam değişkenleri (`DRI_PRIME`, `RADV_DEBUG=nodcc`, Vulkan ICD) bu sürümde
+**bilinçli olarak değiştirilmedi** — çalışıyor ve test edilmiş durumda.
 
 ---
 
@@ -87,7 +89,7 @@ bu sürümde **bilinçli olarak değiştirilmedi** — çalışıyor ve test edi
 chmod +x OpenAnime-*.AppImage
 ./OpenAnime-*.AppImage
 ```
-İsteğe bağlı: `./install.sh` ile masaüstü entegrasyonu.
+İsteğe bağlı: `./packaging/install.sh` ile masaüstü entegrasyonu.
 
 ### Arch Linux (AUR)
 ```bash
@@ -149,6 +151,20 @@ kartlardan yönetilir. Aşağıdaki dosya elle düzenleme veya geri yükleme iç
 | `gpuDisplayOverride` | `null` | GPU algılamasını elle ez: `"integrated"` veya `"discrete"`. |
 | `debugOutlines` | `false` | Tıklanabilir elemanların etrafına kırmızı çerçeve çiz. |
 | `titlebar` | `{...}` | Özel başlık çubuğu görünümü. |
+
+### Discord durumunda ne gönderilir
+
+Discord RPC varsayılan olarak **açıktır**. Etkinleştirildiğinde izlenen animenin adı,
+bölüm metni, oynatma/duraklatma durumu ve zaman damgaları yerel Discord istemcisi
+üzerinden Discord'a iletilir. Durum, izlenen sayfanın tam adresine tıklanabilir bir
+bağlantı da içerir. Uygulama bu veriyi kendisi saklamaz veya başka bir yere
+göndermez; iletim tamamen Discord'un kendi altyapısı üzerinden yapılır. Kapatmak için
+`/settings` kartındaki **Discord RPC** anahtarını kapatmak ya da `discordRPC`'u
+`false` yapmak yeterlidir.
+
+Uygulama kendi tarafında hiçbir telemetri, analitik veya otomatik güncelleme
+sorgusu yapmaz. Siteyi tarayıcıda ziyaret ederken oluşan üçüncü taraf istekleri
+(video CDN'leri, analitik) bir masaüstü istemcisinde de aynen gerçekleşir.
 
 ---
 

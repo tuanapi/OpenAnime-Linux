@@ -45,6 +45,15 @@ jobs:
       - name: Create Portable Zip
         run: cd dist && zip -r OpenAnime-${{ github.ref_name }}-portable.zip linux-unpacked/
 
+      - name: Generate Checksums
+        run: |
+          cd dist
+          rm -f CHECKSUMS.txt
+          sha256sum \
+            *.AppImage *.deb *.rpm *.pacman *.tar.gz *-portable.zip *.yml \
+            > CHECKSUMS.txt
+          cat CHECKSUMS.txt
+
       - name: Create Release
         uses: softprops/action-gh-release@v2
         if: startsWith(github.ref, 'refs/tags/')
@@ -58,7 +67,7 @@ jobs:
             dist/*.tar.gz
             dist/*-portable.zip
             dist/*.yml
-            dist/*.blockmap
+            dist/CHECKSUMS.txt
           body_path: RELEASE_NOTES.md
 
   nix-check:

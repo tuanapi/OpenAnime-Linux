@@ -9,6 +9,8 @@
     const WIN_ID = 'oa-window-settings-card';
     const STORE = 'openanime-rpc-enabled';
     const CHUNK_KEY = 'oa-expander-chunk';
+    if (window.__oaCardsBooted) return;
+    window.__oaCardsBooted = true;
 
     const rid = () => Math.random().toString(36).slice(2, 14);
     const lsGet = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
@@ -78,6 +80,8 @@
       const row = el('div', C.item);
       row.dataset.key = key;
       const lab = el('span', C.tbBody);
+      const labId = 'oa-tgl-' + rid();
+      lab.id = labId;
       lab.textContent = label;
       const ctl = el('div', C.control);
       const st = el('span', C.tbBody);
@@ -88,6 +92,7 @@
       inp.className = C.toggle;
       inp.type = 'checkbox';
       inp.checked = checked;
+      inp.setAttribute('aria-labelledby', labId);
       wrap.appendChild(inp);
       ctl.appendChild(st);
       ctl.appendChild(wrap);
@@ -98,6 +103,8 @@
     function comboRow(C, kind, label, btnLabel) {
       const row = el('div', C.item);
       const lab = el('span', C.tbBody);
+      const labId = 'oa-cbo-' + rid();
+      lab.id = labId;
       lab.textContent = label;
       const ctl = el('div', C.control);
       const combo = el('div', C.combo);
@@ -110,9 +117,10 @@
       btn.tabIndex = 0;
       btn.type = 'button';
       btn.id = bid;
-      btn.setAttribute('aria-labelledby', lid);
+      btn.setAttribute('aria-labelledby', labId + ' ' + lid);
       btn.setAttribute('aria-controls', did);
       btn.setAttribute('aria-haspopup', 'listbox');
+      btn.setAttribute('aria-expanded', 'false');
       const bl = el('span', C.comboLabel);
       bl.id = lid;
       bl.setAttribute('data-label', '');
@@ -155,33 +163,51 @@
       ];
     }
 
+    let closeOpenMenu = null;
     function openComboMenu(C, btn, options, selVal, onPick) {
       const wrapper = btn.closest('[class*="combo-box"]:not([class*="dropdown"])') || btn.parentElement;
       const bid = btn.id;
       const did = btn.getAttribute('aria-controls') || ('fds-combo-dropdown-' + rid());
       btn.setAttribute('aria-controls', did);
-      const close = () => {
-        const old = document.getElementById(did);
+      const menuOf = () => document.getElementById(did);
+      const close = (restore) => {
+        const old = menuOf();
+        const ae = document.activeElement;
+        const owned = !!(old && ae && old.contains(ae));
         if (old) old.remove();
         if (wrapper) wrapper.classList.remove('open');
+        btn.setAttribute('aria-expanded', 'false');
         document.removeEventListener('click', onDoc, true);
         document.removeEventListener('keydown', onKey, true);
+        document.removeEventListener('focusin', onFocusIn, true);
+        if (closeOpenMenu === close) closeOpenMenu = null;
+        if (restore !== false && (owned || !ae || ae === document.body)) {
+          try { btn.focus({ preventScroll: true }); } catch (e) {}
+        }
       };
       const onDoc = (ev) => {
         if (ev.target.closest && (ev.target === btn || btn.contains(ev.target))) return;
+        const m = menuOf();
+        if (m && (ev.target === m || m.contains(ev.target))) return;
         close();
       };
+      const onFocusIn = (ev) => {
+        if (ev.target === btn || (ev.target.closest && btn.contains(ev.target))) return;
+        const m = menuOf();
+        if (m && (ev.target === m || m.contains(ev.target))) return;
+        close(false);
+      };
       let onKey = (ev) => { if (ev.key === 'Escape') close(); };
-      close();
+      if (closeOpenMenu) closeOpenMenu(false);
       const ul = document.createElement('ul');
       ul.id = did;
       ul.setAttribute('role', 'listbox');
       ul.setAttribute('aria-labelledby', btn.getAttribute('aria-labelledby') || bid);
-      const mid = Math.floor(options.length / 2); // native: selected idx vs middle
+      const mid = Math.floor(options.length / 2);
       const selIdx = options.findIndex((opt) => opt.val === selVal);
       const dir = selIdx < 0 || selIdx === mid ? 'center' : selIdx < mid ? 'top' : 'bottom';
       ul.className = /\bdirection-\S+/.test(C.comboMenu) ? C.comboMenu.replace(/\bdirection-\S+/, 'direction-' + dir) : C.comboMenu + ' direction-' + dir;
-      let z = -(selIdx >= 0 ? selIdx : mid) * 36; // native seed: row height * idx
+      let z = -(selIdx >= 0 ? selIdx : mid) * 36;
       const w = (btn.offsetWidth || 0) + 8;
       ul.style.setProperty('--fds-menu-offset', z + 'px');
       ul.style.setProperty('position', 'absolute', 'important');
@@ -196,10 +222,11 @@
       ul.style.setProperty('min-width', w + 'px', 'important');
       options.forEach((opt, idx) => {
         const li = document.createElement('li');
-        li.tabIndex = 0;
+        li.tabIndex = opt.val === selVal ? 0 : -1;
         li.setAttribute('role', 'option');
         li.id = did + '-item-' + idx;
         li.className = C.comboItem + (opt.val === selVal ? ' selected' : '');
+        li.setAttribute('aria-selected', opt.val === selVal ? 'true' : 'false');
         const sp = el('span', C.comboItemInner);
         sp.textContent = opt.label + ' ';
         li.appendChild(sp);
@@ -210,17 +237,23 @@
         ul.appendChild(li);
       });
       const items = Array.from(ul.children);
+      if (!items.some((x) => x.tabIndex >= 0) && items[0]) items[0].tabIndex = 0;
+      const setRove = (i) => {
+        items.forEach((x, j) => { x.tabIndex = j === i ? 0 : -1; });
+        if (items[i]) items[i].focus({ preventScroll: true });
+      };
       onKey = (ev) => {
         if (ev.key === 'Escape') { close(); return; }
         const cur = items.indexOf(document.activeElement);
         if (ev.key === 'ArrowDown' || ev.key === 'ArrowUp') {
           ev.preventDefault();
           const nx = ev.key === 'ArrowDown' ? Math.min(cur + 1, items.length - 1) : Math.max(cur - 1, 0);
-          items[cur < 0 ? (ev.key === 'ArrowDown' ? 0 : items.length - 1) : nx].focus();
-        } else if (ev.key === 'Home') { ev.preventDefault(); items[0].focus(); }
-        else if (ev.key === 'End') { ev.preventDefault(); items[items.length - 1].focus(); }
+          setRove(cur < 0 ? (ev.key === 'ArrowDown' ? 0 : items.length - 1) : nx);
+        } else if (ev.key === 'Home') { ev.preventDefault(); setRove(0); }
+        else if (ev.key === 'End') { ev.preventDefault(); setRove(items.length - 1); }
       };
       if (wrapper) wrapper.classList.add('open');
+      btn.setAttribute('aria-expanded', 'true');
       if (wrapper) wrapper.appendChild(ul);
       else document.body.appendChild(ul);
       const anchor = wrapper || btn;
@@ -239,6 +272,8 @@
       if (sel) sel.focus({ preventScroll: true });
       document.addEventListener('click', onDoc, true);
       document.addEventListener('keydown', onKey, true);
+      document.addEventListener('focusin', onFocusIn, true);
+      closeOpenMenu = close;
     }
 
     function wireRows(C, box) {
@@ -266,8 +301,7 @@
         const btn = combo.querySelector('button');
         const labelEl = combo.querySelector('[data-label]');
         if (!btn) return;
-        btn.addEventListener('click', (e) => {
-          e.stopPropagation();
+        const open = () => {
           if (kind === 'vis') openComboMenu(C, btn, VIS_OPTS, curVis(), (opt) => {
             if (labelEl) labelEl.textContent = opt.label;
             if (CFG) CFG.rpcVisibility = opt.val;
@@ -275,9 +309,23 @@
           });
           else openComboMenu(C, btn, MIN_OPTS, curMins(), (opt) => {
             if (labelEl) labelEl.textContent = opt.label;
-            if (CFG) CFG.pauseDropMinutes = parseInt(opt.val, 10);
-            bridge.setConfig('pauseDropMinutes', parseInt(opt.val, 10));
+            const mins = parseInt(opt.val, 10);
+            if (CFG) CFG.pauseDropMinutes = mins;
+            bridge.setConfig('pauseDropMinutes', mins);
           });
+        };
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (btn.getAttribute('aria-expanded') === 'true') {
+            if (closeOpenMenu) closeOpenMenu();
+            return;
+          }
+          open();
+        });
+        btn.addEventListener('keydown', (e) => {
+          if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
+          e.preventDefault();
+          if (btn.getAttribute('aria-expanded') !== 'true') open();
         });
       });
     }
@@ -356,7 +404,7 @@
     }
 
     const baseCls = (c) => c.split(' ')[0];
-    const findBy = (root, base) => Array.from(root.querySelectorAll('*')).find((el) => el.classList.contains(base));
+    const findBy = (root, base) => { try { return root.querySelector('.' + CSS.escape(base)); } catch (e) { return null; } };
     function legacyContentHTML(C, rows) {
       return '<div class="' + C.contentAnchor + '"><div class="' + C.content + '"><div class="' + C.contentInner + '">' +
         rows.map((r) => r.outerHTML).join('') + '</div></div></div>';
@@ -396,7 +444,7 @@
         const expanded = root.classList.contains('expanded');
         if (expanded) {
           root.classList.remove('expanded');
-          header.setAttribute('aria-expanded', 'false');
+          if (header) header.setAttribute('aria-expanded', 'false');
           anchor.style.setProperty('height', anchor.scrollHeight + 'px', 'important');
           anchor.offsetHeight;
           anchor.style.setProperty('height', '0px', 'important');
@@ -407,7 +455,7 @@
           anchor.style.setProperty('overflow', 'hidden', 'important');
           anchor.offsetHeight;
           root.classList.add('expanded');
-          header.setAttribute('aria-expanded', 'true');
+          if (header) header.setAttribute('aria-expanded', 'true');
           anchor.style.setProperty('height', anchor.scrollHeight + 'px', 'important');
           setTimeout(() => {
             if (root.classList.contains('expanded')) {
@@ -417,8 +465,21 @@
           }, 280);
         }
       };
-      if (header) header.addEventListener('click', (e) => { e.stopPropagation(); toggleExpand(); });
-      if (chevron) chevron.addEventListener('click', (e) => { e.stopPropagation(); toggleExpand(); });
+      const onHeaderKey = (e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        e.preventDefault();
+        e.stopPropagation();
+        toggleExpand();
+      };
+      if (header) {
+        header.addEventListener('click', (e) => { e.stopPropagation(); toggleExpand(); });
+        header.addEventListener('keydown', onHeaderKey);
+      }
+      if (chevron) {
+        chevron.addEventListener('click', (e) => { e.stopPropagation(); toggleExpand(); });
+        if (!chevron.hasAttribute('tabindex')) chevron.setAttribute('tabindex', '0');
+        chevron.addEventListener('keydown', onHeaderKey);
+      }
       wireRows(C, root);
       return root;
     }
@@ -426,19 +487,23 @@
     let observer = null;
     let injecting = false;
     let lastPath = '';
+    let tick = null;
+    let modFailedAt = 0;
     function stopObserver() {
+      if (closeOpenMenu) closeOpenMenu(false);
+      if (tick) { clearTimeout(tick); tick = null; }
       if (observer) { try { observer.disconnect(); } catch (e) {} observer = null; }
     }
     function onUrl() {
       const p = location.pathname;
       if (p === lastPath) return;
       lastPath = p;
+      if (closeOpenMenu) closeOpenMenu(false);
       if (p.includes('/settings')) { armObserver(); inject(); }
       else stopObserver();
     }
     function armObserver() {
       if (observer) return;
-      let tick = null;
       observer = new MutationObserver(() => {
         if (location.pathname !== lastPath) { onUrl(); return; }
         if (!location.pathname.includes('/settings')) return;
@@ -478,6 +543,7 @@
     }
     async function inject() {
       if (injecting) return;
+      if (closeOpenMenu) closeOpenMenu(false);
       if (document.getElementById(RPC_ID) && document.getElementById(WIN_ID)) return;
       const refCard = findRef();
       if (!refCard) return;
@@ -486,7 +552,12 @@
         CFG = bridge.getConfigAll();
         if (!modPromise) modPromise = loadExpander().catch(() => null);
         const mod = await modPromise;
-        if (!mod) modPromise = null;
+        if (!mod) {
+          if (Date.now() - modFailedAt < 30000) return;
+          modFailedAt = Date.now();
+          modPromise = null;
+        } else modFailedAt = 0;
+        if (location.pathname.indexOf('/settings') === -1 || !refCard.isConnected || !refCard.parentNode) return;
         const C = hashes(refCard);
         if (lsGet(STORE) === null) lsSet(STORE, CFG.discordRPC !== false ? 'true' : 'false');
         const specs = [
@@ -495,12 +566,16 @@
         ];
         let anchor = refCard;
         for (const spec of specs) {
-          if (document.getElementById(spec.id)) { anchor = document.getElementById(spec.id); continue; }
+          const existing = document.getElementById(spec.id);
+          if (existing) { anchor = existing; continue; }
           let root = null;
           if (mod && mod.E) {
             try { root = mountReal(mod.E, C, refCard, anchor.nextSibling, spec); } catch (e) { root = null; }
           }
-          if (!root) root = mountLegacy(C, refCard, anchor.nextSibling, spec);
+          if (!root) {
+            try { root = mountLegacy(C, refCard, anchor.nextSibling, spec); } catch (e) { root = null; }
+          }
+          if (!root) break;
           anchor = root;
         }
         if (document.getElementById(RPC_ID) && document.getElementById(WIN_ID)) stopObserver();

@@ -54,6 +54,23 @@ function createDefaultConfig() {
   };
 }
 
+const CONFIG_VALUE_TYPES = {
+  discordRPC: 'boolean',
+  rpcVisibility: 'string',
+  pauseDropMinutes: 'number',
+  useCustomFrame: 'boolean',
+  persistFullscreen: 'boolean',
+  isMaximized: 'boolean',
+  forceWebGPU: 'boolean'
+};
+
+function configValueValid(key, value) {
+  if (CONFIG_VALUE_TYPES[key] && typeof value !== CONFIG_VALUE_TYPES[key]) return false;
+  if (key === 'pauseDropMinutes' && !(value >= 1 && value <= 60)) return false;
+  if (key === 'rpcVisibility' && value !== 'all' && value !== 'watch_only') return false;
+  return true;
+}
+
 function loadConfig() {
   const defaults = createDefaultConfig();
   try {
@@ -61,7 +78,7 @@ function loadConfig() {
     if (fs.existsSync(configPath)) {
       const content = fs.readFileSync(configPath, 'utf8');
       const parsed = JSON.parse(content);
-      return {
+      const merged = {
         ...defaults,
         ...parsed,
         bounds: {
@@ -73,6 +90,10 @@ function loadConfig() {
           ...(parsed.titlebar || {})
         }
       };
+      for (const key of Object.keys(CONFIG_VALUE_TYPES)) {
+        if (!configValueValid(key, merged[key])) merged[key] = defaults[key];
+      }
+      return merged;
     }
   } catch (e) {
     console.error('Error reading config:', e);
@@ -248,11 +269,22 @@ if (!gotTheLock) {
   app.quit();
 } else {
   app.on("second-instance", () => {
-    if (mainWindow) {
+    if (mainWindow && !mainWindow.isDestroyed()) {
       if (mainWindow.isMinimized()) mainWindow.restore();
       mainWindow.focus();
     }
   });
+}
+
+function openExternalSafe(url) {
+  try {
+    const u = new URL(url);
+    if (u.protocol !== 'http:' && u.protocol !== 'https:') return false;
+  } catch (e) {
+    return false;
+  }
+  shell.openExternal(url);
+  return true;
 }
 
 // shared protections for main + child windows
@@ -260,13 +292,13 @@ function applyWindowProtections(win, lastOpenedTime) {
   win.webContents.on("will-navigate", (e, url) => {
     if (!isAllowedDomain(url)) {
       e.preventDefault();
-      shell.openExternal(url);
+      openExternalSafe(url);
     }
   });
 
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (!isAllowedDomain(url)) {
-      shell.openExternal(url);
+      openExternalSafe(url);
       return { action: "deny" };
     }
 
@@ -377,11 +409,13 @@ async function createMainWindow() {
   }
 
   mainWindow.on('close', saveBounds);
+  mainWindow.on('closed', () => { mainWindow = null; });
 
   mainWindow.loadURL(MAIN_URL);
 
-  // Stale SW offline page fix: reload ONLY if the first paint is the SW offline shell.
+  // SW in control => reload once past the cache when the net is up.
   let failCount = 0;
+  let crashCount = 0;
   let reloadedOnce = false;
   const net = require('net');
   const netOk = () => new Promise(res => {
@@ -390,20 +424,23 @@ async function createMainWindow() {
     s.once('timeout', () => { s.destroy(); res(false); });
     s.once('error', () => res(false));
   });
-  mainWindow.webContents.once('did-finish-load', () => {
+  mainWindow.webContents.on('did-finish-load', () => {
+    failCount = 0;
+    crashCount = 0;
     (async () => {
       if (reloadedOnce || !mainWindow || mainWindow.isDestroyed()) return;
       reloadedOnce = true;
-      // SW in control => it may serve a stale cached shell. Net up => reload past it.
       const hasSW = await mainWindow.webContents.executeJavaScript(
         '!!(navigator.serviceWorker && navigator.serviceWorker.controller)'
       ).catch(() => false);
       if (!hasSW) return;
-      if (await netOk()) mainWindow.webContents.reload();
-    })();
+      if (!await netOk()) return;
+      if (!mainWindow || mainWindow.isDestroyed()) return;
+      mainWindow.webContents.reload();
+    })().catch(() => {});
   });
   mainWindow.webContents.on('did-fail-load', (e, code, desc, url, isMainFrame) => {
-    if (!isMainFrame || !mainWindow) return;
+    if (!isMainFrame || !mainWindow || mainWindow.isDestroyed()) return;
     if (failCount < 3) { failCount++; mainWindow.webContents.reload(); }
     else mainWindow.loadFile(path.join(__dirname, 'scripts', 'load-error.html'));
   });
@@ -414,6 +451,13 @@ async function createMainWindow() {
   });
   wc.on('render-process-gone', (_e, details) => {
     if (details.reason === 'clean-exit' || !mainWindow || mainWindow.isDestroyed()) return;
+    crashCount++;
+    if (crashCount > 3) {
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.loadFile(path.join(__dirname, 'scripts', 'load-error.html'));
+      }
+      return;
+    }
     console.error('[render] process gone (' + details.reason + '), reloading');
     wc.reload();
   });
@@ -430,13 +474,14 @@ async function createMainWindow() {
       event.preventDefault();
     }
     if (input.control && input.shift && input.key.toLowerCase() === 'i') {
-      mainWindow.webContents.toggleDevTools();
+      if (!app.isPackaged) mainWindow.webContents.toggleDevTools();
       event.preventDefault();
     }
   });
 
   // html5 fullscreen
   let isHtmlFullscreen = false;
+  let persistFsTimer = null;
   mainWindow.webContents.on('enter-html-full-screen', () => {
     isHtmlFullscreen = true;
   });
@@ -449,8 +494,9 @@ async function createMainWindow() {
     if (!isMainFrame) return;
     const wasFullscreen = isHtmlFullscreen || mainWindow.isFullScreen();
     isHtmlFullscreen = false;
-    if (persistFullscreen && wasFullscreen) {
-      setTimeout(() => {
+    if (persistFullscreen && wasFullscreen && !persistFsTimer) {
+      persistFsTimer = setTimeout(() => {
+        persistFsTimer = null;
         if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isFullScreen()) {
           mainWindow.setFullScreen(true);
         }
@@ -465,14 +511,12 @@ app.whenReady().then(async () => {
   const fs = require('fs');
   try {
     // rewrites config.json, backfilling any new keys
-    const currentConfig = fs.existsSync(configPath) ? config : createDefaultConfig();
     // drop keys for cut features so they can't come back from an old file
-    for (const dead of ['localLibraryPaths']) delete currentConfig[dead];
+    for (const dead of ['localLibraryPaths']) delete config[dead];
     if (!fs.existsSync(path.dirname(configPath))) {
       fs.mkdirSync(path.dirname(configPath), { recursive: true });
     }
-    fs.writeFileSync(configPath, JSON.stringify(currentConfig, null, 2));
-    Object.assign(config, currentConfig);
+    writeConfig();
   } catch (e) {
     console.error('Error writing/syncing config on startup:', e);
   }
@@ -512,6 +556,7 @@ ipcMain.on('premid-update', (event, data) => {
 ipcMain.on('rpc-set-enabled', (event, enabled) => {
   config.discordRPC = enabled === true;
   saveConfig();
+  invalidatePremidCache();
   if (!enabled) {
     if (rpc && rpc.user) rpc.user.clearActivity().catch(() => {});
     try { if (rpc) rpc.destroy(); } catch (e) {}
@@ -531,13 +576,15 @@ ipcMain.on('rpc-set-enabled', (event, enabled) => {
 // Generic settings writes from the RPC card: save + apply live effects.
 ipcMain.on('config-set', (event, key, value) => {
   if (typeof key !== 'string' || !CONFIG_WRITE_KEYS.includes(key)) return;
+  if (!configValueValid(key, value)) return;
+  const prev = config[key];
   config[key] = value;
-  try { saveConfig(); } catch (e) {}
-  if (key === 'useCustomFrame' && mainWindow) {
+  saveConfig();
+  if (key === 'useCustomFrame' && prev !== value && mainWindow && !mainWindow.isDestroyed()) {
     // Frame can't change on a live window; relaunch cleanly.
     setTimeout(() => { app.relaunch(); app.exit(0); }, 400);
   }
-  if (key === 'isMaximized' && value === true && mainWindow) {
+  if (key === 'isMaximized' && value === true && mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.maximize();
   }
   console.log('config-set:', key, '=', typeof value === 'object' ? JSON.stringify(value) : value);
@@ -580,6 +627,11 @@ let lastPausedState = false;
 let lastCalculatedStart = 0;
 let pauseDropTimer = null;
 let presenceDropped = false;
+
+function invalidatePremidCache() {
+  lastPremidJson = '';
+  lastCalculatedStart = 0;
+}
 
 function updateDiscordRPCFromPremid(data) {
   if (!rpc || !rpcReady) return;
@@ -736,6 +788,7 @@ function initDiscordRPC() {
     rpc.on('ready', () => {
       isConnecting = false;
       rpcReady = true;
+      invalidatePremidCache();
       if (rpcRetryTimer) { clearTimeout(rpcRetryTimer); rpcRetryTimer = null; }
       if (rpcLoginGuard) { clearTimeout(rpcLoginGuard); rpcLoginGuard = null; }
       console.log('Discord RPC Connected!');

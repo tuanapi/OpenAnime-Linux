@@ -1,9 +1,11 @@
 const { ipcRenderer, contextBridge, webFrame } = require('electron');
 
 const forceWebGPU = ipcRenderer.sendSync('get-config', 'forceWebGPU');
-if (forceWebGPU !== false && localStorage.getItem('settings.useWebGPU') === null) {
-  localStorage.setItem('settings.useWebGPU', 'true');
-}
+try {
+  if (forceWebGPU !== false && localStorage.getItem('settings.useWebGPU') === null) {
+    localStorage.setItem('settings.useWebGPU', 'true');
+  }
+} catch (e) {}
 
 const isChildWindow = process.argv.includes('--child-window');
 
@@ -35,6 +37,7 @@ function watchPremid() {
   function syncVideoListeners() {
     const vid = document.querySelector('video');
     if (!vid || vid === watchedVideo) return;
+    if (watchedVideo) ['play', 'pause', 'seeked'].forEach(evt => watchedVideo.removeEventListener(evt, readAndSend));
     watchedVideo = vid;
     ['play', 'pause', 'seeked'].forEach(evt => vid.addEventListener(evt, readAndSend));
   }
@@ -82,6 +85,10 @@ function watchPremid() {
 
   const announcerObserver = new MutationObserver(reconcile);
   const discoveryObserver = new MutationObserver(reconcile);
+  const detachTripwire = new MutationObserver(() => {
+    if (announcer && !announcer.isConnected) reconcile();
+  });
+  detachTripwire.observe(document.body, { childList: true, subtree: true });
 
   armDiscovery();
   reconcile();
