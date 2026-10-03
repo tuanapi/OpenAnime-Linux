@@ -1,4 +1,6 @@
-const { ipcRenderer } = require('electron');
+const { ipcRenderer, contextBridge } = require('electron');
+const fs = require('fs');
+const path = require('path');
 
 // Force WebGPU on unless disabled in config
 const forceWebGPU = ipcRenderer.sendSync('get-config', 'forceWebGPU');
@@ -14,7 +16,6 @@ function watchPremid() {
   let watchedVideo = null;
   let debounceTimer = null;
 
-  // Read current premid state and video state, send via IPC if present
   function readAndSend() {
     const el = document.querySelector('premid-announcer');
     if (!el) return;
@@ -34,7 +35,6 @@ function watchPremid() {
     ipcRenderer.send('premid-update', parsed);
   }
 
-  // Attach play/pause/seeked listeners to the current video element
   function syncVideoListeners() {
     const vid = document.querySelector('video');
     if (!vid || vid === watchedVideo) return;
@@ -42,7 +42,6 @@ function watchPremid() {
     ['play', 'pause', 'seeked'].forEach(evt => vid.addEventListener(evt, readAndSend));
   }
 
-  // Watch the page body for DOM changes, debounced
   new MutationObserver(() => {
     syncVideoListeners();
     clearTimeout(debounceTimer);
@@ -53,7 +52,26 @@ function watchPremid() {
   setInterval(readAndSend, 10000); // fallback poll
 }
 
+contextBridge.exposeInMainWorld('openanime', {
+  getConfig: (key) => ipcRenderer.sendSync('get-config', key),
+  setRpcEnabled: (enabled) => ipcRenderer.send('rpc-set-enabled', enabled),
+  setConfig: (key, value) => ipcRenderer.send('config-set', key, value)
+});
+
+function injectMainWorld() {
+  try {
+    const code = fs.readFileSync(path.join(__dirname, 'injected.js'), 'utf8');
+    const s = document.createElement('script');
+    s.textContent = code;
+    (document.head || document.documentElement).appendChild(s);
+    s.remove();
+  } catch (e) {
+    console.error('injectMainWorld failed:', e);
+  }
+}
+
 window.addEventListener('DOMContentLoaded', () => {
   if (isChildWindow) return;
   watchPremid();
+  injectMainWorld();
 });

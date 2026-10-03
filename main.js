@@ -356,7 +356,7 @@ async function createMainWindow() {
 
   mainWindow.loadURL(MAIN_URL);
 
-  // Stale SW offline page fix: probe net once, reload if up.
+  // Stale SW offline page fix: reload ONLY if the first paint is the SW offline shell.
   let failCount = 0;
   let reloadedOnce = false;
   const net = require('net');
@@ -366,19 +366,46 @@ async function createMainWindow() {
     s.once('timeout', () => { s.destroy(); res(false); });
     s.once('error', () => res(false));
   });
-  (async () => {
-    if (reloadedOnce || !mainWindow || mainWindow.isDestroyed()) return;
-    if (await netOk()) {
+  mainWindow.webContents.once('did-finish-load', () => {
+    (async () => {
+      if (reloadedOnce || !mainWindow || mainWindow.isDestroyed()) return;
       reloadedOnce = true;
-      if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.reload();
-    }
-  })();
+      // SW controls the page but no app root rendered => stale offline shell.
+      const stale = await mainWindow.webContents.executeJavaScript(
+        "!!(navigator.serviceWorker && navigator.serviceWorker.controller) && !document.querySelector('#sveltekit, #app, [data-sveltekit-preload-data]')"
+      ).catch(() => false);
+      if (!stale) return;
+      if (await netOk()) mainWindow.webContents.reload();
+    })();
+  });
   mainWindow.webContents.on('did-fail-load', (e, code, desc, url, isMainFrame) => {
     if (isMainFrame && mainWindow && failCount < 3) {
       failCount++;
       mainWindow.webContents.reload();
     }
   });
+
+  const navLog = [];
+  const nav = (why, extra) => {
+    const line = `${new Date().toISOString()} [nav] ${why}${extra ? ' :: ' + extra : ''}`;
+    navLog.push(line);
+    if (navLog.length > 40) navLog.shift();
+    console.log(line);
+  };
+  console.log('[nav] boot history: ' + (navLog.length ? navLog.join(' || ') : 'clean start'));
+  const wc = mainWindow.webContents;
+  wc.on('did-start-navigation', (_e, url, _inPlace, isMainFrame, _process, _frame) => {
+    if (isMainFrame) nav('main-frame nav start', url);
+  });
+  wc.on('did-navigate', (_e, url, httpCode) => nav('did-navigate', `${url} (${httpCode})`));
+  wc.on('did-navigate-in-page', (_e, url, isMainFrame) => { if (isMainFrame) nav('spa nav', url); });
+  wc.on('did-stop-loading', (_e, isMainFrame) => { if (isMainFrame) nav('did-stop-loading', ''); });
+  wc.on('did-fail-load', (_e, code, desc, url, isMainFrame, _c) => {
+    if (isMainFrame) nav('DID-FAIL-LOAD -> auto reload', `${code} ${desc} ${url}`);
+  });
+  wc.on('did-start-loading', (_e, isMainFrame) => { if (isMainFrame) nav('did-start-loading', ''); });
+  wc.on('render-process-gone', (_e, details) => nav('RENDER PROCESS GONE', JSON.stringify(details)));
+  wc.on('unresponsive', () => nav('UNRESPONSIVE', ''));
 
   // global keyboard shortcuts (F5, F11, Ctrl+Shift+I)
   mainWindow.webContents.on('before-input-event', (event, input) => {
@@ -426,6 +453,8 @@ app.whenReady().then(async () => {
   try {
     // rewrites config.json, backfilling any new keys
     const currentConfig = fs.existsSync(configPath) ? config : createDefaultConfig(true);
+    // drop keys for cut features so they can't come back from an old file
+    for (const dead of ['localLibraryPaths']) delete currentConfig[dead];
     if (!fs.existsSync(path.dirname(configPath))) {
       fs.mkdirSync(path.dirname(configPath), { recursive: true });
     }
@@ -455,6 +484,41 @@ ipcMain.on('get-config', (event, key) => {
 
 ipcMain.on('premid-update', (event, data) => {
   updateDiscordRPCFromPremid(data);
+});
+
+ipcMain.on('rpc-set-enabled', (event, enabled) => {
+  config.discordRPC = enabled === true;
+  try {
+    require('fs').writeFileSync(configPath, JSON.stringify(config, null, 2));
+  } catch (e) {}
+  if (!enabled) {
+    if (rpc && rpc.user) rpc.user.clearActivity().catch(() => {});
+    try { if (rpc) rpc.destroy(); } catch (e) {}
+    rpc = null;
+    rpcReady = false;
+    isConnecting = false;
+    presenceDropped = false;
+    if (pauseDropTimer) { clearTimeout(pauseDropTimer); pauseDropTimer = null; }
+    console.log('Discord RPC disabled via settings');
+  } else {
+    initDiscordRPC();
+    console.log('Discord RPC enabled via settings');
+  }
+});
+
+// Generic settings writes from the RPC card: save + apply live effects.
+ipcMain.on('config-set', (event, key, value) => {
+  if (typeof key !== 'string' || !key) return;
+  config[key] = value;
+  try { require('fs').writeFileSync(configPath, JSON.stringify(config, null, 2)); } catch (e) {}
+  if (key === 'useCustomFrame' && mainWindow) {
+    // Frame can't change on a live window; relaunch cleanly.
+    setTimeout(() => { app.relaunch(); app.exit(0); }, 400);
+  }
+  if (key === 'isMaximized' && value === true && mainWindow) {
+    mainWindow.maximize();
+  }
+  console.log('config-set:', key, '=', typeof value === 'object' ? JSON.stringify(value) : value);
 });
 
 app.on("window-all-closed", () => {
@@ -536,6 +600,11 @@ let presenceDropped = false;
 
 function updateDiscordRPCFromPremid(data) {
   if (!rpc || !rpcReady) return;
+
+  if (config.rpcVisibility === 'watch_only') {
+    const playing = data.video && typeof data.video.currentTime === 'number' && !data.video.paused;
+    if (!playing) return;
+  }
 
   let currentStart = 0;
   if (data.video && typeof data.video.currentTime === 'number') {

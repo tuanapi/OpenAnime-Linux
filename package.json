@@ -43,6 +43,7 @@
       "launcher.js",
       "main.js",
       "preload.js",
+      "injected.js",
       "scripts/",
       "icon512.png",
       "screenshots/",
