@@ -1,20 +1,17 @@
-const { ipcRenderer, contextBridge } = require('electron');
-const fs = require('fs');
-const path = require('path');
+const { ipcRenderer, contextBridge, webFrame } = require('electron');
 
-// Force WebGPU on unless disabled in config
 const forceWebGPU = ipcRenderer.sendSync('get-config', 'forceWebGPU');
-if (forceWebGPU !== false) {
+if (forceWebGPU !== false && localStorage.getItem('settings.useWebGPU') === null) {
   localStorage.setItem('settings.useWebGPU', 'true');
 }
 
-// Whether this is a popup/child window
 const isChildWindow = process.argv.includes('--child-window');
 
-// Watch the page for Discord Rich Presence data and pushes updates to main
 function watchPremid() {
   let watchedVideo = null;
   let debounceTimer = null;
+  let announcer = null;
+  let discoveryActive = false;
 
   function readAndSend() {
     const el = document.querySelector('premid-announcer');
@@ -42,36 +39,67 @@ function watchPremid() {
     ['play', 'pause', 'seeked'].forEach(evt => vid.addEventListener(evt, readAndSend));
   }
 
-  new MutationObserver(() => {
+  function attachAnnouncer(el) {
+    if (announcer === el && announcer.isConnected) return;
+    announcerObserver.disconnect();
+    announcer = el;
+    announcerObserver.observe(el, { childList: true, characterData: true, subtree: true });
+  }
+
+  function detachAnnouncer() {
+    announcerObserver.disconnect();
+    announcer = null;
+  }
+
+  function armDiscovery() {
+    if (discoveryActive) return;
+    discoveryActive = true;
+    discoveryObserver.observe(document.body, { childList: true, subtree: true });
+  }
+
+  function disarmDiscovery() {
+    if (!discoveryActive) return;
+    discoveryActive = false;
+    discoveryObserver.disconnect();
+  }
+
+  function reconcile() {
+    const el = document.querySelector('premid-announcer');
+    if (el) {
+      attachAnnouncer(el);
+    } else if (announcer) {
+      detachAnnouncer();
+    }
     syncVideoListeners();
+    if (announcer && announcer.isConnected && document.querySelector('video')) {
+      disarmDiscovery();
+    } else {
+      armDiscovery();
+    }
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(readAndSend, 250);
-  }).observe(document.body, { childList: true, subtree: true, characterData: true });
+  }
 
-  syncVideoListeners();
-  setInterval(readAndSend, 10000); // fallback poll
+  const announcerObserver = new MutationObserver(reconcile);
+  const discoveryObserver = new MutationObserver(reconcile);
+
+  armDiscovery();
+  reconcile();
 }
 
 contextBridge.exposeInMainWorld('openanime', {
   getConfig: (key) => ipcRenderer.sendSync('get-config', key),
+  getConfigAll: () => ipcRenderer.sendSync('get-config-all'),
   setRpcEnabled: (enabled) => ipcRenderer.send('rpc-set-enabled', enabled),
   setConfig: (key, value) => ipcRenderer.send('config-set', key, value)
 });
 
-function injectMainWorld() {
-  try {
-    const code = fs.readFileSync(path.join(__dirname, 'injected.js'), 'utf8');
-    const s = document.createElement('script');
-    s.textContent = code;
-    (document.head || document.documentElement).appendChild(s);
-    s.remove();
-  } catch (e) {
-    console.error('injectMainWorld failed:', e);
-  }
+if (!isChildWindow) {
+  const source = ipcRenderer.sendSync('get-injected-source');
+  if (source) webFrame.executeJavaScript(source);
 }
 
 window.addEventListener('DOMContentLoaded', () => {
   if (isChildWindow) return;
   watchPremid();
-  injectMainWorld();
 });

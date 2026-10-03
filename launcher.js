@@ -8,7 +8,6 @@ const {
   displayGpuClassification,
   renderNodeCount,
   hasNvidiaModule,
-  hasNvidiaDrm,
   hasAmdDiscrete,
   nvidiaRenderNode,
 } = require('./scripts/gpu-detect');
@@ -20,19 +19,6 @@ try {
     config = { ...config, ...JSON.parse(fs.readFileSync(configPath, 'utf8')) };
   }
 } catch (e) {}
-
-// Strip external --render-node-override.
-let i = 0;
-while (i < process.argv.length) {
-  const a = process.argv[i];
-  if (a === '--render-node-override' || a.startsWith('--render-node-override=')) {
-    process.argv.splice(i, 1);
-    if (a === '--render-node-override') process.argv.splice(i, 1); // also drops its value arg
-    console.warn('[GPU] stripped --render-node-override (stale flag; crashes hybrid GPU process)');
-    continue;
-  }
-  i++;
-}
 
 function detectSession() {
   const hasWaylandSocket = !!process.env.WAYLAND_DISPLAY;
@@ -95,31 +81,38 @@ if (isHybrid && config.highPerformance !== false) {
 }
 
 global.__hasNvidiaHardware = hasNvidia;
-global.__hasNvidiaDrm = hasNvidiaDrm();
 global.__iGpuDrivesDisplay = iGpuDrivesDisplay;
-global.__isWayland = session === 'wayland';
 global.__isX11 = session === 'x11';
 global.__isHybrid = isHybrid;
-global.__gpuPrimeReady = Promise.resolve();
 
 let relaunched = false;
 if (goingX11) {
   console.log('[GPU] iGPU display + NVIDIA on Wayland -> relaunching under X11 (XWayland)');
   try {
     const { spawn } = require('child_process');
-    // Child: core-silent during init (TRAP recovers, core trips popups).
     const child = spawn('/bin/sh', ['-c', 'ulimit -c 0; exec "$0" "$@"',
       process.execPath, '--ozone-platform=x11', ...process.argv.slice(1)], {
       stdio: 'inherit',
       env: process.env,
     });
     relaunched = true;
-    child.on('error', (e) => {
-      console.error('[GPU] X11 relaunch failed, continuing on Wayland:', e);
+    let settled = false;
+    const fallback = (why, detail) => {
+      if (settled) return;
+      settled = true;
+      console.error('[GPU] X11 relaunch failed, continuing on Wayland:', why, detail || '');
       relaunched = false;
       boot();
+    };
+    child.on('error', (e) => fallback('spawn error', e));
+    child.on('exit', (code, signal) => {
+      if (code || signal) fallback('child exit', `code=${code} signal=${signal}`);
     });
-    child.on('exit', (code) => process.exit(code ?? 0));
+    setTimeout(() => {
+      if (settled) return;
+      settled = true;
+      process.exit(0);
+    }, 3000);
   } catch (e) {
     console.error('[GPU] X11 relaunch failed, continuing on Wayland:', e);
     relaunched = false;

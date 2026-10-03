@@ -9,7 +9,6 @@
     const WIN_ID = 'oa-window-settings-card';
     const STORE = 'openanime-rpc-enabled';
     const CHUNK_KEY = 'oa-expander-chunk';
-    const CHUNK_HARDCODED = '/__openanime/immutable/openanime-Bm4u6ew7.js';
 
     const rid = () => Math.random().toString(36).slice(2, 14);
     const lsGet = (k) => { try { return localStorage.getItem(k); } catch (e) { return null; } };
@@ -70,8 +69,9 @@
     const VIS_OPTS = [{ val: 'all', label: 'Herşey' }, { val: 'watch_only', label: 'İzlenen' }];
 
     const el = (tag, cls) => { const e = document.createElement(tag); if (cls) e.className = cls; return e; };
-    const curVis = () => bridge.getConfig('rpcVisibility') === 'watch_only' ? 'watch_only' : 'all';
-    const curMins = () => String(Number(bridge.getConfig('pauseDropMinutes')) || 5);
+    let CFG = null;
+    const curVis = () => CFG && CFG.rpcVisibility === 'watch_only' ? 'watch_only' : 'all';
+    const curMins = () => String(Number(CFG ? CFG.pauseDropMinutes : 5) || 5);
     const rpcOn = () => lsGet(STORE) !== 'false';
 
     function toggleRow(C, key, label, checked) {
@@ -95,7 +95,7 @@
       row.appendChild(ctl);
       return row;
     }
-    function comboRow(C, kind, label, btnLabel, hidVal) {
+    function comboRow(C, kind, label, btnLabel) {
       const row = el('div', C.item);
       const lab = el('span', C.tbBody);
       lab.textContent = label;
@@ -104,15 +104,17 @@
       combo.dataset.kind = kind;
       const bid = 'fds-combo-box-button-' + rid();
       const did = 'fds-combo-box-dropdown-' + rid();
+      const lid = 'fds-combo-box-label-' + rid();
       const btn = document.createElement('button');
       btn.className = C.comboBtn;
       btn.tabIndex = 0;
       btn.type = 'button';
       btn.id = bid;
-      btn.setAttribute('aria-labelledby', bid);
+      btn.setAttribute('aria-labelledby', lid);
       btn.setAttribute('aria-controls', did);
       btn.setAttribute('aria-haspopup', 'listbox');
       const bl = el('span', C.comboLabel);
+      bl.id = lid;
       bl.setAttribute('data-label', '');
       bl.textContent = btnLabel;
       const svgNS = 'http://www.w3.org/2000/svg';
@@ -129,13 +131,8 @@
       btn.appendChild(bl);
       btn.appendChild(document.createTextNode(' '));
       btn.appendChild(svg);
-      const hid = document.createElement('input');
-      hid.type = 'hidden';
-      hid.setAttribute('aria-hidden', 'true');
-      hid.value = hidVal;
       combo.appendChild(btn);
       combo.appendChild(document.createTextNode(' '));
-      combo.appendChild(hid);
       ctl.appendChild(combo);
       row.appendChild(lab);
       row.appendChild(ctl);
@@ -146,15 +143,15 @@
       const mins = curMins();
       return [
         toggleRow(C, 'rpc', 'Discord RPC Durumu', rpcOn()),
-        comboRow(C, 'vis', 'RPC Görünürlüğü', vis === 'watch_only' ? 'İzlenen' : 'Herşey', vis),
-        comboRow(C, 'mins', 'Zaman Aşımı', mins + ' dk', mins)
+        comboRow(C, 'vis', 'RPC Görünürlüğü', vis === 'watch_only' ? 'İzlenen' : 'Herşey'),
+        comboRow(C, 'mins', 'Zaman Aşımı', mins + ' dk')
       ];
     }
     function windowRows(C) {
       return [
-        toggleRow(C, 'useCustomFrame', 'Özel Pencere Çerçevesi', bridge.getConfig('useCustomFrame') === true),
-        toggleRow(C, 'persistFullscreen', 'Tam Ekranı Koru', bridge.getConfig('persistFullscreen') === true),
-        toggleRow(C, 'isMaximized', 'Açılışta Pencereyi Büyüt', bridge.getConfig('isMaximized') === true)
+        toggleRow(C, 'useCustomFrame', 'Özel Pencere Çerçevesi', CFG && CFG.useCustomFrame === true),
+        toggleRow(C, 'persistFullscreen', 'Tam Ekranı Koru', CFG && CFG.persistFullscreen === true),
+        toggleRow(C, 'isMaximized', 'Açılışta Pencereyi Büyüt', CFG && CFG.isMaximized === true)
       ];
     }
 
@@ -179,12 +176,13 @@
       const ul = document.createElement('ul');
       ul.id = did;
       ul.setAttribute('role', 'listbox');
-      ul.setAttribute('aria-labelledby', bid);
+      ul.setAttribute('aria-labelledby', btn.getAttribute('aria-labelledby') || bid);
       const mid = Math.floor(options.length / 2); // native: selected idx vs middle
       const selIdx = options.findIndex((opt) => opt.val === selVal);
       const dir = selIdx < 0 || selIdx === mid ? 'center' : selIdx < mid ? 'top' : 'bottom';
       ul.className = /\bdirection-\S+/.test(C.comboMenu) ? C.comboMenu.replace(/\bdirection-\S+/, 'direction-' + dir) : C.comboMenu + ' direction-' + dir;
       let z = -(selIdx >= 0 ? selIdx : mid) * 36; // native seed: row height * idx
+      const w = (btn.offsetWidth || 0) + 8;
       ul.style.setProperty('--fds-menu-offset', z + 'px');
       ul.style.setProperty('position', 'absolute', 'important');
       ul.style.setProperty('display', 'block', 'important');
@@ -194,7 +192,6 @@
       ul.style.setProperty('margin', '-6px 0px 0px -5px', 'important');
       ul.style.setProperty('padding', '1px', 'important');
       ul.style.setProperty('border-radius', '8px', 'important');
-      const w = (btn.offsetWidth || 0) + 8;
       ul.style.setProperty('width', w + 'px', 'important');
       ul.style.setProperty('min-width', w + 'px', 'important');
       options.forEach((opt, idx) => {
@@ -203,12 +200,6 @@
         li.setAttribute('role', 'option');
         li.id = did + '-item-' + idx;
         li.className = C.comboItem + (opt.val === selVal ? ' selected' : '');
-        li.style.setProperty('padding', '0px 11px', 'important');
-        li.style.setProperty('border-radius', '4px', 'important');
-        li.style.setProperty('margin', '4px', 'important');
-        li.style.setProperty('height', '32px', 'important');
-        li.style.setProperty('display', 'flex', 'important');
-        li.style.setProperty('align-items', 'center', 'important');
         const sp = el('span', C.comboItemInner);
         sp.textContent = opt.label + ' ';
         li.appendChild(sp);
@@ -234,12 +225,16 @@
       else document.body.appendChild(ul);
       const anchor = wrapper || btn;
       const sel = items.find((li) => li.classList.contains('selected')) || items[0];
-      z += anchor.getBoundingClientRect().top - sel.getBoundingClientRect().top; // native J(): align sel row
+      const anchorTop = anchor.getBoundingClientRect().top;
+      const selTop = sel.getBoundingClientRect().top;
+      const vh = window.innerHeight;
+      z += anchorTop - selTop;
       ul.style.setProperty('--fds-menu-offset', z + 'px');
-      const mr = ul.getBoundingClientRect(); // clamp into viewport
-      if (mr.bottom > window.innerHeight - 8) z -= mr.bottom - (window.innerHeight - 8);
-      ul.style.setProperty('--fds-menu-offset', z + 'px');
-      if (ul.getBoundingClientRect().top < 8) z += 8 - ul.getBoundingClientRect().top;
+      const mr = ul.getBoundingClientRect();
+      let mTop = mr.top;
+      let mBottom = mr.bottom;
+      if (mBottom > vh - 8) { const d = mBottom - (vh - 8); z -= d; mTop -= d; mBottom -= d; }
+      if (mTop < 8) z += 8 - mTop;
       ul.style.setProperty('--fds-menu-offset', z + 'px');
       if (sel) sel.focus({ preventScroll: true });
       document.addEventListener('click', onDoc, true);
@@ -275,10 +270,12 @@
           e.stopPropagation();
           if (kind === 'vis') openComboMenu(C, btn, VIS_OPTS, curVis(), (opt) => {
             if (labelEl) labelEl.textContent = opt.label;
+            if (CFG) CFG.rpcVisibility = opt.val;
             bridge.setConfig('rpcVisibility', opt.val);
           });
           else openComboMenu(C, btn, MIN_OPTS, curMins(), (opt) => {
             if (labelEl) labelEl.textContent = opt.label;
+            if (CFG) CFG.pauseDropMinutes = parseInt(opt.val, 10);
             bridge.setConfig('pauseDropMinutes', parseInt(opt.val, 10));
           });
         });
@@ -317,6 +314,8 @@
       } catch (e) { return null; }
     };
     async function loadExpander() {
+      const cached = lsGet(CHUNK_KEY);
+      if (cached) { const m = await usable(cached); if (m) return m; }
       const urls = [...new Set(performance.getEntriesByType('resource')
         .map((r) => r.name)
         .filter((u) => u.includes('/__openanime/immutable/openanime-') && u.endsWith('.js'))
@@ -327,10 +326,6 @@
         const m = await usable(urls[i]);
         if (m) { lsSet(CHUNK_KEY, urls[i]); return m; }
       }
-      const cached = lsGet(CHUNK_KEY);
-      if (cached) { const m = await usable(cached); if (m) return m; }
-      const m = await usable(CHUNK_HARDCODED);
-      if (m) { lsSet(CHUNK_KEY, CHUNK_HARDCODED); return m; }
       return null;
     }
 
@@ -388,7 +383,7 @@
         const icon = header.querySelector('.expander-icon');
         if (icon) icon.innerHTML = spec.icon;
       }
-      if (chevron) { chevron.id = cid; chevron.setAttribute('aria-labelledby', hid); }
+      if (chevron) { chevron.id = cid; chevron.setAttribute('aria-label', spec.title); }
       if (oldAnchor) oldAnchor.remove();
       const frag = document.createElement('template');
       frag.innerHTML = legacyContentHTML(C, spec.rows);
@@ -431,11 +426,55 @@
     let observer = null;
     let injecting = false;
     let lastPath = '';
+    function stopObserver() {
+      if (observer) { try { observer.disconnect(); } catch (e) {} observer = null; }
+    }
+    function onUrl() {
+      const p = location.pathname;
+      if (p === lastPath) return;
+      lastPath = p;
+      if (p.includes('/settings')) { armObserver(); inject(); }
+      else stopObserver();
+    }
+    function armObserver() {
+      if (observer) return;
+      let tick = null;
+      observer = new MutationObserver(() => {
+        if (location.pathname !== lastPath) { onUrl(); return; }
+        if (!location.pathname.includes('/settings')) return;
+        if (document.getElementById(RPC_ID) && document.getElementById(WIN_ID)) { stopObserver(); return; }
+        if (tick) return;
+        tick = setTimeout(() => { tick = null; inject(); }, 400);
+      });
+      observer.observe(document.body, { childList: true, subtree: true });
+    }
     function findRef() {
-      const cands = Array.from(document.querySelectorAll('div, span, p, h3, h4'));
-      const t = cands.find((e) => e.textContent.trim() === 'Kişiselleştirilmiş öneriler')
-        || cands.find((e) => e.textContent.trim() === 'NSFW uyarılarını sıfırla');
-      return t ? t.closest('.expander') : null;
+      const targets = ['Kişiselleştirilmiş öneriler', 'NSFW uyarılarını sıfırla'];
+      const exact = new Array(targets.length).fill(null);
+      const loose = new Array(targets.length).fill(null);
+      const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+      let node = walker.nextNode();
+      while (node) {
+        const v = node.nodeValue.trim();
+        const card = v && node.parentElement ? node.parentElement.closest('.expander') : null;
+        if (card) {
+          for (let i = 0; i < targets.length; i++) {
+            if (v === targets[i]) {
+              if (!exact[i]) exact[i] = card;
+            } else if (!loose[i] && v.indexOf(targets[i]) !== -1) {
+              loose[i] = card;
+            }
+          }
+        }
+        node = walker.nextNode();
+      }
+      for (let i = 0; i < targets.length; i++) {
+        if (exact[i]) return exact[i];
+      }
+      for (let i = 0; i < targets.length; i++) {
+        if (loose[i]) return loose[i];
+      }
+      return null;
     }
     async function inject() {
       if (injecting) return;
@@ -444,11 +483,12 @@
       if (!refCard) return;
       injecting = true;
       try {
+        CFG = bridge.getConfigAll();
         if (!modPromise) modPromise = loadExpander().catch(() => null);
         const mod = await modPromise;
         if (!mod) modPromise = null;
         const C = hashes(refCard);
-        if (lsGet(STORE) === null) lsSet(STORE, bridge.getConfig('discordRPC') !== false ? 'true' : 'false');
+        if (lsGet(STORE) === null) lsSet(STORE, CFG.discordRPC !== false ? 'true' : 'false');
         const specs = [
           { id: RPC_ID, title: 'Discord RPC', caption: 'Durumunuzu (izlediğiniz anime, bölüm vb.) Discord profilinizde gösterir.', icon: DISCORD_ICON, rows: rpcRows(C) },
           { id: WIN_ID, title: 'Pencere', caption: 'Uygulama penceresinin çerçeve, tam ekran ve boyut davranışını ayarlayın.', icon: WINDOW_ICON, rows: windowRows(C) }
@@ -463,6 +503,7 @@
           if (!root) root = mountLegacy(C, refCard, anchor.nextSibling, spec);
           anchor = root;
         }
+        if (document.getElementById(RPC_ID) && document.getElementById(WIN_ID)) stopObserver();
       } finally {
         injecting = false;
       }
@@ -470,41 +511,15 @@
 
     function start() {
       lastPath = location.pathname;
-      if (location.pathname.includes('/settings')) inject();
-      const onUrl = () => {
-        const p = location.pathname;
-        if (p === lastPath) return;
-        lastPath = p;
-        if (p.includes('/settings')) inject();
-      };
-      window.__oaNavLog = window.__oaNavLog || [];
-      const nav = (m, u) => {
-        try {
-          window.__oaNavLog.push({ t: new Date().toISOString(), m, u: String(u), from: location.pathname,
-            stack: (new Error().stack || '').split('\n').slice(1, 9).join(' <- ') });
-          if (window.__oaNavLog.length > 40) window.__oaNavLog.shift();
-        } catch (e) {}
-      };
       const _push = history.pushState;
-      history.pushState = function () { nav('push', arguments[2]); const r = _push.apply(this, arguments); onUrl(); return r; };
+      history.pushState = function () { const r = _push.apply(this, arguments); onUrl(); return r; };
       const _rep = history.replaceState;
-      history.replaceState = function () { nav('replace', arguments[2]); const r = _rep.apply(this, arguments); onUrl(); return r; };
-      addEventListener('popstate', () => { nav('popstate', location.href); onUrl(); });
-      addEventListener('hashchange', () => { nav('hashchange', location.href); onUrl(); });
-      try {
-        const _rel = location.reload.bind(location);
-        location.reload = function () { nav('reload()', location.href); return _rel(); };
-      } catch (e) {}
-      if (observer) return;
-      let tick = null;
-      observer = new MutationObserver(() => {
-        if (location.pathname !== lastPath) { onUrl(); return; }
-        if (!location.pathname.includes('/settings')) return;
-        if (document.getElementById(RPC_ID) && document.getElementById(WIN_ID)) return;
-        if (tick) return;
-        tick = setTimeout(() => { tick = null; inject(); }, 400);
-      });
-      observer.observe(document.body, { childList: true, subtree: true });
+      history.replaceState = function () { const r = _rep.apply(this, arguments); onUrl(); return r; };
+      addEventListener('popstate', () => { onUrl(); });
+      addEventListener('hashchange', () => { onUrl(); });
+      armObserver();
+      if (location.pathname.includes('/settings')) inject();
+      else stopObserver();
     }
     if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
     else start();

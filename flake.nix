@@ -14,7 +14,7 @@
       {
         packages.default = pkgs.buildNpmPackage rec {
           pname = "openanime";
-          version = "1.1.7";
+          version = "1.1.8";
 
           src = ./.;
 
@@ -33,7 +33,7 @@
             runHook preInstall
 
             mkdir -p $out/share/openanime $out/bin
-            cp -r launcher.js main.js preload.js scripts icon512.png package.json node_modules $out/share/openanime/
+            cp -r launcher.js main.js preload.js injected.js scripts icon512.png package.json node_modules $out/share/openanime/
 
             makeWrapper ${pkgs.electron}/bin/electron $out/bin/openanime \
               --add-flags $out/share/openanime/launcher.js

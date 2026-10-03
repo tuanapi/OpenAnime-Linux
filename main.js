@@ -28,10 +28,11 @@ function isAllowedDomain(url) {
 // config
 const configPath = path.join(app.getPath('userData'), 'config.json');
 
-function createDefaultConfig(useSmartBounds = false) {
-  const defaultConfig = {
+function createDefaultConfig() {
+  return {
     highPerformance: true,
     discordRPC: true,
+    rpcVisibility: 'all',
     pauseDropMinutes: 5,
     useCustomFrame: false,
     persistFullscreen: false,
@@ -51,32 +52,16 @@ function createDefaultConfig(useSmartBounds = false) {
       headerOffsetTop: 1
     }
   };
-
-  if (useSmartBounds) {
-    try {
-      const { screen } = require('electron');
-      const primaryDisplay = screen.getPrimaryDisplay();
-      if (primaryDisplay && primaryDisplay.workArea) {
-        const { width: workWidth, height: workHeight, x: workX, y: workY } = primaryDisplay.workArea;
-        defaultConfig.bounds.x = Math.round(workX + (workWidth - 1360) / 2);
-        defaultConfig.bounds.y = Math.round(workY + (workHeight - 900) / 2);
-      }
-    } catch (err) {
-      console.error('Failed to calculate smart bounds:', err);
-    }
-  }
-
-  return defaultConfig;
 }
 
 function loadConfig() {
-  const defaults = createDefaultConfig(false);
+  const defaults = createDefaultConfig();
   try {
     const fs = require('fs');
     if (fs.existsSync(configPath)) {
       const content = fs.readFileSync(configPath, 'utf8');
       const parsed = JSON.parse(content);
-      const merged = {
+      return {
         ...defaults,
         ...parsed,
         bounds: {
@@ -88,30 +73,6 @@ function loadConfig() {
           ...(parsed.titlebar || {})
         }
       };
-
-      // Calculate smart bounds if x or y is missing and screen is ready
-      if (merged.bounds.x === undefined || merged.bounds.y === undefined) {
-        try {
-          const { screen } = require('electron');
-          const primaryDisplay = screen.getPrimaryDisplay();
-          if (primaryDisplay && primaryDisplay.workArea) {
-            const { width: workWidth, height: workHeight, x: workX, y: workY } = primaryDisplay.workArea;
-            // clamp window size to screen (respect minWidth/minHeight)
-            const minW = 800, minH = 600;
-            merged.bounds.width = Math.max(minW, Math.min(merged.bounds.width || 1360, workWidth));
-            merged.bounds.height = Math.max(minH, Math.min(merged.bounds.height || 900, workHeight));
-            if (merged.bounds.x === undefined) {
-              merged.bounds.x = Math.max(workX, Math.round(workX + (workWidth - merged.bounds.width) / 2));
-            }
-            if (merged.bounds.y === undefined) {
-              merged.bounds.y = Math.max(workY, Math.round(workY + (workHeight - merged.bounds.height) / 2));
-            }
-          }
-        } catch (e) {
-          // screen API not ready yet
-        }
-      }
-      return merged;
     }
   } catch (e) {
     console.error('Error reading config:', e);
@@ -120,6 +81,90 @@ function loadConfig() {
 }
 
 const config = loadConfig();
+
+const CONFIG_READ_KEYS = [
+  'discordRPC',
+  'rpcVisibility',
+  'pauseDropMinutes',
+  'useCustomFrame',
+  'persistFullscreen',
+  'isMaximized',
+  'forceWebGPU'
+];
+
+const CONFIG_WRITE_KEYS = [
+  'rpcVisibility',
+  'pauseDropMinutes',
+  'useCustomFrame',
+  'persistFullscreen',
+  'isMaximized'
+];
+
+let injectedSource = '';
+try {
+  injectedSource = require('fs').readFileSync(path.join(__dirname, 'injected.js'), 'utf8');
+} catch (e) {
+  console.error('Error reading injected.js:', e);
+}
+
+let configSaveTimer = null;
+
+function writeConfig() {
+  try {
+    const fs = require('fs');
+    const tmp = configPath + '.tmp';
+    fs.writeFileSync(tmp, JSON.stringify(config, null, 2));
+    fs.renameSync(tmp, configPath);
+  } catch (e) {
+    console.error('Error saving config:', e);
+  }
+}
+
+function saveConfig() {
+  if (configSaveTimer) return;
+  configSaveTimer = setTimeout(() => {
+    configSaveTimer = null;
+    writeConfig();
+  }, 150);
+}
+
+function flushConfig() {
+  if (configSaveTimer) {
+    clearTimeout(configSaveTimer);
+    configSaveTimer = null;
+  }
+  writeConfig();
+}
+
+function sanitizeBounds(b) {
+  const { screen } = require('electron');
+  const minW = 800;
+  const minH = 600;
+  let width = Math.max(minW, Math.round(b.width || 1360));
+  let height = Math.max(minH, Math.round(b.height || 900));
+  const hasPos = Number.isFinite(b.x) && Number.isFinite(b.y);
+
+  if (hasPos) {
+    const x = Math.round(b.x);
+    const y = Math.round(b.y);
+    const reachable = screen.getAllDisplays().some((d) => {
+      const a = d.workArea;
+      return x < a.x + a.width - 40 && x + width > a.x + 40 &&
+             y < a.y + a.height - 40 && y + height > a.y + 40;
+    });
+    if (reachable) return { x, y, width, height };
+  }
+
+  const wa = screen.getPrimaryDisplay().workArea;
+  width = Math.max(minW, Math.min(width, wa.width));
+  height = Math.max(minH, Math.min(height, wa.height));
+  return {
+    x: Math.round(wa.x + (wa.width - width) / 2),
+    y: Math.round(wa.y + (wa.height - height) / 2),
+    width,
+    height
+  };
+}
 
 // GPU / rendering command line switches
 app.commandLine.appendSwitch("enable-unsafe-webgpu");
@@ -239,25 +284,19 @@ function applyWindowProtections(win, lastOpenedTime) {
       minHeight: 600,
       icon: path.join(__dirname, "icon512.png"),
       frame: true,
-      autoHideMenuBar: true,
       webPreferences: {
         contextIsolation: true,
         preload: path.join(__dirname, "preload.js"),
-        sandbox: false,
+        sandbox: true,
         partition: "persist:openanime",
-        // tells preload.js this is a child window
         additionalArguments: ["--child-window"]
       }
     });
 
-    childWin.setMenu(null);
-
-    // hide scrollbars
     childWin.webContents.on('dom-ready', () => {
       childWin.webContents.insertCSS('::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }');
     });
 
-    // recursive — child windows get the same protections
     applyWindowProtections(childWin, lastOpenedTime);
 
     childWin.loadURL(url);
@@ -268,29 +307,18 @@ function applyWindowProtections(win, lastOpenedTime) {
 function saveBounds() {
   try {
     if (!mainWindow) return;
-    const fs = require('fs');
     config.bounds = mainWindow.getNormalBounds();
     config.isMaximized = mainWindow.isMaximized();
-    fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+    saveConfig();
   } catch (e) {
     console.error('Error saving bounds:', e);
-  }
-}
-
-async function clearStaleServiceWorkerCache() {
-  try {
-    const ses = session.fromPartition('persist:openanime');
-    // Unregisters the service worker; leaves the Cache Storage API untouched
-    await ses.clearStorageData({ storages: ['serviceworkers'] });
-  } catch (e) {
-    console.error('Failed to clear stale service worker registration:', e);
   }
 }
 
 async function createMainWindow() {
   // read config
   let useCustomFrame = config.useCustomFrame || false;
-  let winBounds = config.bounds || { width: 1280, height: 800 };
+  let winBounds = sanitizeBounds(config.bounds || {});
   let isMaximized = config.isMaximized || false;
   let persistFullscreen = config.persistFullscreen || false;
   const tb = config.titlebar || {};
@@ -301,20 +329,19 @@ async function createMainWindow() {
     : { frame: true };
 
   mainWindow = new BrowserWindow({
-    width: winBounds.width || 1280,
-    height: winBounds.height || 800,
+    width: winBounds.width,
+    height: winBounds.height,
     x: winBounds.x,
     y: winBounds.y,
     minWidth: 800,
     minHeight: 600,
     icon: path.join(__dirname, "icon512.png"),
     ...frameOptions,
-    autoHideMenuBar: true,
     resizable: true,
     webPreferences: {
       contextIsolation: true,
       preload: path.join(__dirname, "preload.js"),
-      sandbox: false,
+      sandbox: true,
       partition: "persist:openanime"
     }
   });
@@ -351,9 +378,6 @@ async function createMainWindow() {
 
   mainWindow.on('close', saveBounds);
 
-  // Unregisters a stale service worker before first load
-  await clearStaleServiceWorkerCache();
-
   mainWindow.loadURL(MAIN_URL);
 
   // Stale SW offline page fix: reload ONLY if the first paint is the SW offline shell.
@@ -361,7 +385,7 @@ async function createMainWindow() {
   let reloadedOnce = false;
   const net = require('net');
   const netOk = () => new Promise(res => {
-    const s = net.connect({ host: '1.1.1.1', port: 443, timeout: 2000 });
+    const s = net.connect({ host: 'openani.me', port: 443, timeout: 2000 });
     s.once('connect', () => { s.destroy(); res(true); });
     s.once('timeout', () => { s.destroy(); res(false); });
     s.once('error', () => res(false));
@@ -379,33 +403,20 @@ async function createMainWindow() {
     })();
   });
   mainWindow.webContents.on('did-fail-load', (e, code, desc, url, isMainFrame) => {
-    if (isMainFrame && mainWindow && failCount < 3) {
-      failCount++;
-      mainWindow.webContents.reload();
-    }
+    if (!isMainFrame || !mainWindow) return;
+    if (failCount < 3) { failCount++; mainWindow.webContents.reload(); }
+    else mainWindow.loadFile(path.join(__dirname, 'scripts', 'load-error.html'));
   });
 
-  const navLog = [];
-  const nav = (why, extra) => {
-    const line = `${new Date().toISOString()} [nav] ${why}${extra ? ' :: ' + extra : ''}`;
-    navLog.push(line);
-    if (navLog.length > 40) navLog.shift();
-    console.log(line);
-  };
-  console.log('[nav] boot history: ' + (navLog.length ? navLog.join(' || ') : 'clean start'));
   const wc = mainWindow.webContents;
-  wc.on('did-start-navigation', (_e, url, _inPlace, isMainFrame, _process, _frame) => {
-    if (isMainFrame) nav('main-frame nav start', url);
+  wc.on('did-navigate-in-page', (_e, url, isMainFrame) => {
+    if (isMainFrame) console.log('[nav] ' + url);
   });
-  wc.on('did-navigate', (_e, url, httpCode) => nav('did-navigate', `${url} (${httpCode})`));
-  wc.on('did-navigate-in-page', (_e, url, isMainFrame) => { if (isMainFrame) nav('spa nav', url); });
-  wc.on('did-stop-loading', (_e, isMainFrame) => { if (isMainFrame) nav('did-stop-loading', ''); });
-  wc.on('did-fail-load', (_e, code, desc, url, isMainFrame, _c) => {
-    if (isMainFrame) nav('DID-FAIL-LOAD -> auto reload', `${code} ${desc} ${url}`);
+  wc.on('render-process-gone', (_e, details) => {
+    if (details.reason === 'clean-exit' || !mainWindow || mainWindow.isDestroyed()) return;
+    console.error('[render] process gone (' + details.reason + '), reloading');
+    wc.reload();
   });
-  wc.on('did-start-loading', (_e, isMainFrame) => { if (isMainFrame) nav('did-start-loading', ''); });
-  wc.on('render-process-gone', (_e, details) => nav('RENDER PROCESS GONE', JSON.stringify(details)));
-  wc.on('unresponsive', () => nav('UNRESPONSIVE', ''));
 
   // global keyboard shortcuts (F5, F11, Ctrl+Shift+I)
   mainWindow.webContents.on('before-input-event', (event, input) => {
@@ -434,11 +445,13 @@ async function createMainWindow() {
   });
 
   // keep fullscreen when switching episodes
-  mainWindow.webContents.on('did-start-navigation', (e, url, isInPlace, isMainFrame) => {
-    if (persistFullscreen && isMainFrame && (isHtmlFullscreen || mainWindow.isFullScreen())) {
-      // force native fullscreen
+  mainWindow.webContents.on('did-start-navigation', (_e, _url, _isInPlace, isMainFrame) => {
+    if (!isMainFrame) return;
+    const wasFullscreen = isHtmlFullscreen || mainWindow.isFullScreen();
+    isHtmlFullscreen = false;
+    if (persistFullscreen && wasFullscreen) {
       setTimeout(() => {
-        if (mainWindow && !mainWindow.isFullScreen()) {
+        if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isFullScreen()) {
           mainWindow.setFullScreen(true);
         }
       }, 100);
@@ -452,7 +465,7 @@ app.whenReady().then(async () => {
   const fs = require('fs');
   try {
     // rewrites config.json, backfilling any new keys
-    const currentConfig = fs.existsSync(configPath) ? config : createDefaultConfig(true);
+    const currentConfig = fs.existsSync(configPath) ? config : createDefaultConfig();
     // drop keys for cut features so they can't come back from an old file
     for (const dead of ['localLibraryPaths']) delete currentConfig[dead];
     if (!fs.existsSync(path.dirname(configPath))) {
@@ -465,10 +478,10 @@ app.whenReady().then(async () => {
   }
 
   Menu.setApplicationMenu(null);
-  await global.__gpuPrimeReady;
-  // GPU init window passed; restore cores for later crashes.
-  const { execFile } = require('child_process');
-  execFile('prlimit', ['--pid', String(process.pid), '--core=unlimited'], () => {});
+  const allowedPermissions = new Set(['fullscreen', 'clipboard-read', 'clipboard-sanitized-write', 'notifications', 'media', 'idle-detection', 'pointerLock']);
+  const oaSession = session.fromPartition('persist:openanime');
+  oaSession.setPermissionRequestHandler((_wc, permission, callback) => callback(allowedPermissions.has(permission)));
+  oaSession.setPermissionCheckHandler((_wc, permission) => allowedPermissions.has(permission));
   createMainWindow();
   initDiscordRPC();
 
@@ -479,7 +492,17 @@ app.whenReady().then(async () => {
 });
 
 ipcMain.on('get-config', (event, key) => {
-  event.returnValue = config[key];
+  event.returnValue = CONFIG_READ_KEYS.includes(key) ? config[key] : undefined;
+});
+
+ipcMain.on('get-config-all', (event) => {
+  const out = {};
+  for (const key of CONFIG_READ_KEYS) out[key] = config[key];
+  event.returnValue = out;
+});
+
+ipcMain.on('get-injected-source', (event) => {
+  event.returnValue = injectedSource;
 });
 
 ipcMain.on('premid-update', (event, data) => {
@@ -488,9 +511,7 @@ ipcMain.on('premid-update', (event, data) => {
 
 ipcMain.on('rpc-set-enabled', (event, enabled) => {
   config.discordRPC = enabled === true;
-  try {
-    require('fs').writeFileSync(configPath, JSON.stringify(config, null, 2));
-  } catch (e) {}
+  saveConfig();
   if (!enabled) {
     if (rpc && rpc.user) rpc.user.clearActivity().catch(() => {});
     try { if (rpc) rpc.destroy(); } catch (e) {}
@@ -499,6 +520,7 @@ ipcMain.on('rpc-set-enabled', (event, enabled) => {
     isConnecting = false;
     presenceDropped = false;
     if (pauseDropTimer) { clearTimeout(pauseDropTimer); pauseDropTimer = null; }
+    if (rpcRetryTimer) { clearTimeout(rpcRetryTimer); rpcRetryTimer = null; }
     console.log('Discord RPC disabled via settings');
   } else {
     initDiscordRPC();
@@ -508,9 +530,9 @@ ipcMain.on('rpc-set-enabled', (event, enabled) => {
 
 // Generic settings writes from the RPC card: save + apply live effects.
 ipcMain.on('config-set', (event, key, value) => {
-  if (typeof key !== 'string' || !key) return;
+  if (typeof key !== 'string' || !CONFIG_WRITE_KEYS.includes(key)) return;
   config[key] = value;
-  try { require('fs').writeFileSync(configPath, JSON.stringify(config, null, 2)); } catch (e) {}
+  try { saveConfig(); } catch (e) {}
   if (key === 'useCustomFrame' && mainWindow) {
     // Frame can't change on a live window; relaunch cleanly.
     setTimeout(() => { app.relaunch(); app.exit(0); }, 400);
@@ -531,6 +553,8 @@ app.on("will-quit", () => {
   }
 });
 
+app.on('before-quit', flushConfig);
+
 // Discord RPC Setup
 const discordClientId = '1482661655975428156';
 
@@ -547,47 +571,6 @@ function getPauseDropMs() {
 }
 let rpc;
 
-// Path to the standard Discord IPC socket
-function getDiscordSocketPath() {
-  const runtimeDir = process.env.XDG_RUNTIME_DIR || '/run/user/' + process.getuid();
-  return path.join(runtimeDir, 'discord-ipc-0');
-}
-
-// Whether we created the symlink below (so we know whether to clean it up)
-let discordSymlinkCreated = false;
-
-// Removes the symlink on quit, if we created one
-app.on('quit', () => {
-  if (!discordSymlinkCreated) return;
-  try { require('fs').unlinkSync(getDiscordSocketPath()); } catch (e) {}
-});
-
-// Symlinks the standard Discord IPC path to a Flatpak/Vesktop/Snap Discord socket, if found
-function ensureDiscordSocketAccess() {
-  if (process.platform !== 'linux') return;
-  try {
-    const fs = require('fs');
-    const runtimeDir = process.env.XDG_RUNTIME_DIR || '/run/user/' + process.getuid();
-    const standardSocket = getDiscordSocketPath();
-
-    if (fs.existsSync(standardSocket)) return;
-    try { fs.unlinkSync(standardSocket); } catch (e) {}
-
-    const candidates = [
-      path.join(runtimeDir, 'app/com.discordapp.Discord/discord-ipc-0'),
-      path.join(runtimeDir, 'app/dev.vencord.Vesktop/discord-ipc-0'),
-      path.join(runtimeDir, 'snap.discord/discord-ipc-0')
-    ];
-    const target = candidates.find(p => fs.existsSync(p));
-    if (target) {
-      fs.symlinkSync(target, standardSocket);
-      discordSymlinkCreated = true;
-    }
-  } catch (err) {
-    console.error("Discord socket symlink failed:", err);
-  }
-}
-
 let lastPremidJson = '';
 
 let lastKnownVideoTime = 0;
@@ -600,11 +583,6 @@ let presenceDropped = false;
 
 function updateDiscordRPCFromPremid(data) {
   if (!rpc || !rpcReady) return;
-
-  if (config.rpcVisibility === 'watch_only') {
-    const playing = data.video && typeof data.video.currentTime === 'number' && !data.video.paused;
-    if (!playing) return;
-  }
 
   let currentStart = 0;
   if (data.video && typeof data.video.currentTime === 'number') {
@@ -687,6 +665,8 @@ function updateDiscordRPCFromPremid(data) {
     presenceDropped = false;
   }
 
+  if (config.rpcVisibility === 'watch_only' && !(watchingVideo && !pausedNow)) return;
+
   const activity = {
     details: data.details || "OpenAnime'de",
     state: data.state || "Geziniyor",
@@ -735,12 +715,20 @@ function updateDiscordRPCFromPremid(data) {
 
 let isConnecting = false;
 let rpcReady = false;
+let rpcRetryTimer = null;
+let rpcLoginGuard = null;
+function scheduleRpcRetry() {
+  if (rpcRetryTimer) return;
+  rpcRetryTimer = setTimeout(() => {
+    rpcRetryTimer = null;
+    initDiscordRPC();
+  }, 15000);
+}
 function initDiscordRPC() {
   const discordEnabled = config.discordRPC !== false;
   if (!discordEnabled || isConnecting || rpcReady) return;
 
   isConnecting = true;
-  ensureDiscordSocketAccess();
 
   if (!rpc) {
     rpc = new DiscordRPCClient({ clientId: discordClientId });
@@ -748,17 +736,18 @@ function initDiscordRPC() {
     rpc.on('ready', () => {
       isConnecting = false;
       rpcReady = true;
+      if (rpcRetryTimer) { clearTimeout(rpcRetryTimer); rpcRetryTimer = null; }
+      if (rpcLoginGuard) { clearTimeout(rpcLoginGuard); rpcLoginGuard = null; }
       console.log('Discord RPC Connected!');
     });
 
     rpc.on('disconnected', () => {
       console.log('Discord RPC Disconnected. Retrying in 15s...');
-      // destroys the client before clearing the reference
       try { rpc.destroy(); } catch (e) {}
       rpc = null;
       isConnecting = false;
       rpcReady = false;
-      setTimeout(initDiscordRPC, 15000);
+      scheduleRpcRetry();
     });
   }
 
@@ -767,16 +756,18 @@ function initDiscordRPC() {
     .catch(err => {
       console.log('Discord RPC connection failed. Retrying in 15s...');
       isConnecting = false;
-      setTimeout(initDiscordRPC, 15000);
+      try { if (rpc) rpc.destroy(); } catch (e) {}
+      rpc = null;
+      scheduleRpcRetry();
     });
 
-  // Safeguard: if login() never resolves or rejects, isConnecting would stay
-  // true forever and block all future retries (including after sleep/wake).
-  setTimeout(() => {
+  if (rpcLoginGuard) { clearTimeout(rpcLoginGuard); rpcLoginGuard = null; }
+  rpcLoginGuard = setTimeout(() => {
+    rpcLoginGuard = null;
     if (isConnecting && !rpcReady) {
       console.log('Discord RPC login timed out. Retrying in 15s...');
       isConnecting = false;
-      setTimeout(initDiscordRPC, 15000);
+      scheduleRpcRetry();
     }
   }, 10000);
 }
