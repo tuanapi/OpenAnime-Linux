@@ -26,6 +26,35 @@
       "category": "Video",
       "icon": "icon512.png"
     },
+    "deb": {
+      "depends": [
+        "libgtk-3-0",
+        "libnotify4",
+        "libnss3",
+        "libxss1",
+        "libxtst6",
+        "xdg-utils",
+        "libatspi2.0-0",
+        "libuuid1",
+        "libsecret-1-0",
+        "libxkbcommon0",
+        "libxkbfile1"
+      ]
+    },
+    "rpm": {
+      "depends": [
+        "gtk3",
+        "libnotify",
+        "nss",
+        "libXScrnSaver",
+        "(libXtst or libXtst6)",
+        "xdg-utils",
+        "at-spi2-core",
+        "(libuuid or libuuid1)",
+        "libxkbcommon",
+        "libxkbfile"
+      ]
+    },
     "pacman": {
       "depends": [
         "gtk3",
@@ -33,7 +62,8 @@
         "libxss",
         "alsa-lib",
         "libxtst",
-        "libxkbfile"
+        "libxkbfile",
+        "libxkbcommon"
       ]
     },
     "directories": {
@@ -58,5 +88,8 @@
   },
   "dependencies": {
     "@xhayper/discord-rpc": "^1.5.1"
+  },
+  "allowScripts": {
+    "electron-winstaller@5.4.0": true
   }
 }

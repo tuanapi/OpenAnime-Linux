@@ -5,6 +5,10 @@ on:
     tags:
       - 'v*'
 
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -18,11 +22,17 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
 
       - name: Install Dependencies
         run: npm ci
+
+      - name: Syntax Check
+        run: |
+          for f in main.js preload.js injected.js launcher.js scripts/*.js; do
+            node --check "$f" || exit 1
+          done
 
       - name: Install Build Tools
         run: sudo apt-get update && sudo apt-get install -y rpm libarchive-tools
@@ -49,35 +59,18 @@ jobs:
             dist/*-portable.zip
             dist/*.yml
             dist/*.blockmap
-          generate_release_notes: true
-          body: |
-            ## Sürüm 1.1.7 Yenilikleri
-            - **GPU Yolları Birleşti:** dGPU-ekranlı sistemler native Wayland'de (H.265 donanım decode dahil), iGPU-ekranlı NVIDIA hibritler otomatik X11 (XWayland) altında çalışıyor. Yol, topolojiye göre otomatik seçiliyor; `forceX11` ayarı kaldırıldı.
-            - **iGPU Çökmesi Düzeltildi:** Wayland'de GBM (iGPU) + Vulkan (NVIDIA) karışımı GPU sürecini H.265 oynatırken çökertiyordu (gallium SEGV). X11 yolunda GL de NVIDIA'ya taşınıyor: tek cihaz.
-            - **GPU Algılama:** `scripts/gpu-detect.js` — PCI vendor/device tabloları, VRAM ve bus sezgisi, NVIDIA-eleme kuralı; `node scripts/gpu-detect.js --self-test` ile 11 topoloji doğrulanıyor.
-            - **Tanı Modu:** `OpenAnime --diagnose` / `npm run diagnose` — WebGPU adaptörü + gerçek fps ölçer, `DIAG_JSON` çıktısını issue'lara yapıştırın.
-            - **Electron 44.4.x:** Chromium 152, Node 24.
-            - **Nix/NixOS Desteği:** `flake.nix` — `nix run github:tuanapi/OpenAnime-Linux`.
-            - **Güvenlik:** Bağımlılıklar güncellendi — bilinen 15 güvenlik açığının tamamı giderildi.
-
-            ⚠️ *Bu sürümdeki GPU/ekran algılama değişiklikleri henüz geniş kullanıcı kitlesinde doğrulanmadı. Sorun yaşarsanız lütfen bildirin.*
-
-            ### Bilinen Sorunlar (Known Issues)
-            - iGPU-ekranlı NVIDIA hibritlerde uygulama XWayland altında açılır (otomatik); bu beklenen davranıştır, Wayland zorlaması için bir ayar yoktur.
-
-            ## 📥 İndirme Seçenekleri
-            - **AppImage (`.AppImage`):** Tek tıkla çalışır, kurulum gerektirmez. (Tüm Linux dağıtımları için önerilir)
-            - **Arch Linux (`.pacman`):** Arch Linux, Manjaro, EndeavourOS vb. sistemler için yerel paket.
-            - **Debian/Ubuntu (`.deb`):** Debian, Ubuntu, Linux Mint, Pop!_OS vb. için kurulum paketi.
-            - **Fedora/RHEL (`.rpm`):** Fedora, openSUSE, RHEL tabanlı sistemler için kurulum paketi.
-            - **Nix/NixOS:** `nix run github:tuanapi/OpenAnime-Linux` — ayrı indirme gerekmez, `flake.nix` repoda.
-            - **Portable (`.zip` / `.tar.gz`):** Arşivi klasöre çıkartın ve doğrudan `openanime` dosyasını çalıştırın.
+          body_path: RELEASE_NOTES.md
 
   nix-check:
     runs-on: ubuntu-latest
     # Doesn't block or gate the release above — Nix support is new and this
     # job exists to surface breakage visibly, not to hold up the AppImage/
     # deb/rpm release (the primary distribution path) if the flake breaks.
+    #
+    # NOTE: flake.nix's npmDepsHash is stale as of the 1.1.8 dependency bump
+    # (electron 44.5.1, @xhayper/discord-rpc 1.5.1). Refresh it before tagging
+    # or this job goes red:
+    #   nix build .#default --no-link --print-out-paths   # then update the hash
     steps:
       - name: Checkout
         uses: actions/checkout@v4
