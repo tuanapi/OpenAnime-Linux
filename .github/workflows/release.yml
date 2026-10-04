@@ -59,6 +59,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         with:
           name: ${{ github.ref_name }}
+          fail_on_unmatched_files: false
           files: |
             dist/*.AppImage
             dist/*.deb
@@ -66,6 +67,7 @@ jobs:
             dist/*.pacman
             dist/*.tar.gz
             dist/*-portable.zip
+            dist/latest-linux.yml
             dist/CHECKSUMS.txt
           body_path: RELEASE_NOTES.md
 
