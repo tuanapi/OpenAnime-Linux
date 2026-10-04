@@ -15,6 +15,7 @@ const path = require("path");
 const { Client: DiscordRPCClient } = require("@xhayper/discord-rpc");
 
 const MAIN_URL = "https://openani.me";
+const MAIN_HOST = new URL(MAIN_URL).hostname;
 
 function isAllowedDomain(url) {
   try {
@@ -39,6 +40,7 @@ function createDefaultConfig() {
     isMaximized: false,
     forceWebGPU: true,
     forcePrimeOffload: false,
+    gpuDisplayOverride: null,
     debugOutlines: false,
     bounds: {
       width: 1360,
@@ -352,7 +354,6 @@ async function createMainWindow() {
   let useCustomFrame = config.useCustomFrame || false;
   let winBounds = sanitizeBounds(config.bounds || {});
   let isMaximized = config.isMaximized || false;
-  let persistFullscreen = config.persistFullscreen || false;
   const tb = config.titlebar || {};
 
   // Uses Electron's native Window Controls Overlay when useCustomFrame is on
@@ -413,17 +414,32 @@ async function createMainWindow() {
 
   mainWindow.loadURL(MAIN_URL);
 
-  // SW in control => reload once past the cache when the net is up.
+  // SW in control => reload past the cache once the origin is really serving.
   let failCount = 0;
   let crashCount = 0;
   let reloadedOnce = false;
-  const net = require('net');
+  let sawNetDown = false;
+  let reloadTries = 0;
+  const https = require('https');
   const netOk = () => new Promise(res => {
-    const s = net.connect({ host: 'openani.me', port: 443, timeout: 2000 });
-    s.once('connect', () => { s.destroy(); res(true); });
-    s.once('timeout', () => { s.destroy(); res(false); });
-    s.once('error', () => res(false));
+    const req = https.request({ host: MAIN_HOST, port: 443, path: '/', method: 'HEAD', timeout: 3000 }, r => {
+      req.destroy();
+      res(r.statusCode < 500);
+    });
+    req.once('timeout', () => { req.destroy(); res(false); });
+    req.once('error', () => { req.destroy(); res(false); });
+    req.end();
   });
+  const reloadInterval = setInterval(async () => {
+    if (reloadTries >= 5 || !sawNetDown || !mainWindow || mainWindow.isDestroyed()) {
+      clearInterval(reloadInterval);
+      return;
+    }
+    if (!await netOk()) return;
+    reloadTries++;
+    mainWindow.webContents.reload();
+  }, 3000);
+  mainWindow.webContents.on('closed', () => clearInterval(reloadInterval));
   mainWindow.webContents.on('did-finish-load', () => {
     failCount = 0;
     crashCount = 0;
@@ -434,7 +450,7 @@ async function createMainWindow() {
         '!!(navigator.serviceWorker && navigator.serviceWorker.controller)'
       ).catch(() => false);
       if (!hasSW) return;
-      if (!await netOk()) return;
+      if (!await netOk()) { sawNetDown = true; return; }
       if (!mainWindow || mainWindow.isDestroyed()) return;
       mainWindow.webContents.reload();
     })().catch(() => {});
@@ -494,7 +510,7 @@ async function createMainWindow() {
     if (!isMainFrame) return;
     const wasFullscreen = isHtmlFullscreen || mainWindow.isFullScreen();
     isHtmlFullscreen = false;
-    if (persistFullscreen && wasFullscreen && !persistFsTimer) {
+    if (config.persistFullscreen && wasFullscreen && !persistFsTimer) {
       persistFsTimer = setTimeout(() => {
         persistFsTimer = null;
         if (mainWindow && !mainWindow.isDestroyed() && !mainWindow.isFullScreen()) {

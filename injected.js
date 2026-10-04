@@ -68,7 +68,7 @@
     const WINDOW_ICON = '<svg xmlns="http://www.w3.org/2000/svg" aria-hidden="true" role="img" slot="icon" width="22" height="22" viewBox="0 0 24 24" fill="currentColor" fill-rule="evenodd"><path d="M4.5 4h15A2.5 2.5 0 0 1 22 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-15A2.5 2.5 0 0 1 2 17.5v-11A2.5 2.5 0 0 1 4.5 4ZM4 7.5v10A1.5 1.5 0 0 0 5.5 19h13a1.5 1.5 0 0 0 1.5-1.5v-10h-16ZM4.5 5.5a1 1 0 0 0-1 1V6h17v-.5a1 1 0 0 0-1-1h-15Z"/></svg>';
     const COMBO_ICON_D = 'M8.36612 16.1161C7.87796 16.6043 7.87796 17.3957 8.36612 17.8839L23.1161 32.6339C23.6043 33.122 24.3957 33.122 24.8839 32.6339L39.6339 17.8839C40.122 17.3957 40.122 16.6043 39.6339 16.1161C39.1457 15.628 38.3543 15.628 37.8661 16.1161L24 29.9822L10.1339 16.1161C9.64573 15.628 8.85427 15.628 8.36612 16.1161Z';
     const MIN_OPTS = [1, 2, 3, 5, 10, 15, 30, 60].map((m) => ({ val: String(m), label: m + ' dk' }));
-    const VIS_OPTS = [{ val: 'all', label: 'Herşey' }, { val: 'watch_only', label: 'İzlenen' }];
+    const VIS_OPTS = [{ val: 'all', label: 'Her şey' }, { val: 'watch_only', label: 'İzlenen' }];
 
     const el = (tag, cls) => { const e = document.createElement(tag); if (cls) e.className = cls; return e; };
     let CFG = null;
@@ -151,7 +151,7 @@
       const mins = curMins();
       return [
         toggleRow(C, 'rpc', 'Discord RPC Durumu', rpcOn()),
-        comboRow(C, 'vis', 'RPC Görünürlüğü', vis === 'watch_only' ? 'İzlenen' : 'Herşey'),
+        comboRow(C, 'vis', 'RPC Görünürlüğü', vis === 'watch_only' ? 'İzlenen' : 'Her şey'),
         comboRow(C, 'mins', 'Zaman Aşımı', mins + ' dk')
       ];
     }
@@ -550,13 +550,12 @@
       injecting = true;
       try {
         CFG = bridge.getConfigAll();
-        if (!modPromise) modPromise = loadExpander().catch(() => null);
+        if (!modPromise) {
+          if (Date.now() - modFailedAt < 3000) return;
+          modPromise = loadExpander().catch(() => null);
+        }
         const mod = await modPromise;
-        if (!mod) {
-          if (Date.now() - modFailedAt < 30000) return;
-          modFailedAt = Date.now();
-          modPromise = null;
-        } else modFailedAt = 0;
+        if (!mod) { modFailedAt = Date.now(); modPromise = null; } else modFailedAt = 0;
         if (location.pathname.indexOf('/settings') === -1 || !refCard.isConnected || !refCard.parentNode) return;
         const C = hashes(refCard);
         if (lsGet(STORE) === null) lsSet(STORE, CFG.discordRPC !== false ? 'true' : 'false');

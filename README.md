@@ -30,10 +30,10 @@
 
 **Uygulama içi ayar kartları.** Discord RPC ve Pencere ayarları artık sitenin kendi
 `/settings` sayfasında, sitenin gerçek Expander bileşenine bağlanan iki kart olarak
-görünür. Kartlar yerel site kartlarıyla aynı şekilde açılır, animasyonu ve klavye
-davranışıdır.
+görünür. Kartlar yerel site kartlarıyla aynı şekilde açılır; animasyon ve klavye
+davranışı da yerellerle aynıdır.
 
-- **Discord RPC** – aç/kapa, **RPC Görünürlüğü** (`Herşey` / `İzlenen`), **Zaman Aşımı**
+- **Discord RPC** – aç/kapa, **RPC Görünürlüğü** (`Her şey` / `İzlenen`), **Zaman Aşımı**
   (1–60 dk).
 - **Pencere** – **Özel Pencere Çerçevesi**, **Tam Ekranı Koru**, **Açılışta Pencereyi Büyüt**.
 
@@ -50,6 +50,13 @@ bir hata sayfası gösterilir.
 - **Ağ kontrolü yanlış adrese gidiyordu.** "İnternet var mı" testi `1.1.1.1:443`
   (Cloudflare) ile kuruluyordu; o adres engellendiğinde test başarısız dönüyor ve
   eski sayfayı yenileme hiç çalışmıyordu. Artık `openani.me` kullanılıyor.
+- **Ağ kontrolü yalnızca TCP'yi yokluyordu.** Bağlantı açık olduğu için "internet
+  var" deniyordu, ama TLS el sıkışması başarısız olduğunda sitenin kendi çevrimdışı
+  sayfası açılıp kalıyordu. Artık test gerçek bir HTTPS isteği yapıyor; bağlantı
+  koptuğunda yenileme denemeleri birkaç saniye arayla tekrarlanıyor.
+- **"Tam Ekranı Koru" ayarı ancak yeniden başlayınca etkili oluyordu.** Ayar
+  pencere açılırken bir kez okunuyor, sonra değişiklikler dikkate alınmıyordu.
+  Artık ayar anında geçerli oluyor.
 - **Kayıtlı pencere konumu geçersiz kalınca uygulama görünmez açılıyordu.**
   Monitörü değiştirince ya da çözünürlüğü oynatınca eski konum olduğu gibi
   kullanılıyordu. Konum ve boyut artık bağlı bulunduğu ekrana sığdırılıyor;
@@ -64,7 +71,7 @@ bir hata sayfası gösterilir.
 - **config.json yazımı atomik değildi.** Yazma sırasında bir çökme dosyayı
   kırpıyordu. Artık `config.json.tmp` üzerine yazılıp `rename` ile yerine
   konuyor, kapanışta da boşaltılıyor.
-- **X11'e geçişte ebeveyn süreç uygulama boyunca yanıp duruyordu.** Artık 3
+- **X11'e geçişte ebeveyn süreç uygulama boyunca arka planda açık kalıyordu.** Artık 3
   saniyelik el sıkışmanın ardından çıkıyor.
 - **Paket bağımlılıklarında `libxkbcommon` eksikti.** Electron bu kütüphaneyi
   doğrudan bağlıyor; `deb` / `rpm` / `pacman` ve kaynak AUR paketinde bağımlılık
