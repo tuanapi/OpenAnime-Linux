@@ -74,7 +74,7 @@ Exec="\"$INSTALL_DIR/$APP_FILENAME\"" %u
 Icon=$ICON_NAME
 Terminal=false
 Categories=AudioVideo;Video;Player;
-StartupWMClass=$APP_NAME
+StartupWMClass=openanime
 PrefersNonDefaultGPU=true
 EOF
 chmod +x "$DESKTOP_DIR/openanime.desktop"

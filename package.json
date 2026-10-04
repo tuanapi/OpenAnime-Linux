@@ -1,5 +1,6 @@
 {
   "name": "openanime",
+  "desktopName": "openanime",
   "version": "1.1.8",
   "main": "launcher.js",
   "description": "OpenAnime için geliştirilmiş, resmi olmayan (unofficial), yerel WebGPU destekli Linux istemcisi.",
@@ -24,7 +25,8 @@
         "pacman"
       ],
       "category": "Video",
-      "icon": "icon512.png"
+      "icon": "icon512.png",
+      "syncDesktopName": true
     },
     "deb": {
       "depends": [
