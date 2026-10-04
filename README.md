@@ -156,9 +156,11 @@ npm run diagnose                    # kaynak sürüm
 
 ## Ekran Görüntüleri
 
-| Ana Sayfa | Detay | Keşfet | Oynatıcı |
-| :---: | :---: | :---: | :---: |
-| ![Ana Sayfa](screenshots/main.png) | ![Detay](screenshots/detail.png) | ![Keşfet](screenshots/discover.png) | ![Oynatıcı](screenshots/player.png) |
+| Ana Sayfa | Detay Görünümü |
+| :---: | :---: |
+| ![Ana Sayfa](screenshots/main.png) | ![Detay](screenshots/detail.png) |
+| **Keşfet** | **Oynatıcı** |
+| ![Keşfet](screenshots/discover.png) | ![Oynatıcı](screenshots/player.png) |
 
 ---
 

@@ -36,7 +36,7 @@ sayfa gösterilir.
   değiştirince ya da çözünürlüğü oynatınca eski konum olduğu gibi kullanılıyordu.
   Konum ve boyut artık bağlı bulunduğu ekrana sığdırılıyor; sığmıyorsa pencere
   ortalanıyor.
-- **Pencereler korumalı alan (sandbox) olmadan çalışıyordu.** Ana pencere ve açılır
+- **Pencereler sandbox olmadan çalışıyordu.** Ana pencere ve açılır
   pencereler artık `sandbox: true` ile açılıyor.
 - **`get-config` config.json'daki her anahtarı renderer'a veriyordu.** Okuma listesiyle
   sınırlandı.
@@ -46,8 +46,8 @@ sayfa gösterilir.
 - **config.json yazımı atomik değildi.** Yazma sırasında uygulama çökerse dosya yarım
   kalıyordu. Artık `config.json.tmp` üzerine yazılıp `rename` ile yerine konuyor;
   kapanışta bekleyen yazma tamamlanıyor.
-- **X11'e geçişte üst süreç uygulama boyunca arka planda açık kalıyordu.** Artık
-  3 saniyelik bekledikten sonra sonlanıyor.
+- **X11'e geçişte parent süreç uygulama boyunca arka planda açık kalıyordu.** Artık
+  3 saniye bekledikten sonra sonlanıyor.
 - **Paket bağımlılıklarında `libxkbcommon` eksikti.** Electron `libxkbcommon`'u doğrudan
   bağlıyor; bu kütüphane `deb` / `rpm` / `pacman` ve kaynak AUR paketinde bağımlılık
   olarak tanımlı değildi. `-bin` AUR paketinde ayrıca `libxkbfile` ve `libxtst` de
