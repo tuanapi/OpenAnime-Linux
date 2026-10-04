@@ -65,14 +65,15 @@ const CONFIG_VALUE_TYPES = {
   useCustomFrame: 'boolean',
   persistFullscreen: 'boolean',
   isMaximized: 'boolean',
-  forceWebGPU: 'boolean'
+  forceWebGPU: 'boolean',
+  dismissedUpdate: 'string'
 };
 
 function configValueValid(key, value) {
+  if (key === 'dismissedUpdate') return value === null || updateCheck.coreVersion(value) !== null;
   if (CONFIG_VALUE_TYPES[key] && typeof value !== CONFIG_VALUE_TYPES[key]) return false;
   if (key === 'pauseDropMinutes' && !(value >= 1 && value <= 60)) return false;
   if (key === 'rpcVisibility' && value !== 'all' && value !== 'watch_only') return false;
-  if (key === 'dismissedUpdate' && value !== null && typeof value !== 'string') return false;
   return true;
 }
 

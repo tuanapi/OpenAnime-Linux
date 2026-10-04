@@ -80,7 +80,8 @@ function start(options) {
       const release = await fetchLatestRelease();
       if (stopped || !release) return;
       if (!isNewerThan(coreVersion(release.tag), coreVersion(app.getVersion()))) return;
-      if (getDismissed() === release.tag) return;
+      const dismissed = coreVersion(getDismissed());
+      if (dismissed && !isNewerThan(coreVersion(release.tag), dismissed)) return;
       const win = getWindow();
       if (!win || win.isDestroyed()) return;
       await askAboutRelease(release, win, openExternal, setDismissed);
