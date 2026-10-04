@@ -74,8 +74,8 @@ if (isHybrid && config.highPerformance !== false) {
   } else if (displayGpu !== 'discrete' || config.forcePrimeOffload === true) {
     process.env.DRI_PRIME = process.env.DRI_PRIME || '1';
     if (hasAmdDiscreteGpu) {
-      process.env.RADV_DEBUG = ['RADV_DEBUG', 'nodcc'].filter(Boolean).join(',');
-      process.env.AMD_DEBUG = ['AMD_DEBUG', 'nodcc'].filter(Boolean).join(',');
+      process.env.RADV_DEBUG = 'nodcc';
+      process.env.AMD_DEBUG = 'nodcc';
     }
   }
 }
