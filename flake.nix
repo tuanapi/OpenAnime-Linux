@@ -10,6 +10,16 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
+
+        # The npm build bundles the electron in devDependencies (44.5.1). This
+        # derivation wraps nixpkgs' electron instead, so the two channels do not
+        # ship the same Electron major. nixpkgs does not carry Electron 44 at
+        # all (43.6.0 on unstable, 43.7.7 on master as of this writing), so the
+        # lock cannot be bumped to close the gap -- matching 44.5.1 would mean
+        # fetching the GitHub release zip as a fixed-output derivation.
+        # installPhase warns on every build so the gap stays visible.
+        lockedElectron = (builtins.fromJSON (builtins.readFile ./package-lock.json)).packages."node_modules/electron".version;
+        nixElectron = pkgs.electron.version;
       in
       {
         packages.default = pkgs.buildNpmPackage rec {
@@ -32,6 +42,12 @@
           installPhase = ''
             runHook preInstall
 
+            if [ "${nixElectron}" != "${lockedElectron}" ]; then
+              echo "warning: this Nix build wraps Electron ${nixElectron}," >&2
+              echo "warning: but package-lock.json pins ${lockedElectron}." >&2
+              echo "warning: nixpkgs has no Electron 44; re-check when bumping the lock." >&2
+            fi
+
             mkdir -p $out/share/openanime $out/bin
             cp -r launcher.js main.js preload.js injected.js scripts icon512.png package.json node_modules $out/share/openanime/
 
@@ -51,7 +67,7 @@
             Icon=openanime
             Terminal=false
             Categories=AudioVideo;Video;Player;
-            StartupWMClass=OpenAnime
+            StartupWMClass=openanime
             PrefersNonDefaultGPU=true
             EOF
 
@@ -64,6 +80,11 @@
             license = licenses.mit;
             platforms = platforms.linux;
             mainProgram = "openanime";
+          };
+
+          passthru = {
+            inherit lockedElectron nixElectron;
+            electronMatchesNpm = nixElectron == lockedElectron;
           };
         };
 
