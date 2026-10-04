@@ -20,6 +20,26 @@ durumunun temizleneceği belirlenebilir.
 **Hata sayfası.** Sayfa üç kez yüklenemezse boş pencere yerine hatayı açıklayan bir
 sayfa gösterilir.
 
+**Güncelleme denetleyicisi.** Uygulama açılışta ve altı saatte bir GitHub
+sürümlerini denetler. Yeni bir sürüm varsa pencere içinde bildirim çıkar. Bildirimi
+kapatmak yeterlidir; "Şimdi Güncelle" dediğinizde güncelleme işini uygulamanın kendi
+paket yöneticisine devreder — `pacman`, `dnf` ya da `apt` ne kuruluysa o açılır.
+Uygulama kendi başına hiçbir paketi indirip kurmaz.
+
+**İmzalı paket depoları.** `deb`, `rpm` ve `pacman` paketleri artık imzalı bir depoda
+da sunuluyor. Depoyu ekledikten sonra güncellemeler dağıtımınızın kendi aracıyla
+gelir:
+
+- Arch / Manjaro / EndeavourOS: `pacman -Syu`
+- Fedora / openSUSE / RHEL: `dnf upgrade`
+- Debian / Ubuntu / Mint / Pop!_OS: `apt update && apt upgrade`
+
+Depo anahtarı `packaging/repo/openanime-repo.asc` dosyasındadır; kurulum
+yönergeleri `packaging/repo/README.md` içinde.
+
+**`CHECKSUMS.txt`.** Her sürümün dosyaları için SHA-256 sağlama toplamları ayrı bir
+varlık olarak yayımlanıyor.
+
 ## Düzeltilenler
 
 - **Ağ kontrolü yanlış adrese gidiyordu.** "İnternet var mı" testi `1.1.1.1:443`
@@ -52,6 +72,23 @@ sayfa gösterilir.
   bağlıyor; bu kütüphane `deb` / `rpm` / `pacman` ve kaynak AUR paketinde bağımlılık
   olarak tanımlı değildi. `-bin` AUR paketinde ayrıca `libxkbfile` ve `libxtst` de
   eksikti. Üçü de artık tüm paketlerde tanımlı.
+- **Pencere görev çubuğuyla eşleşmiyordu.** Uygulamanın pencere sınıfı (`openanime`)
+  ile `.desktop` dosyasındaki `StartupWMClass` değeri (`OpenAnime`) birbirinden
+  farklıydı; bu yüzden görev çubuğu ya da dock ikonu pencereyi tanımıyor, ikinci bir
+  simge açıyor ya da hiç simge göstermiyordu. İkisi de artık `openanime`. Aynı
+  eşleşme Nix paketinde de zaten doğruydu.
+- **Uygulama siteden kamera ve mikrofon izni istiyordu.** Site bu izinleri
+  kullanmıyor; istemek doğrudan gereksiz bir güvenlik uyarısı çıkarıyordu. İstek
+  kaldırıldı.
+- **AMD kartlarda `RADV_DEBUG` kendi adını değerine yazıyordu.** Değişken
+  `RADV_DEBUG=RADV_DEBUG=nodcc` biçiminde kuruluyordu, bu yüzden Radeon
+  sürücüsü ayarı geçersiz sayılıyordu. Artık düz `nodcc` yazılıyor; `AMD_DEBUG`
+  için de aynı düzeltme geçerli.
+- **Kapatılan güncelleme bildirimi çok sık geri geliyordu.** Bir sürüm
+  kapatıldığında etiketin tamamı saklanıyordu; aynı sürümün yeni bir derlemesi
+  yayımlandığında (`v1.1.9-1`, `v1.1.9-2`) bildirim tekrar çıkıyordu. Artık
+  karşılaştırma da aynı ölçüde, sürümün çekirdek kısmına göre yapılıyor; gerçekten
+  yeni bir sürüm çıkana kadar yeniden görünmüyor.
 
 ## 📥 İndirme Seçenekleri
 
