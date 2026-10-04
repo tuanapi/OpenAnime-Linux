@@ -14,6 +14,7 @@ const isHybrid = global.__isHybrid === true;
 const path = require("path");
 const { Client: DiscordRPCClient } = require("@xhayper/discord-rpc");
   const updateCheck = require("./scripts/update-check");
+  const packageUpdate = require("./scripts/package-update");
 
 const MAIN_URL = "https://openani.me";
 const MAIN_HOST = new URL(MAIN_URL).hostname;
@@ -576,7 +577,8 @@ app.whenReady().then(async () => {
     getWindow: () => mainWindow,
     openExternal: openExternalSafe,
     getDismissed: () => config.dismissedUpdate,
-    setDismissed: (tag) => { config.dismissedUpdate = tag; saveConfig(); }
+    setDismissed: (tag) => { config.dismissedUpdate = tag; saveConfig(); },
+    onUpdate: () => packageUpdate.run().then((r) => r.handled)
   });
 
   // reconnect rpc after sleep

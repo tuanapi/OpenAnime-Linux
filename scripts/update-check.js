@@ -51,7 +51,7 @@ async function fetchLatestRelease() {
   }
 }
 
-async function askAboutRelease(release, win, openExternal, onDismiss) {
+async function askAboutRelease(release, win, openExternal, onDismiss, onUpdate) {
   const { response } = await dialog.showMessageBox(win, {
     type: 'info',
     title: 'Güncelleme',
@@ -62,12 +62,19 @@ async function askAboutRelease(release, win, openExternal, onDismiss) {
     cancelId: 1,
     noLink: true
   });
-  if (response === 0) openExternal(release.url);
-  else onDismiss(release.tag);
+  if (response !== 0) return onDismiss(release.tag);
+  if (onUpdate) {
+    try {
+      if (await onUpdate(release)) return;
+    } catch (e) {
+      console.error('Update handoff failed:', e);
+    }
+  }
+  openExternal(release.url);
 }
 
 function start(options) {
-  const { getWindow, openExternal, getDismissed, setDismissed } = options;
+  const { getWindow, openExternal, getDismissed, setDismissed, onUpdate } = options;
   if (!app.isPackaged) return () => {};
 
   let stopped = false;
@@ -84,7 +91,7 @@ function start(options) {
       if (dismissed && !isNewerThan(coreVersion(release.tag), dismissed)) return;
       const win = getWindow();
       if (!win || win.isDestroyed()) return;
-      await askAboutRelease(release, win, openExternal, setDismissed);
+      await askAboutRelease(release, win, openExternal, setDismissed, onUpdate);
     } catch (e) {
       console.error('Update check failed:', e);
     } finally {

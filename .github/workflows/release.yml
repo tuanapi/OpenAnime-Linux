@@ -71,6 +71,107 @@ jobs:
             dist/CHECKSUMS.txt
           body_path: RELEASE_NOTES.md
 
+      - name: Install Repository Tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y apt-utils createrepo-c pacman-package-manager
+
+      - name: Import Repository Signing Key
+        env:
+          REPO_GPG_PRIVATE_KEY: ${{ secrets.REPO_GPG_PRIVATE_KEY }}
+          REPO_GPG_KEY_ID: ${{ secrets.REPO_GPG_KEY_ID }}
+        run: |
+          if [ -z "$REPO_GPG_PRIVATE_KEY" ] || [ -z "$REPO_GPG_KEY_ID" ]; then
+            echo "::notice title=Repository metadata skipped::REPO_GPG_PRIVATE_KEY / REPO_GPG_KEY_ID secrets are not set"
+            echo "SKIP_REPO=1" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          printf '%s' "$REPO_GPG_PRIVATE_KEY" | gpg --batch --import
+          gpg --batch --list-secret-keys --keyid-format LONG "$REPO_GPG_KEY_ID"
+
+      - name: Generate Repository Metadata
+        if: env.SKIP_REPO != '1'
+        env:
+          REPO_GPG_KEY_ID: ${{ secrets.REPO_GPG_KEY_ID }}
+        run: |
+          bash scripts/repo/build-repo.sh dist repo-site OpenAnime "$REPO_GPG_KEY_ID"
+          cp packaging/repo/openanime-repo.asc repo-site/openanime-repo.asc
+          find repo-site -type f | sort
+
+      - name: Verify Repository Signatures
+        if: env.SKIP_REPO != '1'
+        run: |
+          gpg --verify repo-site/apt/dists/stable/InRelease
+          gpg --verify repo-site/apt/dists/stable/Release.gpg repo-site/apt/dists/stable/Release
+          gpg --verify repo-site/rpm/repodata/repomd.xml.asc repo-site/rpm/repodata/repomd.xml
+          gpg --verify repo-site/pacman/openanime.db.sig repo-site/pacman/openanime.db.tar.gz
+
+      - name: Smoke Test APT
+        if: env.SKIP_REPO != '1'
+        run: |
+          sudo install -d -m 0755 /etc/apt/keyrings
+          gpg --batch --yes --dearmor -o /tmp/openanime.gpg packaging/repo/openanime-repo.asc
+          sudo install -m 0644 /tmp/openanime.gpg /etc/apt/keyrings/openanime.gpg
+          printf 'deb [signed-by=/etc/apt/keyrings/openanime.gpg] file://%s/repo-site/apt stable main\n' "$PWD" \
+            | sudo tee /etc/apt/sources.list.d/openanime-selftest.list
+          sudo apt-get update
+          apt-cache policy openanime
+          apt-get install -y --download-only openanime
+          sudo rm -f /etc/apt/sources.list.d/openanime-selftest.list
+
+      - name: Smoke Test DNF
+        if: env.SKIP_REPO != '1'
+        run: |
+          sudo dnf --disablerepo='*' \
+            --repofrompath=openanime,"file://$PWD/repo-site/rpm" \
+            --setopt=openanime.gpgcheck=0 \
+            --setopt=openanime.repo_gpgcheck=0 \
+            repoquery --qf '%{name}-%{version}-%{release}.%{arch}' openanime
+          sudo dnf --disablerepo='*' \
+            --repofrompath=openanime,"file://$PWD/repo-site/rpm" \
+            --setopt=openanime.gpgcheck=0 \
+            --setopt=openanime.repo_gpgcheck=0 \
+            download --resolve --alldeps --destdir "$RUNNER_TEMP/dnf-probe" openanime
+
+      - name: Smoke Test Pacman
+        if: env.SKIP_REPO != '1'
+        run: |
+          export GNUPGHOME="$RUNNER_TEMP/gnupg-smoke"
+          mkdir -p "$GNUPGHOME" && chmod 700 "$GNUPGHOME"
+          gpg --batch --quiet --import packaging/repo/openanime-repo.asc
+          printf '%s:6:\n' "$(gpg --with-colons --fingerprint packaging/repo/openanime-repo.asc | awk -F: '/^fpr:/{print $10; exit}')" \
+            | gpg --batch --import-ownertrust
+          mkdir -p "$RUNNER_TEMP/pac/db" "$RUNNER_TEMP/pac/cache"
+          printf '[options]\nArchitecture = x86_64\nDBPath = %s\nCacheDir = %s\nGPGDir = %s\n\n[openanime]\nServer = file://%s/repo-site/pacman\nSigLevel = Required DatabaseRequired\n' \
+            "$RUNNER_TEMP/pac/db" "$RUNNER_TEMP/pac/cache" "$GNUPGHOME" "$PWD" \
+            > "$RUNNER_TEMP/pac/pacman.conf"
+          sudo pacman --config "$RUNNER_TEMP/pac/pacman.conf" -Sy
+          sudo pacman --config "$RUNNER_TEMP/pac/pacman.conf" -Sl openanime
+          sudo pacman --config "$RUNNER_TEMP/pac/pacman.conf" -Sp openanime || true
+
+      - name: Publish Repository to gh-pages
+        if: env.SKIP_REPO != '1'
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin gh-pages || true
+          if git rev-parse --verify FETCH_HEAD >/dev/null 2>&1; then
+            git checkout -B gh-pages FETCH_HEAD
+          else
+            git checkout --orphan gh-pages
+            git rm -rfq --cached . 2>/dev/null || true
+            rm -rf ./* ./.github
+          fi
+          if [ -d apt/pool ]; then cp -a apt/pool repo-site/apt/; fi
+          if [ -d rpm ]; then find rpm -maxdepth 1 -name '*.rpm' -exec cp -a {} repo-site/rpm/ \; ; fi
+          if [ -d pacman ]; then find pacman -maxdepth 1 -name '*.pkg.tar.*' -exec cp -a {} repo-site/pacman/ \; ; fi
+          cp -a repo-site/. .
+          git add -A
+          git commit -m "repo: publish metadata for $TAG" || echo "nothing new to publish"
+          git push origin gh-pages
+
   nix-check:
     runs-on: ubuntu-latest
     # Doesn't block or gate the release above — Nix support is new and this
