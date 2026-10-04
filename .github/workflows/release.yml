@@ -74,7 +74,7 @@ jobs:
       - name: Install Repository Tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y apt-utils createrepo-c pacman-package-manager
+          sudo apt-get install -y apt-utils createrepo-c pacman-package-manager dnf dnf-plugins-core
 
       - name: Import Repository Signing Key
         env:
@@ -105,6 +105,9 @@ jobs:
           gpg --verify repo-site/apt/dists/stable/Release.gpg repo-site/apt/dists/stable/Release
           gpg --verify repo-site/rpm/repodata/repomd.xml.asc repo-site/rpm/repodata/repomd.xml
           gpg --verify repo-site/pacman/openanime.db.sig repo-site/pacman/openanime.db.tar.gz
+            for sig in repo-site/pacman/*.pkg.tar.xz.sig; do
+              gpg --verify "$sig" "${sig%.sig}"
+            done
 
       - name: Smoke Test APT
         if: env.SKIP_REPO != '1'
@@ -116,22 +119,25 @@ jobs:
             | sudo tee /etc/apt/sources.list.d/openanime-selftest.list
           sudo apt-get update
           apt-cache policy openanime
-          apt-get install -y --download-only openanime
+          sudo apt-get install -y --download-only openanime
           sudo rm -f /etc/apt/sources.list.d/openanime-selftest.list
 
       - name: Smoke Test DNF
         if: env.SKIP_REPO != '1'
         run: |
+          sudo rpm --import packaging/repo/openanime-repo.asc
           sudo dnf --disablerepo='*' \
             --repofrompath=openanime,"file://$PWD/repo-site/rpm" \
             --setopt=openanime.gpgcheck=0 \
-            --setopt=openanime.repo_gpgcheck=0 \
+            --setopt=openanime.repo_gpgcheck=1 \
             repoquery --qf '%{name}-%{version}-%{release}.%{arch}' openanime
+          mkdir -p "$RUNNER_TEMP/dnf-probe"
           sudo dnf --disablerepo='*' \
             --repofrompath=openanime,"file://$PWD/repo-site/rpm" \
             --setopt=openanime.gpgcheck=0 \
-            --setopt=openanime.repo_gpgcheck=0 \
-            download --resolve --alldeps --destdir "$RUNNER_TEMP/dnf-probe" openanime
+            --setopt=openanime.repo_gpgcheck=1 \
+            download --downloaddir="$RUNNER_TEMP/dnf-probe" openanime
+          ls -l "$RUNNER_TEMP/dnf-probe"
 
       - name: Smoke Test Pacman
         if: env.SKIP_REPO != '1'
@@ -156,19 +162,22 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git fetch origin gh-pages || true
-          if git rev-parse --verify FETCH_HEAD >/dev/null 2>&1; then
+          if git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
+            git fetch --depth=1 origin gh-pages
             git checkout -B gh-pages FETCH_HEAD
           else
             git checkout --orphan gh-pages
             git rm -rfq --cached . 2>/dev/null || true
-            rm -rf ./* ./.github
+            mv repo-site "$RUNNER_TEMP/keep-site"
+            rm -rf ./* ./.github ./.gitignore
+            mv "$RUNNER_TEMP/keep-site" ./repo-site
           fi
           if [ -d apt/pool ]; then cp -a apt/pool repo-site/apt/; fi
           if [ -d rpm ]; then find rpm -maxdepth 1 -name '*.rpm' -exec cp -a {} repo-site/rpm/ \; ; fi
           if [ -d pacman ]; then find pacman -maxdepth 1 -name '*.pkg.tar.*' -exec cp -a {} repo-site/pacman/ \; ; fi
           cp -a repo-site/. .
-          git add -A
+          rm -rf repo-site
+          git add apt rpm pacman openanime-repo.asc
           git commit -m "repo: publish metadata for $TAG" || echo "nothing new to publish"
           git push origin gh-pages
 

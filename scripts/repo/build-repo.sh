@@ -19,7 +19,7 @@ FORMATS="${FORMATS:-apt rpm pacman}"
 missing=""
 case " $FORMATS " in *" apt "*)  command -v apt-ftparchive >/dev/null 2>&1 || missing="$missing apt-utils(apt-ftparchive)" ;; esac
 case " $FORMATS " in *" rpm "*)  { command -v createrepo_c >/dev/null 2>&1 || command -v createrepo >/dev/null 2>&1; } || missing="$missing createrepo-c" ;; esac
-case " $FORMATS " in *" pacman "*) command -v repo-add >/dev/null 2>&1 || missing="$missing pacman(pacman-package-manager)" ;; esac
+case " $FORMATS " in *" pacman "*) { command -v repo-add >/dev/null 2>&1 && command -v bsdtar >/dev/null 2>&1; } || missing="$missing pacman(pacman-package-manager bsdtar)" ;; esac
 if [ -n "$missing" ]; then
   echo "build-repo: missing index generators:$missing" >&2
   echo "  debian/ubuntu: apt-get install -y apt-utils createrepo-c pacman-package-manager" >&2
@@ -49,7 +49,7 @@ DEB_STEM="$(basename "$DEB_SRC" .deb)"
 PKG_NAME="${DEB_STEM%%_*}"
 ARCH="${DEB_STEM##*_}"
 VERSION="${DEB_STEM#*_}"
-VERSION="${VERSION%_$ARCH}"
+VERSION="${VERSION%_"$ARCH"}"
 
 SUITE=stable
 COMPONENT=main
@@ -125,7 +125,11 @@ PAC_POOL="$PAC_ROOT/${PKG_NAME}-${PAC_PKGVER}-${PAC_ARCH}.pkg.tar.xz"
 cp "$PAC_SRC" "$PAC_POOL"
 
 if [ -n "$GPG_KEY" ]; then
-  repo-add --quiet --sign --key "$GPG_KEY" "$PAC_ROOT/$PKG_NAME.db.tar.gz" "$PAC_POOL"
+  # Arch's own repos ship a detached .sig beside every package, and libalpm treats
+  # a missing one as fatal under "SigLevel = Required". Sign the pool file the
+  # same way, binary rather than armored to match what pacman expects.
+  gpg "${GPG_ARGS[@]}" --detach-sign -o "$PAC_POOL.sig" "$PAC_POOL"
+  repo-add --quiet --sign --key "$GPG_KEY" --include-sigs "$PAC_ROOT/$PKG_NAME.db.tar.gz" "$PAC_POOL"
 else
   repo-add --quiet "$PAC_ROOT/$PKG_NAME.db.tar.gz" "$PAC_POOL"
 fi
@@ -133,8 +137,12 @@ fi
 # repo-add leaves <name>.db as a symlink to the .tar.gz. GitHub Pages does not
 # reliably resolve symlinks, so materialise a real copy; libalpm sniffs the
 # gzip stream from the content and does not care that it is not a link.
-rm -f "$PAC_ROOT/$PKG_NAME.db"
+# The .sig symlink has the same problem, and "DatabaseRequired" needs it.
+rm -f "$PAC_ROOT/$PKG_NAME.db" "$PAC_ROOT/$PKG_NAME.db.sig"
 cp "$PAC_ROOT/$PKG_NAME.db.tar.gz" "$PAC_ROOT/$PKG_NAME.db"
+if [ -f "$PAC_ROOT/$PKG_NAME.db.tar.gz.sig" ]; then
+  cp "$PAC_ROOT/$PKG_NAME.db.tar.gz.sig" "$PAC_ROOT/$PKG_NAME.db.sig"
+fi
 fi
 
 echo "==> wrote $OUT_DIR (formats: $FORMATS)"
