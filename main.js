@@ -562,7 +562,7 @@ app.whenReady().then(async () => {
   }
 
   Menu.setApplicationMenu(null);
-  const allowedPermissions = new Set(['fullscreen', 'clipboard-read', 'clipboard-sanitized-write', 'notifications', 'media', 'idle-detection', 'pointerLock']);
+  const allowedPermissions = new Set(['fullscreen', 'clipboard-read', 'clipboard-sanitized-write', 'notifications', 'idle-detection', 'pointerLock']);
   const oaSession = session.fromPartition('persist:openanime');
   oaSession.setPermissionRequestHandler((_wc, permission, callback) => callback(allowedPermissions.has(permission)));
   oaSession.setPermissionCheckHandler((_wc, permission) => allowedPermissions.has(permission));
