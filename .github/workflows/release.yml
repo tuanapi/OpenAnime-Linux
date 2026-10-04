@@ -50,7 +50,7 @@ jobs:
           cd dist
           rm -f CHECKSUMS.txt
           sha256sum \
-            *.AppImage *.deb *.rpm *.pacman *.tar.gz *-portable.zip *.yml \
+            *.AppImage *.deb *.rpm *.pacman *.tar.gz *-portable.zip \
             > CHECKSUMS.txt
           cat CHECKSUMS.txt
 
@@ -66,7 +66,6 @@ jobs:
             dist/*.pacman
             dist/*.tar.gz
             dist/*-portable.zip
-            dist/*.yml
             dist/CHECKSUMS.txt
           body_path: RELEASE_NOTES.md
 
