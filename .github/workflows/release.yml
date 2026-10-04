@@ -76,10 +76,11 @@ jobs:
     # job exists to surface breakage visibly, not to hold up the AppImage/
     # deb/rpm release (the primary distribution path) if the flake breaks.
     #
-    # NOTE: flake.nix's npmDepsHash is stale as of the 1.1.8 dependency bump
-    # (electron 44.5.1, @xhayper/discord-rpc 1.5.1). Refresh it before tagging
-    # or this job goes red:
-    #   nix build .#default --no-link --print-out-paths   # then update the hash
+    # npmDepsHash was refreshed for electron 44.5.1 / @xhayper/discord-rpc
+    # 1.5.1 with:
+    #   nix run nixpkgs#prefetch-npm-deps -- package-lock.json
+    # Refresh it the same way whenever package-lock.json changes, or this job
+    # goes red on the fixed-output hash mismatch.
     steps:
       - name: Checkout
         uses: actions/checkout@v4
