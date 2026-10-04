@@ -185,19 +185,22 @@
           try { btn.focus({ preventScroll: true }); } catch (e) {}
         }
       };
+      const orphan = () => { if (!btn.isConnected) { close(false); return true; } return false; };
       const onDoc = (ev) => {
+        if (orphan()) return;
         if (ev.target.closest && (ev.target === btn || btn.contains(ev.target))) return;
         const m = menuOf();
         if (m && (ev.target === m || m.contains(ev.target))) return;
         close();
       };
       const onFocusIn = (ev) => {
+        if (orphan()) return;
         if (ev.target === btn || (ev.target.closest && btn.contains(ev.target))) return;
         const m = menuOf();
         if (m && (ev.target === m || m.contains(ev.target))) return;
         close(false);
       };
-      let onKey = (ev) => { if (ev.key === 'Escape') close(); };
+      let onKey = (ev) => { if (orphan()) return; if (ev.key === 'Escape') close(); };
       if (closeOpenMenu) closeOpenMenu(false);
       const ul = document.createElement('ul');
       ul.id = did;
@@ -356,7 +359,11 @@
         const m = await import(u);
         if (!m || typeof m.E !== 'function') return null;
         const probe = document.createElement('div');
-        new m.E({ target: probe, props: { expanded: false, $$slots: {}, $$scope: { ctx: [] } } });
+        const inst = new m.E({ target: probe, props: { expanded: false, $$slots: {}, $$scope: { ctx: [] } } });
+        try {
+          if (inst && typeof inst.$destroy === 'function') inst.$destroy();
+          else if (typeof m.unmount === 'function') m.unmount(inst);
+        } catch (e) {}
         probe.remove();
         return m;
       } catch (e) { return null; }
@@ -507,7 +514,7 @@
       observer = new MutationObserver(() => {
         if (location.pathname !== lastPath) { onUrl(); return; }
         if (!location.pathname.includes('/settings')) return;
-        if (document.getElementById(RPC_ID) && document.getElementById(WIN_ID)) { stopObserver(); return; }
+        if (document.getElementById(RPC_ID) && document.getElementById(WIN_ID)) return;
         if (tick) return;
         tick = setTimeout(() => { tick = null; inject(); }, 400);
       });
@@ -577,7 +584,6 @@
           if (!root) break;
           anchor = root;
         }
-        if (document.getElementById(RPC_ID) && document.getElementById(WIN_ID)) stopObserver();
       } finally {
         injecting = false;
       }

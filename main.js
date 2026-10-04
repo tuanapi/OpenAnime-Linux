@@ -163,13 +163,14 @@ function sanitizeBounds(b) {
   const { screen } = require('electron');
   const minW = 800;
   const minH = 600;
-  let width = Math.max(minW, Math.round(b.width || 1360));
-  let height = Math.max(minH, Math.round(b.height || 900));
-  const hasPos = Number.isFinite(b.x) && Number.isFinite(b.y);
+  const num = (v, f) => (Number.isFinite(+v) ? Math.round(+v) : f);
+  let width = Math.max(minW, num(b.width, 1360));
+  let height = Math.max(minH, num(b.height, 900));
+  const hasPos = Number.isFinite(+b.x) && Number.isFinite(+b.y);
 
   if (hasPos) {
-    const x = Math.round(b.x);
-    const y = Math.round(b.y);
+    const x = Math.round(+b.x);
+    const y = Math.round(+b.y);
     const reachable = screen.getAllDisplays().some((d) => {
       const a = d.workArea;
       return x < a.x + a.width - 40 && x + width > a.x + 40 &&
@@ -291,12 +292,13 @@ function openExternalSafe(url) {
 
 // shared protections for main + child windows
 function applyWindowProtections(win, lastOpenedTime) {
-  win.webContents.on("will-navigate", (e, url) => {
-    if (!isAllowedDomain(url)) {
-      e.preventDefault();
-      openExternalSafe(url);
-    }
-  });
+  const guardNav = (e, url) => {
+    if (isAllowedDomain(url)) return;
+    e.preventDefault();
+    openExternalSafe(url);
+  };
+  win.webContents.on("will-navigate", guardNav);
+  win.webContents.on("will-redirect", guardNav);
 
   win.webContents.setWindowOpenHandler(({ url }) => {
     if (!isAllowedDomain(url)) {
@@ -355,10 +357,11 @@ async function createMainWindow() {
   let winBounds = sanitizeBounds(config.bounds || {});
   let isMaximized = config.isMaximized || false;
   const tb = config.titlebar || {};
+  const nnum = (v, f) => (Number.isFinite(+v) ? +v : f);
 
   // Uses Electron's native Window Controls Overlay when useCustomFrame is on
   const frameOptions = useCustomFrame
-    ? { titleBarStyle: 'hidden', titleBarOverlay: { color: tb.color, symbolColor: tb.symbolColor, height: tb.height } }
+    ? { titleBarStyle: 'hidden', titleBarOverlay: { color: tb.color, symbolColor: tb.symbolColor, height: nnum(tb.height, 46) } }
     : { frame: true };
 
   mainWindow = new BrowserWindow({
@@ -382,8 +385,8 @@ async function createMainWindow() {
   mainWindow.webContents.on('dom-ready', () => {
     let css = '::-webkit-scrollbar { display: none !important; width: 0 !important; height: 0 !important; }';
     if (useCustomFrame) {
-      const offsetRight = tb.headerOffsetRight ?? 8;
-      const offsetTop = tb.headerOffsetTop ?? 0;
+      const offsetRight = nnum(tb.headerOffsetRight, 8);
+      const offsetTop = nnum(tb.headerOffsetTop, 0);
       css += `
         .topbar > div.header-right {
           margin-right: ${offsetRight}rem !important;
@@ -414,12 +417,15 @@ async function createMainWindow() {
 
   mainWindow.loadURL(MAIN_URL);
 
-  // SW in control => reload past the cache once the origin is really serving.
+  // SW in control => reload past the cache; only ever after an observed outage.
   let failCount = 0;
   let crashCount = 0;
   let reloadedOnce = false;
   let sawNetDown = false;
   let reloadTries = 0;
+  let netMisses = 0;
+  let probing = false;
+  let reloadInterval = null;
   const https = require('https');
   const netOk = () => new Promise(res => {
     const req = https.request({ host: MAIN_HOST, port: 443, path: '/', method: 'HEAD', timeout: 3000 }, r => {
@@ -430,16 +436,34 @@ async function createMainWindow() {
     req.once('error', () => { req.destroy(); res(false); });
     req.end();
   });
-  const reloadInterval = setInterval(async () => {
-    if (reloadTries >= 5 || !sawNetDown || !mainWindow || mainWindow.isDestroyed()) {
-      clearInterval(reloadInterval);
-      return;
+  const stopRetries = () => {
+    if (reloadInterval) { clearInterval(reloadInterval); reloadInterval = null; }
+  };
+  const probe = async () => {
+    if (probing) return;
+    probing = true;
+    try {
+      if (!mainWindow || mainWindow.isDestroyed()) { stopRetries(); return; }
+      if (!await netOk()) {
+        sawNetDown = true;
+        if (++netMisses >= 10) stopRetries();
+        return;
+      }
+      netMisses = 0;
+      if (!sawNetDown) { stopRetries(); return; }
+      sawNetDown = false;
+      if (reloadTries >= 3 || !mainWindow || mainWindow.isDestroyed()) { stopRetries(); return; }
+      reloadTries++;
+      mainWindow.webContents.reload();
+    } finally {
+      probing = false;
     }
-    if (!await netOk()) return;
-    reloadTries++;
-    mainWindow.webContents.reload();
-  }, 3000);
-  mainWindow.webContents.on('closed', () => clearInterval(reloadInterval));
+  };
+  const armRetries = () => {
+    if (reloadInterval || reloadTries >= 3) return;
+    reloadInterval = setInterval(probe, 3000);
+  };
+  mainWindow.webContents.on('destroyed', stopRetries);
   mainWindow.webContents.on('did-finish-load', () => {
     failCount = 0;
     crashCount = 0;
@@ -450,7 +474,7 @@ async function createMainWindow() {
         '!!(navigator.serviceWorker && navigator.serviceWorker.controller)'
       ).catch(() => false);
       if (!hasSW) return;
-      if (!await netOk()) { sawNetDown = true; return; }
+      if (!await netOk()) { armRetries(); return; }
       if (!mainWindow || mainWindow.isDestroyed()) return;
       mainWindow.webContents.reload();
     })().catch(() => {});
@@ -616,7 +640,7 @@ app.on("will-quit", () => {
   }
 });
 
-app.on('before-quit', flushConfig);
+app.on('before-quit', () => { saveBounds(); flushConfig(); });
 
 // Discord RPC Setup
 const discordClientId = '1482661655975428156';
@@ -651,6 +675,7 @@ function invalidatePremidCache() {
 
 function updateDiscordRPCFromPremid(data) {
   if (!rpc || !rpcReady) return;
+  if (!data || typeof data !== 'object') return;
 
   let currentStart = 0;
   if (data.video && typeof data.video.currentTime === 'number') {
@@ -733,7 +758,15 @@ function updateDiscordRPCFromPremid(data) {
     presenceDropped = false;
   }
 
-  if (config.rpcVisibility === 'watch_only' && !(watchingVideo && !pausedNow)) return;
+  if (config.rpcVisibility === 'watch_only' && !(watchingVideo && !pausedNow)) {
+    if (!presenceDropped && rpc && rpc.user) {
+      presenceDropped = true;
+      rpc.user.clearActivity().catch(err => {
+        console.error('Discord RPC clearActivity failed (watch_only):', err);
+      });
+    }
+    return;
+  }
 
   const activity = {
     details: data.details || "OpenAnime'de",

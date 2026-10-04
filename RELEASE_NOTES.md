@@ -11,19 +11,19 @@ davranışı da yerellerle aynıdır.
   (1–60 dk).
 - **Pencere** – **Özel Pencere Çerçevesi**, **Tam Ekranı Koru**, **Açılışta Pencereyi Büyüt**.
 
-**Discord oynatıyor rozetleri.** Oynatıyor / duraklatıldı durumları kendi ikonlarını
+**Discord durum rozetleri.** Oynatılıyor / duraklatıldı durumları kendi ikonlarını
 kullanır.
 
 **Zaman aşımı ayarı.** `pauseDropMinutes` ile duraklatıldıktan kaç dakika sonra Discord
 durumunun temizleneceği belirlenebilir.
 
-**Hata sayfası.** Sayfa üç kez yüklenemezse boş pencere yerine ne olduğunu söyleyen
-bir hata sayfası gösterilir.
+**Hata sayfası.** Sayfa üç kez yüklenemezse boş pencere yerine hatayı açıklayan bir
+sayfa gösterilir.
 
 ## Düzeltilenler
 
 - **Ağ kontrolü yanlış adrese gidiyordu.** "İnternet var mı" testi `1.1.1.1:443`
-  (Cloudflare) ile kuruluyordu; o adres engellendiğinde test başarısılı dönüyor ve eski
+  (Cloudflare) ile kuruluyordu; o adres engellendiğinde test başarısız oluyor ve eski
   sayfayı yenileme hiç çalışmıyordu. Artık `openani.me` kullanılıyor.
 - **Ağ kontrolü yalnızca TCP'yi yokluyordu.** Bağlantı açık olduğu için "internet
   var" deniyordu, ama TLS el sıkışması başarısız olduğunda sitenin kendi çevrimdışı
@@ -36,18 +36,18 @@ bir hata sayfası gösterilir.
   değiştirince ya da çözünürlüğü oynatınca eski konum olduğu gibi kullanılıyordu.
   Konum ve boyut artık bağlı bulunduğu ekrana sığdırılıyor; sığmıyorsa pencere
   ortalanıyor.
-- **Pencereler sandbox'sız çalışıyordu.** Ana ve alt pencere artık `sandbox: true` ile
-  açılıyor.
+- **Pencereler korumalı alan (sandbox) olmadan çalışıyordu.** Ana pencere ve açılır
+  pencereler artık `sandbox: true` ile açılıyor.
 - **`get-config` config.json'daki her anahtarı renderer'a veriyordu.** Okuma listesiyle
   sınırlandı.
-- **WebGPU tercihi her açılışta yeniden yazılıyordu.** `settings.useWebGPU` koşulu
-  sorulmadan, her açılışta üzerine yazılıyordu. Artık yalnızca gerçekten farklıysa
-  yazılır; `forceWebGPU` `false` ise hiç dokunulmaz.
-- **config.json yazımı atomik değildi.** Yazma sırasında bir çökme dosyayı kırpıyordu.
-  Artık `config.json.tmp` üzerine yazılıp `rename` ile yerine konuyor, kapanışta da
-  boşaltılıyor.
-- **X11'e geçişte ebeveyn süreç uygulama boyunca arka planda açık kalıyordu.** Artık 3 saniyelik
-  el sıkışmanın ardından çıkıyor.
+- **WebGPU tercihi her açılışta yeniden yazılıyordu.** `settings.useWebGPU` değeri
+  kontrol edilmeden, her açılışta üzerine yazılıyordu. Artık yalnızca gerçekten
+  farklıysa yazılır; `forceWebGPU` `false` ise hiç dokunulmaz.
+- **config.json yazımı atomik değildi.** Yazma sırasında uygulama çökerse dosya yarım
+  kalıyordu. Artık `config.json.tmp` üzerine yazılıp `rename` ile yerine konuyor;
+  kapanışta bekleyen yazma tamamlanıyor.
+- **X11'e geçişte üst süreç uygulama boyunca arka planda açık kalıyordu.** Artık
+  3 saniyelik bekledikten sonra sonlanıyor.
 - **Paket bağımlılıklarında `libxkbcommon` eksikti.** Electron `libxkbcommon`'u doğrudan
   bağlıyor; bu kütüphane `deb` / `rpm` / `pacman` ve kaynak AUR paketinde bağımlılık
   olarak tanımlı değildi. `-bin` AUR paketinde ayrıca `libxkbfile` ve `libxtst` de

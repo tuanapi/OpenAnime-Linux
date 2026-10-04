@@ -3,7 +3,8 @@
 
   # OpenAnime Linux
 
-  OpenAnime için gayriresmi Linux masaüstü istemcisi — WebGPU etkin, çerçevesiz pencere.
+  OpenAnime için gayriresmi Linux masaüstü istemcisi — WebGPU etkin, çerçeve
+  özelleştirilebilir.
 
   [![Top Language](https://img.shields.io/github/languages/top/tuanapi/OpenAnime-Linux)](https://github.com/tuanapi/OpenAnime-Linux)
   [![License](https://img.shields.io/github/license/tuanapi/OpenAnime-Linux)](LICENSE)
@@ -15,79 +16,36 @@
 
 ## Özellikler
 
-- **Performans** – WebGPU, `forceWebGPU` açıkken sitenin tercihi ezilerek etkin
-  tutulur.
-- **Arayüz** – Özelleştirilebilir pencere kenarlığı.
+- **WebGPU** – `forceWebGPU` açıkken sitenin WebGPU tercihi geçersiz kılınarak WebGPU
+  etkin tutulur.
 - **Uygulama içi ayarlar** – Discord RPC ve pencere ayarları, sitenin kendi `/settings`
-  sayfasındaki kartlar içinden yönetilir.
-- **Taşınabilir** – Kurulum gerekmez, indir çalıştır.
+  sayfasındaki kartlardan yönetilir.
+- **Taşınabilir** – AppImage ile kurulum gerekmez, indir çalıştır.
+- **Özelleştirilebilir pencere** – kenarlık rengi, yükseklik ve sembol rengi.
 
----
-
-## Sürüm 1.1.8
-
-### Yeni
-
-**Uygulama içi ayar kartları.** Discord RPC ve Pencere ayarları artık sitenin kendi
-`/settings` sayfasında, sitenin gerçek Expander bileşenine bağlanan iki kart olarak
-görünür. Kartlar yerel site kartlarıyla aynı şekilde açılır; animasyon ve klavye
-davranışı da yerellerle aynıdır.
-
-- **Discord RPC** – aç/kapa, **RPC Görünürlüğü** (`Her şey` / `İzlenen`), **Zaman Aşımı**
-  (1–60 dk).
-- **Pencere** – **Özel Pencere Çerçevesi**, **Tam Ekranı Koru**, **Açılışta Pencereyi Büyüt**.
-
-**Discord oynatıyor rozetleri.** Oynatıyor / duraklatıldı durumları kendi ikonlarını kullanır.
-
-**Zaman aşımı ayarı.** `pauseDropMinutes` ile duraklatıldıktan kaç dakika sonra Discord
-durumunun temizleneceği belirlenebilir.
-
-**Hata sayfası.** Sayfa üç kez yüklenemezse boş pencere yerine ne olduğunu söyleyen
-bir hata sayfası gösterilir.
-
-### Düzeltilenler
-
-- **Ağ kontrolü yanlış adrese gidiyordu.** "İnternet var mı" testi `1.1.1.1:443`
-  (Cloudflare) ile kuruluyordu; o adres engellendiğinde test başarısız dönüyor ve
-  eski sayfayı yenileme hiç çalışmıyordu. Artık `openani.me` kullanılıyor.
-- **Ağ kontrolü yalnızca TCP'yi yokluyordu.** Bağlantı açık olduğu için "internet
-  var" deniyordu, ama TLS el sıkışması başarısız olduğunda sitenin kendi çevrimdışı
-  sayfası açılıp kalıyordu. Artık test gerçek bir HTTPS isteği yapıyor; bağlantı
-  koptuğunda yenileme denemeleri birkaç saniye arayla tekrarlanıyor.
-- **"Tam Ekranı Koru" ayarı ancak yeniden başlayınca etkili oluyordu.** Ayar
-  pencere açılırken bir kez okunuyor, sonra değişiklikler dikkate alınmıyordu.
-  Artık ayar anında geçerli oluyor.
-- **Kayıtlı pencere konumu geçersiz kalınca uygulama görünmez açılıyordu.**
-  Monitörü değiştirince ya da çözünürlüğü oynatınca eski konum olduğu gibi
-  kullanılıyordu. Konum ve boyut artık bağlı bulunduğu ekrana sığdırılıyor;
-  sığmıyorsa pencere ortalanıyor.
-- **Pencereler sandbox'sız çalışıyordu.** Ana ve alt pencere artık `sandbox: true`
-  ile açılıyor.
-- **`get-config` config.json'daki her anahtarı renderer'a veriyordu.** Okuma
-  listesiyle sınırlandı.
-- **WebGPU tercihi her açılışta yeniden yazılıyordu.** `settings.useWebGPU`
-  koşulu sorulmadan, her açılışta üzerine yazılıyordu. Artık yalnızca
-  gerçekten farklıysa yazılır; `forceWebGPU` `false` ise hiç dokunulmaz.
-- **config.json yazımı atomik değildi.** Yazma sırasında bir çökme dosyayı
-  kırpıyordu. Artık `config.json.tmp` üzerine yazılıp `rename` ile yerine
-  konuyor, kapanışta da boşaltılıyor.
-- **X11'e geçişte ebeveyn süreç uygulama boyunca arka planda açık kalıyordu.** Artık 3
-  saniyelik el sıkışmanın ardından çıkıyor.
-- **Paket bağımlılıklarında `libxkbcommon` eksikti.** Electron bu kütüphaneyi
-  doğrudan bağlıyor; `deb` / `rpm` / `pacman` ve kaynak AUR paketinde bağımlılık
-  olarak tanımlı değildi. `-bin` AUR paketinde `libxkbfile` ve `libxtst` de
-  eksikti. Üçü de artık tüm paketlerde tanımlı.
+Güncel değişiklikler için [Releases](https://github.com/tuanapi/OpenAnime-Linux/releases) sayfasına bakın.
 
 ---
 
 ## Kurulum
+
+Uygulama `https://openani.me` sitesini açan bir istemcidir; açılış için internet
+gerekir.
 
 ### AppImage (tüm dağıtımlar)
 ```bash
 chmod +x OpenAnime-*.AppImage
 ./OpenAnime-*.AppImage
 ```
-İsteğe bağlı: `./packaging/install.sh` ile masaüstü entegrasyonu.
+
+AppImage FUSE gerektirir. Ubuntu 23.04 ve üzerinde `libfuse2t64` kurulu değilse
+uygulama açılmaz. FUSE olmadan çalıştırmak için:
+
+```bash
+./OpenAnime-*.AppImage --appimage-extract-and-run
+```
+
+İsteğe bağlı: `./packaging/install.sh` ile masaüstü ve menü entegrasyonu.
 
 ### Arch Linux (AUR)
 ```bash
@@ -113,6 +71,12 @@ nix run github:tuanapi/OpenAnime-Linux
 nix profile install github:tuanapi/OpenAnime-Linux
 ```
 
+### Kaldırma
+
+AppImage: dosyayı silin. AUR: `yay -Rns openanime-bin`. deb: `sudo apt remove
+openanime`. rpm: `sudo rpm -e openanime`. Nix: `nix profile remove openanime`.
+`./packaging/uninstall.sh` AppImage kurulumunu temizler.
+
 ---
 
 ## Kaynaktan Derleme
@@ -134,65 +98,59 @@ kartlardan yönetilir. Aşağıdaki dosya elle düzenleme veya geri yükleme iç
 
 `~/.config/openanime/config.json`
 
+Dosya bozulursa silin; uygulama açılışta varsayılanlarla yeniden oluşturur.
+
 | Seçenek | Varsayılan | Açıklama |
 | :--- | :--- | :--- |
-| `highPerformance` | `true` | Hibrit sistemlerde ayrık GPU kullan. `false` yapılırsa PRIME/DRI_PRIME devre dışı kalır (güç tasarrufu). |
 | `discordRPC` | `true` | Discord'da "izliyor" durumunu göster. |
 | `rpcVisibility` | `"all"` | `all` = her durumda göster. `watch_only` = yalnızca video oynatılırken göster. |
 | `pauseDropMinutes` | `5` | Video duraklatıldıktan kaç dakika sonra Discord durumu temizlensin. |
 | `useCustomFrame` | `false` | Electron'un Window Controls Overlay'ini kullan. |
 | `persistFullscreen` | `false` | Bölüm geçişlerinde tam ekranda kal. |
-| `isMaximized` | `false` | Son açılışta pencere maksimize miydi. |
+| `isMaximized` | `false` | Pencere büyütülmüş açılsın mı. |
 | `bounds` | `{...}` | Son pencere konumu ve boyutu. Konum ekranın dışındaysa yeniden ortalanır. |
-| `forceWebGPU` | `true` | `true` ise sitenin WebGPU tercihi ezilir; `false` ise hiç dokunulmaz. |
+| `forceWebGPU` | `true` | `true` ise sitenin WebGPU tercihi geçersiz kılınır; `false` ise hiç dokunulmaz. |
+
+Geliştirici ve paketleme seçenekleri — normalde değiştirilmesi gerekmez:
+
+| Seçenek | Varsayılan | Açıklama |
+| :--- | :--- | :--- |
+| `highPerformance` | `true` | Hibrit sistemlerde ayrık GPU kullan. `false` yapılırsa PRIME/DRI_PRIME ayarlanmayabilir. |
 | `forcePrimeOffload` | `false` | AMD/Intel hibrit sistemlerde DRI_PRIME'ı zorla. |
-| `gpuDisplayOverride` | `null` | GPU algılamasını elle ez: `"integrated"` veya `"discrete"`. |
-| `debugOutlines` | `false` | Tıklanabilir elemanların etrafına kırmızı çerçeve çiz. |
+| `gpuDisplayOverride` | `null` | GPU algılamasını elle geçersiz kıl: `"integrated"` veya `"discrete"`. |
+| `debugOutlines` | `false` | Tıklanabilir öğelerin etrafına kırmızı çerçeve çiz. |
 | `titlebar` | `{...}` | Özel başlık çubuğu görünümü. |
 
 ---
 
 ## GPU Desteği (WebGPU)
 
-Uygulama, hangi GPU'nun görüntüyü çizdiğini otomatik algılar ve her topolojide
-WebGPU'yu ayrık GPU'ya taşır. Algılamayı doğrulamak için:
+Uygulama, görüntüyü hangi GPU'nun işlediğini otomatik algılar ve hibrit sistemlerde
+WebGPU'yu ayrık GPU'ya yönlendirir. Algılamayı doğrulamak için:
 
 ```bash
-OpenAnime --diagnose    # paketli sürüm
-npm run diagnose        # kaynak sürüm
+./OpenAnime-*.AppImage --diagnose    # AppImage
+openanime --diagnose                # paketli kurulum (AUR, deb, rpm)
+npm run diagnose                    # kaynak sürüm
 ```
 
-Çıktıda `webgpu adapter` satırı hangi GPU'nun WebGPU'yu çalıştırdığını, `webgpu fps (load)`
-satırı gerçek oynatma tarzı yük altındaki kare hızını gösterir. Sorun bildirirken
-`DIAG_JSON=...` satırını issue'ya yapıştırın.
-
-| Topoloji | Yapılan | Neden |
-| :--- | :--- | :--- |
-| Tek GPU (Intel / AMD / NVIDIA) | Hiçbir şey değiştirilmez | Varsayılan zaten doğru GPU'yu kullanır. |
-| Çift GPU, ekran ayrık GPU'da (NVIDIA veya AMD) | Ayrık GPU'ya yönlendirme (NVIDIA: PRIME + Vulkan sabitleme; AMD/Intel: `DRI_PRIME=1`), native oturum | Ekran zaten güçlü GPU'da; video + WebGPU tek cihazda. |
-| Çift GPU, ekran iGPU'da + NVIDIA ayrık | Otomatik X11'e geçiş (XWayland) + GLX offload | Wayland'de arabellek (iGPU) ile Vulkan (NVIDIA) iki sürücüye bölünüp video oynatırken çöker; X11'de her şey tek cihazda. |
-| Çift GPU, ekran iGPU'da, NVIDIA yok (AMD/Intel) | `DRI_PRIME=1` (+ AMD'de gerekirse `RADV_DEBUG=nodcc`) | GL tabanlı yolları ayrık GPU'ya yöneltir. |
-| Karışık (ekran hem iGPU hem ayrık GPU'da) | Ekranı süren GPU'ya göre yukarıdaki satırlardan biri otomatik seçilir | Seçim monitörün bağlı olduğu GPU'ya göre yapılır. |
-
-Not: `force-high-performance-gpu`, Chromium'un WebGL, WebGPU ve kompozitör için
-tek GPU seçmesini sağlar; `powerPreference` tarayıcıda yok sayılır.
-
-Sorun bildirirken şunları ekleyin: `OpenAnime --diagnose` (veya `npm run diagnose`)
-çıktısındaki `DIAG_JSON=...` satırı + `journalctl -k` içinde GPU sürücünüze ait
-satırlar (`nvidia_drm`, `amdgpu` ya da `i915`):
-
-```bash
-journalctl -k | grep -iE 'nvidia_drm|amdgpu|i915' | tail -20
-```
+Çıktıda `webgpu adapter` satırı WebGPU'yu hangi GPU'nun çalıştırdığını, `webgpu fps
+(load)` satırı ise sentetik WebGPU yükü altındaki kare hızını gösterir.
 
 ---
 
 ## Bilinen Sorunlar
 
-- **Kare düşmesi / gecikme** – Önce `OpenAnime --diagnose` çalıştırıp `webgpu adapter`
-  satırının doğru GPU'yu gösterdiğini doğrulayın. Hâlâ takılıyorsa `DIAG_JSON=...`
-  satırını ve `journalctl -k` çıktısını
-  [issue](https://github.com/tuanapi/OpenAnime-Linux/issues) olarak açın.
+- **Uygulama açılmıyor** – AppImage'da FUSE eksikliği en sık neden. Yukarıdaki
+  `--appimage-extract-and-run` yöntemini deneyin.
+- **Takılma / kare atlama** – Önce yukarıdaki `--diagnose` komutunu çalıştırıp
+  `webgpu adapter` satırının doğru GPU'yu gösterdiğini doğrulayın. Hâlâ takılıyorsa
+  `DIAG_JSON=...` satırını ve şu çıktıyı
+  [issue](https://github.com/tuanapi/OpenAnime-Linux/issues) olarak açın:
+
+  ```bash
+  journalctl -k | grep -iE 'nvidia_drm|amdgpu|i915' | tail -20
+  ```
 
 ---
 
