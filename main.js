@@ -13,6 +13,7 @@ const hasNvidiaVulkan = global.__hasNvidiaVulkan !== false;
 const isHybrid = global.__isHybrid === true;
 const path = require("path");
 const { Client: DiscordRPCClient } = require("@xhayper/discord-rpc");
+  const updateCheck = require("./scripts/update-check");
 
 const MAIN_URL = "https://openani.me";
 const MAIN_HOST = new URL(MAIN_URL).hostname;
@@ -42,6 +43,7 @@ function createDefaultConfig() {
     forcePrimeOffload: false,
     gpuDisplayOverride: null,
     debugOutlines: false,
+    dismissedUpdate: null,
     bounds: {
       width: 1360,
       height: 900
@@ -70,6 +72,7 @@ function configValueValid(key, value) {
   if (CONFIG_VALUE_TYPES[key] && typeof value !== CONFIG_VALUE_TYPES[key]) return false;
   if (key === 'pauseDropMinutes' && !(value >= 1 && value <= 60)) return false;
   if (key === 'rpcVisibility' && value !== 'all' && value !== 'watch_only') return false;
+  if (key === 'dismissedUpdate' && value !== null && typeof value !== 'string') return false;
   return true;
 }
 
@@ -568,6 +571,12 @@ app.whenReady().then(async () => {
   oaSession.setPermissionCheckHandler((_wc, permission) => allowedPermissions.has(permission));
   createMainWindow();
   initDiscordRPC();
+  updateCheck.start({
+    getWindow: () => mainWindow,
+    openExternal: openExternalSafe,
+    getDismissed: () => config.dismissedUpdate,
+    setDismissed: (tag) => { config.dismissedUpdate = tag; saveConfig(); }
+  });
 
   // reconnect rpc after sleep
   powerMonitor.on('resume', () => {
