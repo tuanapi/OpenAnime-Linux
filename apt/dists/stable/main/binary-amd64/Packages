@@ -8,11 +8,11 @@ Installed-Size: 294680
 Depends: libgtk-3-0, libnotify4, libnss3, libxss1, libxtst6, xdg-utils, libatspi2.0-0, libuuid1, libsecret-1-0, libxkbcommon0, libxkbfile1
 Recommends: libappindicator3-1
 Filename: pool/main/o/openanime/openanime_1.1.8_amd64.deb
-Size: 99798968
-MD5sum: d3621d08de666b57200f5420bc515f8b
-SHA1: adcc4e8ad910b165a27bd56065f993f6e68917a7
-SHA256: 3755027c1855e8309d390bbde80dfa77e1efee2a6894c828622c01203ad3ed4e
-SHA512: 87871367acf65f9260c8112b85da56ffc8ba271c92907555517af518490e4bac188c06d8cc88477aa97febaf4fede234250716686c5c33845c770511522fb53d
+Size: 99799212
+MD5sum: 1d92878d2261b625854a6b73856d66bd
+SHA1: 0f2d2cc385168d9c974b95d008a10c05df277a78
+SHA256: 2073d53f1e8c0909fa2b60ceaa8fe7ac14aa1d24657c6a9689a767882299c2be
+SHA512: 16582fd68fa7debe6e4c6d812a93bb737a9a7c2ff0ca05529cfdf7b9990286cd547036a331852baedeea4f0357d07c5e28a388884d086a772b006f7c8d831ef4
 Homepage: https://github.com/tuanapi/OpenAnime-Linux
 Description: 
   OpenAnime için geliştirilmiş, resmi olmayan (unofficial), yerel WebGPU destekli Linux istemcisi.
