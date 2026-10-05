@@ -7,7 +7,11 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: release-${{ github.ref }}
+  # One group for the whole repo, not one per ref. Every run rewrites the same
+  # gh-pages branch, and a per-ref group let a tag build and a workflow_dispatch
+  # push concurrently, where the loser failed on a non-fast-forward. Serialising
+  # releases is cheap: they are sequential by nature.
+  group: release-${{ github.repository }}
   cancel-in-progress: false
 
 jobs:
