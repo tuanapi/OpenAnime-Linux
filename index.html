@@ -93,15 +93,22 @@ EOF
 sudo dnf install openanime</code></pre></div>
 
 <h2>pacman</h2>
-<div class="copyable"><pre><code>sudo pacman-key --keyserver \
-  hkps://keys.openpgp.org --recv-keys F834BFA883FD8148B3D9D44A3DC4F7E104D352CA
-sudo pacman-key --lsign-key F834BFA883FD8148B3D9D44A3DC4F7E104D352CA
-sudo tee /etc/pacman.d/openanime.conf &gt;/dev/null &lt;&lt;'EOF'
+<div class="copyable"><pre><code>curl -fsSL https://tuanapi.github.io/OpenAnime-Linux/openanime-repo.asc \
+  -o /tmp/openanime-repo.asc
+sudo pacman-key --add /tmp/openanime-repo.asc
+printf 'F834BFA883FD8148B3D9D44A3DC4F7E104D352CA:6:\n' \
+  | sudo gpg --homedir /etc/pacman.d/gnupg --import-ownertrust
+sudo tee -a /etc/pacman.conf &gt;/dev/null &lt;&lt;'EOF'
+
 [openanime]
 SigLevel = Required DatabaseOptional
 Server = https://tuanapi.github.io/OpenAnime-Linux/pacman
 EOF
 sudo pacman -Syu openanime</code></pre></div>
+<p class="fp">Bölüm <code>/etc/pacman.conf</code> sonuna eklenir.
+<code>/etc/pacman.d/openanime.conf</code> içine yazmak işe yaramaz, çünkü Arch'un
+<code>pacman.conf</code> dosyasında <code>Include = /etc/pacman.d/*.conf</code>
+glob'u yoktur.</p>
 
 <h2>Diğer biçimler</h2>
 <p>AppImage, taşınabilir zip ve tar.gz sürümleri
