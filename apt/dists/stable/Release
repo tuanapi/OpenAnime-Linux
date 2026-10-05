@@ -1,0 +1,28 @@
+Architectures: amd64
+Codename: stable
+Components: main
+Date: Mon, 05 Oct 2026 12:03:51 +0000
+Description: OpenAnime repository
+Label: OpenAnime
+Origin: OpenAnime
+Suite: stable
+MD5Sum:
+ 505405edbccae76c0edaf14e17d21bc4              176 Release
+ 71c9a850e6def79c9fb6daef8f68cac3              913 main/binary-amd64/Packages
+ 781f58476ffbaa7545a5e236d3d8c4d9              616 main/binary-amd64/Packages.gz
+ d403c75623cf5737199f30ea6c597766              627 main/binary-amd64/Packages.zst
+SHA1:
+ f1fc8a5456e94cb1103719bb475f8ab4f8e80402              176 Release
+ 1f4e84da5bf7af18e5fc37e3c642d330978b0259              913 main/binary-amd64/Packages
+ 52ada16d65e05ec39cfb26f58b2f756562a8651e              616 main/binary-amd64/Packages.gz
+ 4cca9bd1cae6081f412e0e7abc0b5b8eba9f5119              627 main/binary-amd64/Packages.zst
+SHA256:
+ aeb11e23d53d092a967cfabc39fe445ec4f104c04e96ddf29f1da401bf9f0b32              176 Release
+ 9edf80be061982c71e48fa42ebfa675afad1b59bbc1bca5a9ee9d1c6b7d2d923              913 main/binary-amd64/Packages
+ 6b6e82c1c8f96ed00ea6fb79c3732e3ea7fc8733cd4aa98a71d3ba92ab7a6242              616 main/binary-amd64/Packages.gz
+ 81aace7ab9b8def9657a31f9acc3fa10b025fffb6948c0661f5b0bb6ce367e07              627 main/binary-amd64/Packages.zst
+SHA512:
+ 408317dd4c12d39f664a73138b0282ed3f36c3a70a5e013f5d7a26508c23f43976b48548c9f119b589dd0a3f0ee9601a01b9070fb2e93a7337fe4e6b55ff64ee              176 Release
+ 65546a88015e98170ae512f6e4245d62b65192f01319c55408b78b8102225bbd49deb541d0b30255438b57178270e263c2ab9a4d90d2ba0b648b4eed1e623aec              913 main/binary-amd64/Packages
+ 48ac37b18b90690f4a52da56aede22104bf23226a20e90b93d504cff070084f77398baf624ce4b755fd3a881f687dc6e7e2f8398a5fabbf4589df30dd5e32174              616 main/binary-amd64/Packages.gz
+ 8267fd7fd14852ebf26704d532ec5e84978bd85cf10ff72686b0fab6ef4e19e2b92ecd374f54aeb69c30be04f67df711e68c2d4270f237454f16a6004a1b096a              627 main/binary-amd64/Packages.zst
