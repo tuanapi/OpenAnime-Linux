@@ -67,7 +67,16 @@ GPG_ARGS=(--batch --yes --pinentry-mode loopback --digest-algo SHA512)
 [ -n "$GPG_KEY" ] && GPG_ARGS+=(--local-user "$GPG_KEY")
 
 sign_detached() {
-  gpg "${GPG_ARGS[@]}" --armor --detach-sign -o "$1.asc" "$1"
+  # Output path is an explicit argument, because the two consumers want
+  # different names for the same operation: apt looks for Release.gpg and has no
+  # notion of Release.asc, while dnf's repo_gpgcheck wants repomd.xml.asc.
+  #
+  # ASCII-armored, and that is not cosmetic. A binary detached signature is
+  # rejected by apt with "unsupported binary format": the signature packet here
+  # is ~117 bytes, which the OpenPGP framing rules force into the old-format
+  # header, and apt will not parse that for a detached signature. Armored is
+  # accepted by every apt version and costs a couple of hundred bytes.
+  gpg "${GPG_ARGS[@]}" --armor --detach-sign -o "$1" "$2"
 }
 
 echo "==> $PKG_NAME $VERSION ($ARCH)"
@@ -103,7 +112,7 @@ apt-ftparchive \
 
 if [ -n "$GPG_KEY" ]; then
   gpg "${GPG_ARGS[@]}" --clearsign -o "$APT_ROOT/dists/$SUITE/InRelease" "$APT_ROOT/dists/$SUITE/Release"
-  sign_detached "$APT_ROOT/dists/$SUITE/Release"
+  sign_detached "$APT_ROOT/dists/$SUITE/Release.gpg" "$APT_ROOT/dists/$SUITE/Release"
 fi
 fi
 
@@ -117,7 +126,7 @@ if command -v createrepo_c >/dev/null 2>&1; then
 else
   createrepo --quiet --changelog-limit 0 --update "$RPM_ROOT"
 fi
-[ -n "$GPG_KEY" ] && sign_detached "$RPM_ROOT/repodata/repomd.xml"
+[ -n "$GPG_KEY" ] && sign_detached "$RPM_ROOT/repodata/repomd.xml.asc" "$RPM_ROOT/repodata/repomd.xml"
 fi
 
 # ----------------------------------------------------------------- pacman
@@ -137,20 +146,39 @@ if [ -n "$GPG_KEY" ]; then
   # a missing one as fatal under "SigLevel = Required". Sign the pool file the
   # same way, binary rather than armored to match what pacman expects.
   gpg "${GPG_ARGS[@]}" --detach-sign -o "$PAC_POOL.sig" "$PAC_POOL"
-  repo-add --quiet --sign --key "$GPG_KEY" --include-sigs "$PAC_ROOT/$PKG_NAME.db.tar.gz" "$PAC_POOL"
-else
-  repo-add --quiet "$PAC_ROOT/$PKG_NAME.db.tar.gz" "$PAC_POOL"
 fi
 
-# repo-add leaves <name>.db as a symlink to the .tar.gz. GitHub Pages does not
-# reliably resolve symlinks, so materialise a real copy; libalpm sniffs the
-# gzip stream from the content and does not care that it is not a link.
-# The .sig symlink has the same problem, and "DatabaseRequired" needs it.
-rm -f "$PAC_ROOT/$PKG_NAME.db" "$PAC_ROOT/$PKG_NAME.db.sig"
-cp "$PAC_ROOT/$PKG_NAME.db.tar.gz" "$PAC_ROOT/$PKG_NAME.db"
-if [ -f "$PAC_ROOT/$PKG_NAME.db.tar.gz.sig" ]; then
-  cp "$PAC_ROOT/$PKG_NAME.db.tar.gz.sig" "$PAC_ROOT/$PKG_NAME.db.sig"
-fi
+# Deliberately no --sign or --include-sigs here. --include-sigs only exists from
+# pacman 6.1, and older repo-add parses an unrecognised flag as a positional
+# database filename and aborts with "does not have a valid database archive
+# extension". Signing the databases directly with gpg keeps this working on the
+# older repo-add that Ubuntu's pacman-package-manager ships, and keeps full
+# control of the gpg invocation.
+repo-add --quiet "$PAC_ROOT/$PKG_NAME.db.tar.gz" "$PAC_POOL"
+
+# repo-add names the database file after the extension it was handed, so the
+# archive extension that turns up here depends on how the local repo-add was
+# built; Ubuntu's pacman-package-manager and Arch's own pacman do not agree.
+# Discover what was actually written instead of assuming .tar.gz.
+#
+# repo-add also leaves <name>.db as a symlink pointing at that archive. Pages
+# will not serve a symlink, so replace each one with a real copy of the same
+# bytes. A detached signature covers content and not filenames, so the copy
+# still verifies, and libalpm sniffs the compression from the payload.
+for stem in "$PKG_NAME.db" "$PKG_NAME.files"; do
+  for db in "$PAC_ROOT/$stem".tar.*; do
+    [ -f "$db" ] || continue
+    if [ -n "$GPG_KEY" ]; then
+      rm -f "$db.sig"
+      gpg "${GPG_ARGS[@]}" --detach-sign -o "$db.sig" "$db"
+    fi
+    rm -f "$PAC_ROOT/$stem" "$PAC_ROOT/$stem.sig"
+    cp "$db" "$PAC_ROOT/$stem"
+    if [ -f "$db.sig" ]; then
+      cp "$db.sig" "$PAC_ROOT/$stem.sig"
+    fi
+  done
+done
 fi
 
 echo "==> wrote $OUT_DIR (formats: $FORMATS)"
