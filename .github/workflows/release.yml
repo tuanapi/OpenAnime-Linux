@@ -138,15 +138,20 @@ jobs:
           #
           # gpgkey= is required too: it is how dnf learns which key to import,
           # and --repofrompath defines the repo inline without one.
-          DNF="sudo dnf -y --disablerepo=* \
-            --repofrompath=openanime,file://$PWD/repo-site/rpm \
+          sudo dnf -y --disablerepo='*' \
+            --repofrompath=openanime,"file://$PWD/repo-site/rpm" \
             --setopt=openanime.gpgcheck=0 \
             --setopt=openanime.repo_gpgcheck=1 \
-            --setopt=openanime.gpgkey=file://$PWD/packaging/repo/openanime-repo.asc"
-          $DNF repoquery --qf '%{name}-%{version}-%{release}.%{arch}' openanime
+            --setopt=openanime.gpgkey="file://$PWD/packaging/repo/openanime-repo.asc" \
+            repoquery --qf '%{name}-%{version}-%{release}.%{arch}' openanime
           mkdir -p "$RUNNER_TEMP/dnf-probe"
-          $DNF download --downloaddir="$RUNNER_TEMP/dnf-probe" openanime
-          ls -l "$RUNNER_TEMP/dnf-probe"</command>
+          sudo dnf -y --disablerepo='*' \
+            --repofrompath=openanime,"file://$PWD/repo-site/rpm" \
+            --setopt=openanime.gpgcheck=0 \
+            --setopt=openanime.repo_gpgcheck=1 \
+            --setopt=openanime.gpgkey="file://$PWD/packaging/repo/openanime-repo.asc" \
+            download --downloaddir="$RUNNER_TEMP/dnf-probe" openanime
+          ls -l "$RUNNER_TEMP/dnf-probe"
 
       - name: Smoke Test Pacman
         if: env.SKIP_REPO != '1'
