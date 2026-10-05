@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="tr">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>OpenAnime-Linux package repository</title>
+<title>OpenAnime-Linux paket deposu</title>
 <style>
   :root { color-scheme: dark light; }
   body {
@@ -22,9 +22,19 @@
        text-transform: uppercase; letter-spacing: .04em; }
   code, pre { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
   code { background: #1c1f25; padding: .1rem .35rem; border-radius: 3px; font-size: .9em; }
-  pre { background: #1c1f25; border: 1px solid #262a31; border-radius: 6px;
-        padding: .8rem 1rem; overflow-x: auto; font-size: .85em; }
+  .copyable { position: relative; }
+  .copyable pre { background: #1c1f25; border: 1px solid #262a31; border-radius: 6px;
+                  padding: .8rem 4.5rem .8rem 1rem; overflow-x: auto; font-size: .85em; }
   pre code { background: none; padding: 0; }
+  .copy {
+    position: absolute; top: 8px; right: 8px;
+    font: inherit; font-size: .75rem; line-height: 1;
+    color: #d7dae0; background: #262a31; border: 1px solid #33383f;
+    border-radius: 4px; padding: .35rem .55rem; cursor: pointer;
+    opacity: 0; transition: opacity .12s ease;
+  }
+  .copyable:hover .copy, .copy:focus-visible { opacity: 1; }
+  .copy:hover { background: #33383f; }
   .fp { color: #8b929e; font-size: .85em; word-break: break-all; }
   footer { margin-top: 3rem; padding-top: 1rem; border-top: 1px solid #262a31;
            color: #8b929e; font-size: .85em; }
@@ -32,43 +42,45 @@
     body { background: #fbfcfd; color: #1e2126; }
     h1, h2 { color: #0d0f12; }
     th, td { border-bottom-color: #e3e6ea; }
-    pre, code { background: #f1f3f5; }
-    pre { border-color: #e3e6ea; }
+    .copyable pre, code { background: #f1f3f5; }
+    .copyable pre { border-color: #e3e6ea; }
+    .copy { color: #1e2126; background: #e3e6ea; border-color: #d3d7dd; }
+    .copy:hover { background: #d3d7dd; }
   }
 </style>
 </head>
 <body>
 
-<h1>OpenAnime-Linux package repository</h1>
-<p class="sub">Signed APT, DNF and pacman repositories. Every index and package below is
-detached-signed; the public key is <code>openanime-repo.asc</code>.</p>
+<h1>OpenAnime-Linux paket deposu</h1>
+<p class="sub">İmzalı APT, DNF ve pacman depoları. Aşağıdaki dizinler ve paketler
+ayrılmış imzalarla doğrulanır; açık anahtar <code>openanime-repo.asc</code> dosyasıdır.</p>
 
-<h2>Repositories</h2>
+<h2>Depolar</h2>
 <table>
-  <tr><th>Distribution</th><th>Base URL</th><th>Signing key</th></tr>
+  <tr><th>Dağıtım</th><th>Taban adres</th><th>İmza anahtarı</th></tr>
   <tr><td>Debian / Ubuntu</td>
       <td><a href="apt/">apt/</a></td>
-      <td><code>RFBF A883 FD81 48B3 9D9D 44A3 DC4F 7E10 4352 CA</code></td></tr>
+      <td><code>F834 BFA8 83FD 8148 B3D9 D44A 3DC4 F7E1 04D3 52CA</code></td></tr>
   <tr><td>Fedora / RHEL / openSUSE</td>
       <td><a href="rpm/">rpm/</a></td>
-      <td><code>RFBF A883 FD81 48B3 9D9D 44A3 DC4F 7E10 4352 CA</code></td></tr>
+      <td><code>F834 BFA8 83FD 8148 B3D9 D44A 3DC4 F7E1 04D3 52CA</code></td></tr>
   <tr><td>Arch / Manjaro</td>
       <td><a href="pacman/">pacman/</a></td>
-      <td><code>RFBF A883 FD81 48B3 9D9D 44A3 DC4F 7E10 4352 CA</code></td></tr>
+      <td><code>F834 BFA8 83FD 8148 B3D9 D44A 3DC4 F7E1 04D3 52CA</code></td></tr>
 </table>
-<p class="fp">Full fingerprint: F834BFA883FD8148B3D9D44A3DC4F7E104D352CA<br>
-Key file: <a href="openanime-repo.asc">openanime-repo.asc</a></p>
+<p class="fp">Tam parmak izi: F834BFA883FD8148B3D9D44A3DC4F7E104D352CA<br>
+Anahtar dosyası: <a href="openanime-repo.asc">openanime-repo.asc</a></p>
 
 <h2>APT</h2>
-<pre><code>curl -fsSL https://tuanapi.github.io/OpenAnime-Linux/openanime-repo.asc \
+<div class="copyable"><pre><code>curl -fsSL https://tuanapi.github.io/OpenAnime-Linux/openanime-repo.asc \
   | sudo tee /etc/apt/keyrings/openanime.asc &gt;/dev/null
 echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/openanime.asc] \
   https://tuanapi.github.io/OpenAnime-Linux/apt stable main" \
   | sudo tee /etc/apt/sources.list.d/openanime.list
-sudo apt update &amp;&amp; sudo apt install openanime</code></pre>
+sudo apt update &amp;&amp; sudo apt install openanime</code></pre></div>
 
 <h2>DNF</h2>
-<pre><code>sudo rpm --import https://tuanapi.github.io/OpenAnime-Linux/openanime-repo.asc
+<div class="copyable"><pre><code>sudo rpm --import https://tuanapi.github.io/OpenAnime-Linux/openanime-repo.asc
 sudo tee /etc/yum.repos.d/openanime.repo &gt;/dev/null &lt;&lt;'EOF'
 [openanime]
 name=OpenAnime
@@ -78,10 +90,10 @@ gpgcheck=1
 repo_gpgcheck=1
 gpgkey=https://tuanapi.github.io/OpenAnime-Linux/openanime-repo.asc
 EOF
-sudo dnf install openanime</code></pre>
+sudo dnf install openanime</code></pre></div>
 
 <h2>pacman</h2>
-<pre><code>sudo pacman-key --keyserver \
+<div class="copyable"><pre><code>sudo pacman-key --keyserver \
   hkps://keys.openpgp.org --recv-keys F834BFA883FD8148B3D9D44A3DC4F7E104D352CA
 sudo pacman-key --lsign-key F834BFA883FD8148B3D9D44A3DC4F7E104D352CA
 sudo tee /etc/pacman.d/openanime.conf &gt;/dev/null &lt;&lt;'EOF'
@@ -89,23 +101,43 @@ sudo tee /etc/pacman.d/openanime.conf &gt;/dev/null &lt;&lt;'EOF'
 SigLevel = Required DatabaseOptional
 Server = https://tuanapi.github.io/OpenAnime-Linux/pacman
 EOF
-sudo pacman -Syu openanime</code></pre>
+sudo pacman -Syu openanime</code></pre></div>
 
-<h2>Other formats</h2>
-<p>AppImage, portable zip and tar.gz builds are published on the
-<a href="https://github.com/tuanapi/OpenAnime-Linux/releases/latest">latest release page</a>,
-along with Arch packages in the AUR (<code>openanime</code> built from source,
-<code>openanime-bin</code> prebuilt) and a Nix flake.</p>
+<h2>Diğer biçimler</h2>
+<p>AppImage, taşınabilir zip ve tar.gz sürümleri
+<a href="https://github.com/tuanapi/OpenAnime-Linux/releases/latest">en son sürüm
+sayfasında</a> yayımlanır. Ayrıca Arch için AUR paketleri
+(<code>openanime</code> kaynaktan derlenir, <code>openanime-bin</code> hazır)
+ve bir Nix flake mevcut.</p>
 
-<h2>Notes</h2>
-<p>Packages are built for <code>amd64</code>. Packages accumulate in the pool as new
-versions are released, so earlier versions remain installable by pinning the version
-number. The repositories are generated by each distribution's own tooling — apt-ftparchive,
-createrepo_c and repo-add — so the metadata is canonical rather than hand-rolled.</p>
+<h2>Notlar</h2>
+<p>Paketler <code>amd64</code> mimarisi için üretilir. Yeni sürümler yayımlandıkça
+havuzda birikir; eski sürümler sürüm numarası sabitlenerek kurulabilir.
+Depolar her dağıtımın kendi aracıyla üretilir — apt-ftparchive, createrepo_c ve
+repo-add — böylece üst veri kendi biçimindedir.</p>
 
 <footer>
   <a href="https://github.com/tuanapi/OpenAnime-Linux">github.com/tuanapi/OpenAnime-Linux</a>
 </footer>
+
+<script>
+document.querySelectorAll('.copyable').forEach(function (box) {
+  var btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'copy';
+  btn.textContent = 'Kopyala';
+  btn.addEventListener('click', function () {
+    var code = box.querySelector('code');
+    var done = function () {
+      btn.textContent = 'Kopyalandı';
+      setTimeout(function () { btn.textContent = 'Kopyala'; }, 1500);
+    };
+    if (navigator.clipboard) navigator.clipboard.writeText(code.innerText).then(done, done);
+    else done();
+  });
+  box.appendChild(btn);
+});
+</script>
 
 </body>
 </html>
