@@ -127,18 +127,23 @@ jobs:
         if: env.SKIP_REPO != '1'
         run: |
           sudo rpm --import packaging/repo/openanime-repo.asc
-          sudo dnf --disablerepo='*' \
-            --repofrompath=openanime,"file://$PWD/repo-site/rpm" \
+          # repo_gpgcheck is verified by libdnf, which takes its keys from the
+          # repo definition's gpgkey= and not from the rpm package keyring that
+          # `rpm --import` writes to. --repofrompath defines the repo inline, so
+          # without this the verification runs with no key at all and fails as
+          # "repomd.xml GPG signature verification error: Bad GPG signature".
+          # The APT and Pacman steps both hand their client the key explicitly;
+          # this is the same thing for dnf, and it mirrors the gpgkey= line the
+          # documented .repo file carries.
+          DNF="sudo dnf --disablerepo=* \
+            --repofrompath=openanime,file://$PWD/repo-site/rpm \
             --setopt=openanime.gpgcheck=0 \
             --setopt=openanime.repo_gpgcheck=1 \
-            repoquery --qf '%{name}-%{version}-%{release}.%{arch}' openanime
+            --setopt=openanime.gpgkey=file://$PWD/packaging/repo/openanime-repo.asc"
+          $DNF repoquery --qf '%{name}-%{version}-%{release}.%{arch}' openanime
           mkdir -p "$RUNNER_TEMP/dnf-probe"
-          sudo dnf --disablerepo='*' \
-            --repofrompath=openanime,"file://$PWD/repo-site/rpm" \
-            --setopt=openanime.gpgcheck=0 \
-            --setopt=openanime.repo_gpgcheck=1 \
-            download --downloaddir="$RUNNER_TEMP/dnf-probe" openanime
-          ls -l "$RUNNER_TEMP/dnf-probe"
+          $DNF download --downloaddir="$RUNNER_TEMP/dnf-probe" openanime
+          ls -l "$RUNNER_TEMP/dnf-probe"</command>
 
       - name: Smoke Test Pacman
         if: env.SKIP_REPO != '1'
