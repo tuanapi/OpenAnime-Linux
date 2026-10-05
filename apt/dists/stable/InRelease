@@ -4,35 +4,35 @@ Hash: SHA512
 Architectures: amd64
 Codename: stable
 Components: main
-Date: Mon, 05 Oct 2026 12:03:51 +0000
+Date: Mon, 05 Oct 2026 13:02:27 +0000
 Description: OpenAnime repository
 Label: OpenAnime
 Origin: OpenAnime
 Suite: stable
 MD5Sum:
- 505405edbccae76c0edaf14e17d21bc4              176 Release
- 71c9a850e6def79c9fb6daef8f68cac3              913 main/binary-amd64/Packages
- 781f58476ffbaa7545a5e236d3d8c4d9              616 main/binary-amd64/Packages.gz
- d403c75623cf5737199f30ea6c597766              627 main/binary-amd64/Packages.zst
+ efb370dcbb970f7c4ddf461aedaf51b2              176 Release
+ 80a15cdd872c0e6ec40c8204bc4caa7f              913 main/binary-amd64/Packages
+ 6dc650b20a238e65155ca187425a4bba              617 main/binary-amd64/Packages.gz
+ 6485a8e0956522e2eeed88c89f3e068a              630 main/binary-amd64/Packages.zst
 SHA1:
- f1fc8a5456e94cb1103719bb475f8ab4f8e80402              176 Release
- 1f4e84da5bf7af18e5fc37e3c642d330978b0259              913 main/binary-amd64/Packages
- 52ada16d65e05ec39cfb26f58b2f756562a8651e              616 main/binary-amd64/Packages.gz
- 4cca9bd1cae6081f412e0e7abc0b5b8eba9f5119              627 main/binary-amd64/Packages.zst
+ 34e6713b71a0b153926ef1fe628d3f03ff881e93              176 Release
+ e3f775ed93d6c79663d1d7c942ff1e821f03ba81              913 main/binary-amd64/Packages
+ d43863213c907429858ceae36a6b51991a230e9b              617 main/binary-amd64/Packages.gz
+ e52fa37f409676e6c63f7281bf3623169f0d0b07              630 main/binary-amd64/Packages.zst
 SHA256:
- aeb11e23d53d092a967cfabc39fe445ec4f104c04e96ddf29f1da401bf9f0b32              176 Release
- 9edf80be061982c71e48fa42ebfa675afad1b59bbc1bca5a9ee9d1c6b7d2d923              913 main/binary-amd64/Packages
- 6b6e82c1c8f96ed00ea6fb79c3732e3ea7fc8733cd4aa98a71d3ba92ab7a6242              616 main/binary-amd64/Packages.gz
- 81aace7ab9b8def9657a31f9acc3fa10b025fffb6948c0661f5b0bb6ce367e07              627 main/binary-amd64/Packages.zst
+ 0a9a02a4376986ddba5261c0de39ea12cb976d518be5f22dc93dde2b9b6a2204              176 Release
+ d16adef4dcb59d81c81a81e4e16f71536174d424fae6e26c2c0ced3cb8b90947              913 main/binary-amd64/Packages
+ f0a07724a454e99473403fd5bd6a9c64801cb3d6a6ac826b22e85a6a2b66b177              617 main/binary-amd64/Packages.gz
+ 89c2b8e36b5df5cc03ac35f7eb4b0ba2295e1ae7c98ca55dd50141c5b2e36477              630 main/binary-amd64/Packages.zst
 SHA512:
- 408317dd4c12d39f664a73138b0282ed3f36c3a70a5e013f5d7a26508c23f43976b48548c9f119b589dd0a3f0ee9601a01b9070fb2e93a7337fe4e6b55ff64ee              176 Release
- 65546a88015e98170ae512f6e4245d62b65192f01319c55408b78b8102225bbd49deb541d0b30255438b57178270e263c2ab9a4d90d2ba0b648b4eed1e623aec              913 main/binary-amd64/Packages
- 48ac37b18b90690f4a52da56aede22104bf23226a20e90b93d504cff070084f77398baf624ce4b755fd3a881f687dc6e7e2f8398a5fabbf4589df30dd5e32174              616 main/binary-amd64/Packages.gz
- 8267fd7fd14852ebf26704d532ec5e84978bd85cf10ff72686b0fab6ef4e19e2b92ecd374f54aeb69c30be04f67df711e68c2d4270f237454f16a6004a1b096a              627 main/binary-amd64/Packages.zst
+ a0d4fe20036b05bfd31e975639ac38308389a0e21b1e01f66ab77951c36c0a7b086e82512a6cfd66a4de4397051e2ecc8c3761025e176a25fb634b53e9b4a108              176 Release
+ 353ef1ae3c3760061092aeaf73b26e700bcc11129938416809e11fed1466f89cd8020a268dec59e06f52741c2d3e50157f186d26a38a7304afe3cddda7b2cc59              913 main/binary-amd64/Packages
+ b809f1c22b70159e9f1a845f35e5e2ec854b097729ab1d62026533a63064881aa2fb35e2a4b83c0f1184bdb931d34d5a86cc062c8fee8f4ba24fb486e2566a49              617 main/binary-amd64/Packages.gz
+ 5127c3dbfb39bdd3735774f6086a4ac46e4feb915774842dfb1e351159fa085e44d5139ec34dad5e1763829403e2bb564a181d61756d922c9b38e02ea1fac210              630 main/binary-amd64/Packages.zst
 -----BEGIN PGP SIGNATURE-----
 
-iHUEARYKAB0WIQT4NL+og/2BSLPZ1Eo9xPfhBNNSygUCasOSJwAKCRA9xPfhBNNS
-yuPiAP9Gw8C7gMMaHb1iQTxtut+kfDCJFodTOyq/PVlGPp666AD/UT1NOx/O5Zbu
-ywo0zCnrzDadtPxXbG7acDLc295YHgE=
-=cm9g
+iHUEARYKAB0WIQT4NL+og/2BSLPZ1Eo9xPfhBNNSygUCasOf4wAKCRA9xPfhBNNS
+yrPZAP90l/rAVIq4uycQdWLhojgpHhYy0EhalGBSY0al7E7L/QD/fhddsk3CnjQh
+OPgx/iln1oMXYwvgnS8bdj5qoL2B4Qo=
+=ceVX
 -----END PGP SIGNATURE-----
