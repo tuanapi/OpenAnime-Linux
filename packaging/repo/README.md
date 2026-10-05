@@ -37,6 +37,14 @@ sudo apt update
 sudo apt install openanime
 ```
 
+Depo, yayımlanan her sürümü barındırır; `apt` varsayılan olarak en yeni sürümü
+kurar. Eski bir sürüme dönmek için:
+
+```bash
+apt list --all-versions openanime
+sudo apt install openanime=1.1.7
+```
+
 Kaldırmak için:
 
 ```bash

@@ -71,6 +71,11 @@ nix run github:tuanapi/OpenAnime-Linux
 nix profile install github:tuanapi/OpenAnime-Linux
 ```
 
+Bu yol nixpkgs'ın Electron sürümünü kullanır, `package-lock.json` ile sabitlenen
+sürümü değil. Nix, Electron 44 barındırmadığı için şu an 43.6.0 ile derlenir ve
+derleme sırasında bu farkı uyarı olarak yazar. AppImage, deb, rpm ve pacman
+paketlerinde Electron 44.5.1 kullanılır.
+
 ### Paket depoları (önerilen)
 
 `deb`, `rpm` ve `pacman` paketleri imzalı depolardan da kurulabilir; kurulum
