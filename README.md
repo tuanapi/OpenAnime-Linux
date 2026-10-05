@@ -76,7 +76,7 @@ sürümü değil. Nix, Electron 44 barındırmadığı için şu an 43.6.0 ile d
 derleme sırasında bu farkı uyarı olarak yazar. AppImage, deb, rpm ve pacman
 paketlerinde Electron 44.5.1 kullanılır.
 
-### Paket depoları (önerilen)
+### Paket [depoları](https://tuanapi.github.io/OpenAnime-Linux/) (önerilen)
 
 `deb`, `rpm` ve `pacman` paketleri imzalı depolardan da kurulabilir; kurulum
 yönergeleri `packaging/repo/README.md` içindedir. Depo anahtarı parmak izi:
