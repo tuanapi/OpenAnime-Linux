@@ -3,7 +3,13 @@
 # Each index is produced by that distribution's own generator rather than
 # hand-rolled here, so the formats stay canonical.
 #
-# usage: build-repo.sh <dist-dir> <out-dir> <origin> [gpg-key-id]
+# usage: build-repo.sh <dist-dir> <out-dir> <origin> [gpg-key-id] [seed-dir]
+#
+# seed-dir, when given, is a flat directory of packages already published to
+# gh-pages. They are merged into the pool before any index is generated, so the
+# generated metadata actually references them. Merging them in afterwards would
+# leave them in the pool but absent from Packages/repomd.xml/pacman db, i.e.
+# files a client can see but can never install.
 #
 # FORMATS is a space separated subset of "apt rpm pacman"; it defaults to all
 # three. Restricting it is only useful on a host that lacks some of the index
@@ -15,6 +21,7 @@ OUT_DIR="${2:?missing out dir}"
 ORIGIN="${3:?missing origin label}"
 GPG_KEY="${4:-}"
 FORMATS="${FORMATS:-apt rpm pacman}"
+SEED_DIR="${5:-}"
 
 missing=""
 case " $FORMATS " in *" apt "*)  command -v apt-ftparchive >/dev/null 2>&1 || missing="$missing apt-utils(apt-ftparchive)" ;; esac
@@ -41,13 +48,29 @@ APT_ROOT="$OUT_DIR/apt"
 RPM_ROOT="$OUT_DIR/rpm"
 PAC_ROOT="$OUT_DIR/pacman"
 
-DEB_SRC="$(find "$DIST_DIR" -maxdepth 1 -name '*.deb' | sort | head -1)"
-RPM_SRC="$(find "$DIST_DIR" -maxdepth 1 -name '*.rpm' | sort | head -1)"
-PAC_SRC="$(find "$DIST_DIR" -maxdepth 1 -name '*.pacman' | sort | head -1)"
+# Version sort, newest last. Plain sort ranks 1.1.10 below 1.1.9, so `sort |
+# head -1` would silently pick the wrong package as soon as the version number
+# reaches two digits.
+DEB_SRC="$(find "$DIST_DIR" -maxdepth 1 -name '*.deb' | sort -V | tail -1)"
+RPM_SRC="$(find "$DIST_DIR" -maxdepth 1 -name '*.rpm' | sort -V | tail -1)"
+PAC_SRC="$(find "$DIST_DIR" -maxdepth 1 -name '*.pacman' | sort -V | tail -1)"
 
 [ -n "$DEB_SRC" ] || { echo "build-repo: no .deb in $DIST_DIR" >&2; exit 1; }
 [ -n "$RPM_SRC" ] || { echo "build-repo: no .rpm in $DIST_DIR" >&2; exit 1; }
 [ -n "$PAC_SRC" ] || { echo "build-repo: no .pacman in $DIST_DIR" >&2; exit 1; }
+
+# Pool contents: the freshly built package plus whatever the seed dir carries,
+# de-duplicated by filename with the fresh build winning. Re-publishing a
+# version that is already in the pool must replace it, not sit beside it.
+pool_list() { # <fresh-pkg> <glob>
+  { [ -n "$1" ] && echo "$1"
+    [ -n "$SEED_DIR" ] && find "$SEED_DIR" -maxdepth 1 -name "$2"
+  } | awk -F/ 'NF && !seen[$NF]++'
+}
+
+APT_DEBS=(); while IFS= read -r f; do APT_DEBS+=("$f"); done < <(pool_list "$DEB_SRC" '*.deb')
+RPM_PKGS=(); while IFS= read -r f; do RPM_PKGS+=("$f"); done < <(pool_list "$RPM_SRC" '*.rpm')
+PAC_SEEDS=(); while IFS= read -r f; do PAC_SEEDS+=("$f"); done < <(pool_list "$PAC_SRC" '*.pacman')
 
 # electron-builder names these deterministically from package.json:
 #   <name>_<version>_<arch>.deb
@@ -87,7 +110,7 @@ echo "==> $PKG_NAME $VERSION ($ARCH)"
 if [[ " $FORMATS " == *" apt "* ]]; then
 echo "==> apt"
 mkdir -p "$APT_ROOT/$POOL_REL" "$APT_ROOT/dists/$SUITE/$COMPONENT/binary-$ARCH"
-cp "$DEB_SRC" "$APT_ROOT/$POOL_REL/"
+for deb in "${APT_DEBS[@]}"; do cp "$deb" "$APT_ROOT/$POOL_REL/"; done
 
 # Run from $APT_ROOT with the pool as the search path: apt-ftparchive then emits
 # "Filename: pool/main/o/openanime/<file>", which is exactly the relative path
@@ -120,7 +143,7 @@ fi
 if [[ " $FORMATS " == *" rpm "* ]]; then
 echo "==> rpm"
 mkdir -p "$RPM_ROOT"
-cp "$RPM_SRC" "$RPM_ROOT/"
+for rpm_pkg in "${RPM_PKGS[@]}"; do cp "$rpm_pkg" "$RPM_ROOT/"; done
 if command -v createrepo_c >/dev/null 2>&1; then
   createrepo_c --quiet --general-compress-type gz --changelog-limit 0 --update "$RPM_ROOT"
 else
@@ -135,18 +158,36 @@ echo "==> pacman"
 # fpm emits "<name>-<version>.pacman", but libalpm's alpm_pkg_vercompute() does
 # strstr(..., ".pkg.tar") on the pool filename and rejects anything else, so the
 # file has to be republished under the name pacman expects. The payload is an
-# xz-compressed tar, hence .pkg.tar.xz rather than .pkg.tar.zst.
-PAC_PKGVER="$(bsdtar -xOf "$PAC_SRC" .PKGINFO | sed -n 's/^pkgver = //p' | head -1)"
-PAC_ARCH="$(bsdtar -xOf "$PAC_SRC" .PKGINFO | sed -n 's/^arch = //p' | head -1)"
-PAC_POOL="$PAC_ROOT/${PKG_NAME}-${PAC_PKGVER}-${PAC_ARCH}.pkg.tar.xz"
-cp "$PAC_SRC" "$PAC_POOL"
+# xz-compressed tar, hence .pkg.tar.xz rather than .pkg.tar.zst. The version is
+# read per package rather than once, because a seeded pool holds more than one.
+#
+# repo-add keeps only the newest version of a given package name, so it is fed
+# oldest first: handed newest first it discards each older package with an
+# "a newer version is already present in database" warning. The result is the
+# same either way, but the warning reads like a failure in CI output.
+PAC_SEEDS_SORTED=()
+while IFS= read -r f; do PAC_SEEDS_SORTED+=("$f"); done < <(
+  for pac_src in "${PAC_SEEDS[@]}"; do
+    pac_ver="$(bsdtar -xOf "$pac_src" .PKGINFO | sed -n 's/^pkgver = //p' | head -1)"
+    printf '%s\t%s\n' "$pac_ver" "$pac_src"
+  done | sort -V | cut -f2-
+)
 
-if [ -n "$GPG_KEY" ]; then
-  # Arch's own repos ship a detached .sig beside every package, and libalpm treats
-  # a missing one as fatal under "SigLevel = Required". Sign the pool file the
-  # same way, binary rather than armored to match what pacman expects.
-  gpg "${GPG_ARGS[@]}" --detach-sign -o "$PAC_POOL.sig" "$PAC_POOL"
-fi
+PAC_POOL_FILES=()
+for pac_src in "${PAC_SEEDS_SORTED[@]}"; do
+  pac_pkgver="$(bsdtar -xOf "$pac_src" .PKGINFO | sed -n 's/^pkgver = //p' | head -1)"
+  pac_arch="$(bsdtar -xOf "$pac_src" .PKGINFO | sed -n 's/^arch = //p' | head -1)"
+  pac_pool="$PAC_ROOT/${PKG_NAME}-${pac_pkgver}-${pac_arch}.pkg.tar.xz"
+  cp "$pac_src" "$pac_pool"
+  PAC_POOL_FILES+=("$pac_pool")
+
+  if [ -n "$GPG_KEY" ]; then
+    # Arch's own repos ship a detached .sig beside every package, and libalpm treats
+    # a missing one as fatal under "SigLevel = Required". Sign the pool file the
+    # same way, binary rather than armored to match what pacman expects.
+    gpg "${GPG_ARGS[@]}" --detach-sign -o "$pac_pool.sig" "$pac_pool"
+  fi
+done
 
 # Deliberately no --sign or --include-sigs here. --include-sigs only exists from
 # pacman 6.1, and older repo-add parses an unrecognised flag as a positional
@@ -154,7 +195,7 @@ fi
 # extension". Signing the databases directly with gpg keeps this working on the
 # older repo-add that Ubuntu's pacman-package-manager ships, and keeps full
 # control of the gpg invocation.
-repo-add --quiet "$PAC_ROOT/$PKG_NAME.db.tar.gz" "$PAC_POOL"
+repo-add --quiet "$PAC_ROOT/$PKG_NAME.db.tar.gz" "${PAC_POOL_FILES[@]}"
 
 # repo-add names the database file after the extension it was handed, so the
 # archive extension that turns up here depends on how the local repo-add was
