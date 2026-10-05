@@ -17,7 +17,6 @@ const { Client: DiscordRPCClient } = require("@xhayper/discord-rpc");
   const packageUpdate = require("./scripts/package-update");
 
 const MAIN_URL = "https://openani.me";
-const MAIN_HOST = new URL(MAIN_URL).hostname;
 
 function isAllowedDomain(url) {
   try {
@@ -425,72 +424,21 @@ async function createMainWindow() {
 
   mainWindow.loadURL(MAIN_URL);
 
-  // SW in control => reload past the cache; only ever after an observed outage.
+  // One unconditional F5 after the first load; guarded so it fires once.
   let failCount = 0;
   let crashCount = 0;
   let reloadedOnce = false;
-  let sawNetDown = false;
-  let reloadTries = 0;
-  let netMisses = 0;
-  let probing = false;
-  let reloadInterval = null;
-  const https = require('https');
-  const netOk = () => new Promise(res => {
-    const req = https.request({ host: MAIN_HOST, port: 443, path: '/', method: 'HEAD', timeout: 3000 }, r => {
-      req.destroy();
-      res(r.statusCode < 500);
-    });
-    req.once('timeout', () => { req.destroy(); res(false); });
-    req.once('error', () => { req.destroy(); res(false); });
-    req.end();
-  });
-  const stopRetries = () => {
-    if (reloadInterval) { clearInterval(reloadInterval); reloadInterval = null; }
-  };
-  const probe = async () => {
-    if (probing) return;
-    probing = true;
-    try {
-      if (!mainWindow || mainWindow.isDestroyed()) { stopRetries(); return; }
-      if (!await netOk()) {
-        sawNetDown = true;
-        if (++netMisses >= 10) stopRetries();
-        return;
-      }
-      netMisses = 0;
-      if (!sawNetDown) { stopRetries(); return; }
-      sawNetDown = false;
-      if (reloadTries >= 3 || !mainWindow || mainWindow.isDestroyed()) { stopRetries(); return; }
-      reloadTries++;
-      mainWindow.webContents.reload();
-    } finally {
-      probing = false;
-    }
-  };
-  const armRetries = () => {
-    if (reloadInterval || reloadTries >= 3) return;
-    reloadInterval = setInterval(probe, 3000);
-  };
-  mainWindow.webContents.on('destroyed', stopRetries);
   mainWindow.webContents.on('did-finish-load', () => {
     failCount = 0;
     crashCount = 0;
-    (async () => {
-      if (reloadedOnce || !mainWindow || mainWindow.isDestroyed()) return;
-      reloadedOnce = true;
-      const hasSW = await mainWindow.webContents.executeJavaScript(
-        '!!(navigator.serviceWorker && navigator.serviceWorker.controller)'
-      ).catch(() => false);
-      if (!hasSW) return;
-      if (!await netOk()) { armRetries(); return; }
-      if (!mainWindow || mainWindow.isDestroyed()) return;
-      mainWindow.webContents.reload();
-    })().catch(() => {});
+    if (reloadedOnce || !mainWindow || mainWindow.isDestroyed()) return;
+    reloadedOnce = true;
+    mainWindow.webContents.reload();
   });
   mainWindow.webContents.on('did-fail-load', (e, code, desc, url, isMainFrame) => {
     if (!isMainFrame || !mainWindow || mainWindow.isDestroyed()) return;
     if (failCount < 3) { failCount++; mainWindow.webContents.reload(); }
-    else mainWindow.loadFile(path.join(__dirname, 'scripts', 'load-error.html'));
+    else { reloadedOnce = true; mainWindow.loadFile(path.join(__dirname, 'scripts', 'load-error.html')); }
   });
 
   const wc = mainWindow.webContents;
