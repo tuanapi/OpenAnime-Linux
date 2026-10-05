@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 concurrency:
   group: release-${{ github.ref }}
@@ -178,7 +179,7 @@ jobs:
           cp -a repo-site/. .
           rm -rf repo-site
           git add -A apt rpm pacman openanime-repo.asc
-          git commit -m "repo: publish metadata for $TAG" || echo "nothing new to publish"
+          git commit -m "repo: publish metadata for ${TAG:-manual}" || echo "nothing new to publish"
           git push origin gh-pages
 
   nix-check:

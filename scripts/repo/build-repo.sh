@@ -33,6 +33,14 @@ PAC_ROOT="$OUT_DIR/pacman"
 rm -rf "$OUT_DIR"
 mkdir -p "$APT_ROOT" "$RPM_ROOT" "$PAC_ROOT"
 
+# The apt block cd's into $APT_ROOT before running apt-ftparchive, so any path
+# still relative at that point would resolve against the wrong root. Pin the
+# output root to an absolute path now that it exists.
+OUT_DIR="$(cd "$OUT_DIR" && pwd)"
+APT_ROOT="$OUT_DIR/apt"
+RPM_ROOT="$OUT_DIR/rpm"
+PAC_ROOT="$OUT_DIR/pacman"
+
 DEB_SRC="$(find "$DIST_DIR" -maxdepth 1 -name '*.deb' | sort | head -1)"
 RPM_SRC="$(find "$DIST_DIR" -maxdepth 1 -name '*.rpm' | sort | head -1)"
 PAC_SRC="$(find "$DIST_DIR" -maxdepth 1 -name '*.pacman' | sort | head -1)"
