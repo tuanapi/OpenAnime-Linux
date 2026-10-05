@@ -73,7 +73,7 @@ async function detect() {
   return cached;
 }
 
-function detach(cmd, args) {
+function detach(cmd, args, waitExit) {
   return new Promise((resolve) => {
     let settled = false;
     const done = (ok) => {
@@ -83,7 +83,11 @@ function detach(cmd, args) {
     };
     const child = spawn(cmd, args, { detached: true, stdio: 'ignore' });
     child.on('error', () => done(false));
-    child.on('spawn', () => { child.unref(); done(true); });
+    if (waitExit) {
+      child.on('close', (code) => { child.unref(); done(code === 0); });
+    } else {
+      child.on('spawn', () => { child.unref(); done(true); });
+    }
   });
 }
 
@@ -106,7 +110,7 @@ async function privileged(manager) {
   const pkexec = await which('pkexec');
   if (pkexec) {
     try {
-      return await detach(pkexec, ['sh', '-c', manager.run]);
+      return await detach(pkexec, ['sh', '-c', manager.run], true);
     } catch (e) {
       // fall through to a terminal
     }
@@ -128,12 +132,13 @@ async function run() {
   const manager = await detect();
   if (!manager) return { handled: false, via: null };
 
+  let chosen = manager;
   if (manager.alt) {
     const altPath = await which(manager.alt.probe[0]);
-    if (!altPath && manager.alt.run) manager.run = manager.alt.run;
+    if (!altPath && manager.alt.run) chosen = { ...manager, run: manager.alt.run };
   }
 
-  return { handled: await privileged(manager), via: manager.name };
+  return { handled: await privileged(chosen), via: chosen.name };
 }
 
 module.exports = { run, detect, MANAGERS };

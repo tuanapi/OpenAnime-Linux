@@ -75,8 +75,8 @@ varlık olarak yayımlanıyor.
 - **Pencere görev çubuğuyla eşleşmiyordu.** Uygulamanın pencere sınıfı (`openanime`)
   ile `.desktop` dosyasındaki `StartupWMClass` değeri (`OpenAnime`) birbirinden
   farklıydı; bu yüzden görev çubuğu ya da dock ikonu pencereyi tanımıyor, ikinci bir
-  simge açıyor ya da hiç simge göstermiyordu. İkisi de artık `openanime`. Aynı
-  eşleşme Nix paketinde de zaten doğruydu.
+  simge açıyor ya da hiç simge göstermiyordu. İkisi de artık `openanime`. Nix paketi
+  de aynı şekilde düzeltildi (flake.nix içinde de `StartupWMClass=OpenAnime` idi).
 - **AMD kartlarda `RADV_DEBUG` kendi adını değerine yazıyordu.** Değişken
   `RADV_DEBUG=RADV_DEBUG=nodcc` biçiminde kuruluyordu, bu yüzden Radeon
   sürücüsü ayarı geçersiz sayılıyordu. Artık düz `nodcc` yazılıyor; `AMD_DEBUG`

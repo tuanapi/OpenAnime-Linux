@@ -85,6 +85,7 @@ function loadConfig() {
     if (fs.existsSync(configPath)) {
       const content = fs.readFileSync(configPath, 'utf8');
       const parsed = JSON.parse(content);
+      if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return defaults;
       const merged = {
         ...defaults,
         ...parsed,
@@ -287,7 +288,7 @@ if (!gotTheLock) {
 function openExternalSafe(url) {
   try {
     const u = new URL(url);
-    if (u.protocol !== 'http:' && u.protocol !== 'https:') return false;
+    if (u.protocol !== 'https:') return false;
   } catch (e) {
     return false;
   }
@@ -361,12 +362,14 @@ async function createMainWindow() {
   let useCustomFrame = config.useCustomFrame || false;
   let winBounds = sanitizeBounds(config.bounds || {});
   let isMaximized = config.isMaximized || false;
-  const tb = config.titlebar || {};
+  const tbSrc = config.titlebar;
+  const tb = (tbSrc && typeof tbSrc === 'object' && !Array.isArray(tbSrc)) ? tbSrc : {};
   const nnum = (v, f) => (Number.isFinite(+v) ? +v : f);
+  const nstr = (v, f) => (typeof v === 'string' && v ? v : f);
 
   // Uses Electron's native Window Controls Overlay when useCustomFrame is on
   const frameOptions = useCustomFrame
-    ? { titleBarStyle: 'hidden', titleBarOverlay: { color: tb.color, symbolColor: tb.symbolColor, height: nnum(tb.height, 46) } }
+    ? { titleBarStyle: 'hidden', titleBarOverlay: { color: nstr(tb.color, '#00000000'), symbolColor: nstr(tb.symbolColor, '#ffffffcc'), height: nnum(tb.height, 46) } }
     : { frame: true };
 
   mainWindow = new BrowserWindow({
@@ -788,7 +791,7 @@ function updateDiscordRPCFromPremid(data) {
     smallImageKey: watchingVideo ? (pausedNow ? PAUSE_BADGE_URL : PLAY_BADGE_URL) : undefined,
     smallImageText: watchingVideo ? (pausedNow ? 'Duraklatıldı' : 'İzliyor') : undefined,
     instance: false,
-    type: 3 // Watching
+    type: 3
   };
 
   if (currentStart > 0) {
@@ -866,7 +869,7 @@ function initDiscordRPC() {
   }
 
   rpc.login()
-    .then(() => { /* 'ready' event handles success */ })
+    .then(() => {})
     .catch(err => {
       console.log('Discord RPC connection failed. Retrying in 15s...');
       isConnecting = false;

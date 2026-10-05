@@ -99,14 +99,16 @@ function start(options) {
     }
   };
 
+  let interval = null;
   const firstRun = setTimeout(() => {
     check();
-    setInterval(check, CHECK_INTERVAL_MS);
+    interval = setInterval(check, CHECK_INTERVAL_MS);
   }, FIRST_CHECK_DELAY_MS);
 
   return () => {
     stopped = true;
     clearTimeout(firstRun);
+    if (interval) clearInterval(interval);
   };
 }
 

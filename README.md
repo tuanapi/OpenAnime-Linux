@@ -71,6 +71,15 @@ nix run github:tuanapi/OpenAnime-Linux
 nix profile install github:tuanapi/OpenAnime-Linux
 ```
 
+### Paket depoları (önerilen)
+
+`deb`, `rpm` ve `pacman` paketleri imzalı depolardan da kurulabilir; kurulum
+yönergeleri `packaging/repo/README.md` içindedir. Depo anahtarı parmak izi:
+
+```
+F834BFA883FD8148B3D9D44A3DC4F7E104D352CA
+```
+
 ### Kaldırma
 
 AppImage: dosyayı silin. AUR: `yay -Rns openanime-bin`. deb: `sudo apt remove
@@ -109,7 +118,8 @@ Dosya bozulursa silin; uygulama açılışta varsayılanlarla yeniden oluşturur
 | `persistFullscreen` | `false` | Bölüm geçişlerinde tam ekranda kal. |
 | `isMaximized` | `false` | Pencere büyütülmüş açılsın mı. |
 | `bounds` | `{...}` | Son pencere konumu ve boyutu. Konum ekranın dışındaysa yeniden ortalanır. |
-| `forceWebGPU` | `true` | `true` ise sitenin WebGPU tercihi geçersiz kılınır; `false` ise hiç dokunulmaz. |
+| `forceWebGPU` | `true` | Sitenin WebGPU tercihini geçersiz kılar. `true` ise WebGPU açılır, `false` ise kapatılır. |
+| `dismissedUpdate` | `null` | Ertelenen güncelleme bildiriminin sürüm etiketi. Elle silinirse bildirim yeniden gösterilir. |
 
 Geliştirici ve paketleme seçenekleri — normalde değiştirilmesi gerekmez:
 
@@ -129,9 +139,10 @@ Uygulama, görüntüyü hangi GPU'nun işlediğini otomatik algılar ve hibrit s
 WebGPU'yu ayrık GPU'ya yönlendirir. Algılamayı doğrulamak için:
 
 ```bash
-./OpenAnime-*.AppImage --diagnose    # AppImage
-openanime --diagnose                # paketli kurulum (AUR, deb, rpm)
-npm run diagnose                    # kaynak sürüm
+./OpenAnime-*.AppImage --diagnose     # AppImage
+openanime --diagnose                 # AUR veya Nix kurulumu
+/opt/OpenAnime/openanime --diagnose  # deb / rpm kurulumu
+npm run diagnose                     # kaynak sürüm
 ```
 
 Çıktıda `webgpu adapter` satırı WebGPU'yu hangi GPU'nun çalıştırdığını, `webgpu fps

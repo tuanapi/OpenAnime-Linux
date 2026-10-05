@@ -145,7 +145,7 @@ jobs:
           export GNUPGHOME="$RUNNER_TEMP/gnupg-smoke"
           mkdir -p "$GNUPGHOME" && chmod 700 "$GNUPGHOME"
           gpg --batch --quiet --import packaging/repo/openanime-repo.asc
-          printf '%s:6:\n' "$(gpg --with-colons --fingerprint packaging/repo/openanime-repo.asc | awk -F: '/^fpr:/{print $10; exit}')" \
+          printf '%s:6:\n' "$(gpg --show-keys --with-colons --fingerprint packaging/repo/openanime-repo.asc | awk -F: '/^fpr:/{print $10; exit}')" \
             | gpg --batch --import-ownertrust
           mkdir -p "$RUNNER_TEMP/pac/db" "$RUNNER_TEMP/pac/cache"
           printf '[options]\nArchitecture = x86_64\nDBPath = %s\nCacheDir = %s\nGPGDir = %s\n\n[openanime]\nServer = file://%s/repo-site/pacman\nSigLevel = Required DatabaseRequired\n' \
@@ -177,7 +177,7 @@ jobs:
           if [ -d pacman ]; then find pacman -maxdepth 1 -name '*.pkg.tar.*' -exec cp -a {} repo-site/pacman/ \; ; fi
           cp -a repo-site/. .
           rm -rf repo-site
-          git add apt rpm pacman openanime-repo.asc
+          git add -A apt rpm pacman openanime-repo.asc
           git commit -m "repo: publish metadata for $TAG" || echo "nothing new to publish"
           git push origin gh-pages
 

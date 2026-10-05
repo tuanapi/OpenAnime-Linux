@@ -518,9 +518,10 @@
         if (tick) return;
         tick = setTimeout(() => { tick = null; inject(); }, 400);
       });
-      observer.observe(document.body, { childList: true, subtree: true });
+      if (document.body) observer.observe(document.body, { childList: true, subtree: true });
     }
     function findRef() {
+      if (!document.body) return null;
       const targets = ['Kişiselleştirilmiş öneriler', 'NSFW uyarılarını sıfırla'];
       const exact = new Array(targets.length).fill(null);
       const loose = new Array(targets.length).fill(null);

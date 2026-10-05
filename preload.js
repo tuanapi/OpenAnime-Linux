@@ -4,6 +4,8 @@ const forceWebGPU = ipcRenderer.sendSync('get-config', 'forceWebGPU');
 try {
   if (forceWebGPU === true && localStorage.getItem('settings.useWebGPU') !== 'true') {
     localStorage.setItem('settings.useWebGPU', 'true');
+  } else if (forceWebGPU === false && localStorage.getItem('settings.useWebGPU') === 'true') {
+    localStorage.setItem('settings.useWebGPU', 'false');
   }
 } catch (e) {}
 
@@ -103,7 +105,7 @@ contextBridge.exposeInMainWorld('openanime', {
 
 if (!isChildWindow) {
   const source = ipcRenderer.sendSync('get-injected-source');
-  if (source) webFrame.executeJavaScript(source);
+  if (source) webFrame.executeJavaScript(source).catch(() => {});
 }
 
 window.addEventListener('DOMContentLoaded', () => {
