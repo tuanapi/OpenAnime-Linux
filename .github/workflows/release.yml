@@ -160,7 +160,6 @@ jobs:
         if: env.SKIP_REPO != '1'
         env:
           REPO_GPG_KEY_ID: ${{ secrets.REPO_GPG_KEY_ID }}
-          SITE_BASE: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
         run: |
           bash scripts/repo/build-repo.sh dist repo-site OpenAnime "$REPO_GPG_KEY_ID" pool-seed
           cp packaging/repo/openanime-repo.asc repo-site/openanime-repo.asc

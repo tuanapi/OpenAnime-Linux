@@ -28,11 +28,6 @@
 
           src = ./.;
 
-          # Covers package-lock.json, so a version bump alone changes it. Refresh
-          # with:
-          #   nix run "github:NixOS/nixpkgs/$(python3 -c "import json;print(json.load(open('flake.lock'))['nodes']['nixpkgs']['locked']['rev'])")#prefetch-npm-deps" -- package-lock.json
-          # Use the locked revision above, not nixpkgs-unstable: the channel
-          # moves daily and yields a different hash for the same lockfile.
           npmDepsHash = "sha256-orxbHbGOKkIZUq9hxRGAYqvEVrgrDvQyQPoWrZcqJuE=";
 
           # Runtime only needs @xhayper/discord-rpc — electron and
