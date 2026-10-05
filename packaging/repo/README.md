@@ -89,26 +89,39 @@ pacman imzasız depoları reddeder ve anahtarı `pacman-key` ile güvenilir
 işaretlemeniz gerekir:
 
 ```bash
-sudo pacman-key --init
 curl -fsSL https://tuanapi.github.io/OpenAnime-Linux/openanime-repo.asc -o /tmp/openanime-repo.asc
 sudo pacman-key --add /tmp/openanime-repo.asc
 sudo pacman-key --finger F834BFA883FD8148B3D9D44A3DC4F7E104D352CA
-sudo pacman-key --lsign-key F834BFA883FD8148B3D9D44A3DC4F7E104D352CA
 
-echo -e '\n[openanime]\nServer = https://tuanapi.github.io/OpenAnime-Linux/pacman\nSigLevel = Required DatabaseRequired' \
-  | sudo tee -a /etc/pacman.conf
+printf 'F834BFA883FD8148B3D9D44A3DC4F7E104D352CA:6:\n' \
+  | sudo gpg --homedir /etc/pacman.d/gnupg --import-ownertrust
+
+sudo tee -a /etc/pacman.conf >/dev/null <<'EOF'
+
+[openanime]
+SigLevel = Required DatabaseOptional
+Server = https://tuanapi.github.io/OpenAnime-Linux/pacman
+EOF
 
 sudo pacman -Sy
 sudo pacman -S openanime
 ```
 
-`--add` tek başına yetmez; `--lsign-key` olmadan pacman
-`unknown trust` deyip depoyu reddeder.
+Bölüm `/etc/pacman.conf` dosyasının sonuna eklenir. `/etc/pacman.d/openanime.conf`
+içine yazmak işe yaramaz: Arch'un `pacman.conf` dosyasında `Include =
+/etc/pacman.d/*.conf` glob'u yoktur, yalnızca `mirrorlist` gibi tek tek
+dosyalar Include edilir. Böyle bir bölüm varsa `pacman -Sy` onu sessizce
+atlar ve depo hiç görünmez.
+
+`--add` tek başına yetmez; anahtar `unknown trust` deyip veritabanı eşitlemesi
+`invalid or corrupted database (PGP signature)` ile başarısız olur. `--lsign-key`
+bunu çözmez, çünkü üçüncü bir taraftarın anahtarının gizli anahtarı yoktur ve
+yerel imza üretilemez. Sahiplik güveni (`6` = tam) yeterlidir.
 
 Kaldırmak için:
 
 ```bash
-sudo sed -i '/^\[openanime\]/,+3d' /etc/pacman.conf
+sudo sed -i '/^\[openanime\]$/,+2d' /etc/pacman.conf
 sudo pacman -Rns openanime
 ```
 

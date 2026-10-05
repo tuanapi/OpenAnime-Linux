@@ -60,7 +60,9 @@ jobs:
           SOURCE_DATE_EPOCH="$(git log -1 --format=%ct)"
           echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH ($(git log -1 --format=%cI))"
           echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH" >> "$GITHUB_ENV"
-          npm run dist -- --linux AppImage deb rpm tar.gz pacman
+          # electron-builder infers a GitHub provider from the origin remote and
+          # publishes on every run, tags included; Create Release owns uploads.
+          npm run dist -- --linux AppImage deb rpm tar.gz pacman --publish never
 
       - name: Create Portable Zip
         run: cd dist && zip -r OpenAnime-${{ github.ref_name }}-portable.zip linux-unpacked/
@@ -73,6 +75,31 @@ jobs:
             *.AppImage *.deb *.rpm *.pacman *.tar.gz *-portable.zip \
             > CHECKSUMS.txt
           cat CHECKSUMS.txt
+
+      # electron-builder writes this only when publishing, which --publish never
+      # suppresses; generated here so it cannot drift from the built AppImage.
+      - name: Generate Update Manifest
+        if: startsWith(github.ref, 'refs/tags/')
+        run: |
+          # Resolved before cd: inside the output block a failure would only
+          # blank the field and still publish a manifest.
+          VERSION="$(node -p "require('./package.json').version")"
+          RELEASE_DATE="$(git log -1 --format=%cI)"
+          cd dist
+          APPIMAGE="$(ls *.AppImage)"
+          SIZE="$(stat -c %s "$APPIMAGE")"
+          SHA512="$(sha512sum "$APPIMAGE" | cut -d' ' -f1)"
+          {
+            echo "version: $VERSION"
+            echo "files:"
+            echo "  - url: $APPIMAGE"
+            echo "    sha512: $SHA512"
+            echo "    size: $SIZE"
+            echo "path: $APPIMAGE"
+            echo "sha512: $SHA512"
+            echo "releaseDate: $RELEASE_DATE"
+          } > latest-linux.yml
+          cat latest-linux.yml
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
@@ -133,6 +160,7 @@ jobs:
         if: env.SKIP_REPO != '1'
         env:
           REPO_GPG_KEY_ID: ${{ secrets.REPO_GPG_KEY_ID }}
+          SITE_BASE: https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
         run: |
           bash scripts/repo/build-repo.sh dist repo-site OpenAnime "$REPO_GPG_KEY_ID" pool-seed
           cp packaging/repo/openanime-repo.asc repo-site/openanime-repo.asc
@@ -213,6 +241,9 @@ jobs:
         env:
           TAG: ${{ github.ref_name }}
         run: |
+          # Captured before the branch switch below, which replaces the working
+          # tree with gh-pages and so drops packaging/.
+          cp packaging/repo/index.html "$RUNNER_TEMP/index.html"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           if git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
@@ -229,8 +260,9 @@ jobs:
           # build-repo.sh merged them in before generating the indexes. Copying
           # them here as well would re-add files that no index references.
           cp -a repo-site/. .
+          cp "$RUNNER_TEMP/index.html" ./index.html
           rm -rf repo-site
-          git add -A apt rpm pacman openanime-repo.asc
+          git add -A apt rpm pacman openanime-repo.asc index.html
           git commit -m "repo: publish metadata for ${TAG:-manual}" || echo "nothing new to publish"
           git push origin gh-pages
 

@@ -5,6 +5,9 @@
 #
 # usage: build-repo.sh <dist-dir> <out-dir> <origin> [gpg-key-id] [seed-dir]
 #
+# SITE_BASE must be set in the environment to the URL the finished tree is served
+# from; the generated directory indexes link absolutely and cannot work without it.
+#
 # seed-dir, when given, is a flat directory of packages already published to
 # gh-pages. They are merged into the pool before any index is generated, so the
 # generated metadata actually references them. Merging them in afterwards would
@@ -22,6 +25,13 @@ ORIGIN="${3:?missing origin label}"
 GPG_KEY="${4:-}"
 FORMATS="${FORMATS:-apt rpm pacman}"
 SEED_DIR="${5:-}"
+SITE_BASE="${SITE_BASE:-}"
+if [ -z "$SITE_BASE" ]; then
+  echo "SITE_BASE must be set to the URL the site is served from, e.g." >&2
+  echo "https://<owner>.github.io/<repo> -- the directory indexes link absolutely" >&2
+  echo "and there is no way to derive that from the arguments above." >&2
+  exit 2
+fi
 
 missing=""
 case " $FORMATS " in *" apt "*)  command -v apt-ftparchive >/dev/null 2>&1 || missing="$missing apt-utils(apt-ftparchive)" ;; esac
@@ -221,5 +231,49 @@ for stem in "$PKG_NAME.db" "$PKG_NAME.files"; do
   done
 done
 fi
+
+# Pages serves no directory listing, so every directory in the tree answers 404
+# when browsed. One index per directory makes the whole tree clickable. The
+# hand-written landing page overwrites the root one at publish time.
+#
+# Links are absolute rather than relative. A relative "../" resolves against
+# whatever the client considers the base directory, and a request that arrives
+# without a trailing slash makes that the parent, so ".." walks straight out of
+# the site. The mount point is not derivable from OUT_DIR or from ORIGIN, which
+# is a human-readable label rather than a URL, so SITE_BASE carries it.
+write_indexes() {
+  local dir rel base
+  while IFS= read -r -d '' dir; do
+    if [ "$dir" = "$OUT_DIR" ]; then
+      rel=""
+    else
+      rel="${dir#"$OUT_DIR"/}"
+    fi
+    base="${SITE_BASE%/}/$rel"
+    {
+      echo '<!DOCTYPE html><html><head><meta charset="utf-8">'
+      echo "<title>OpenAnime deposu &mdash; ${rel:-/}</title>"
+      echo '<style>body{font:15px/1.6 system-ui,sans-serif;margin:0 auto;'
+      echo 'max-width:44rem;padding:2rem 1.25rem;background:#14161a;color:#d7dae0}'
+      echo 'h1{font-size:1.1rem;color:#f2f4f7}li{font-family:ui-monospace,monospace}'
+      echo 'a{color:#7fb2ff}ul{padding-left:1.2rem}</style></head><body>'
+      echo "<h1>OpenAnime deposu &mdash; ${rel:-/}</h1>"
+      if [ "$dir" != "$OUT_DIR" ]; then
+        echo "<p><a href=\"${SITE_BASE%/}/\">&larr; kök</a></p>"
+      fi
+      echo '<ul>'
+      for entry in $(cd "$dir" && ls -1 | grep -v '^index.html$' | sort); do
+        [ -e "$dir/$entry" ] || continue
+        if [ -d "$dir/$entry" ]; then
+          echo "<li><a href=\"$base/$entry/\">$entry/</a></li>"
+        else
+          echo "<li><a href=\"$base/$entry\">$entry</a></li>"
+        fi
+      done
+      echo '</ul></body></html>'
+    } > "$dir/index.html"
+  done < <(find "$OUT_DIR" -type d -print0 | sort -z)
+}
+write_indexes
 
 echo "==> wrote $OUT_DIR (formats: $FORMATS)"
