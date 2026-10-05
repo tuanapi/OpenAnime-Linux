@@ -41,6 +41,10 @@
         "libsecret-1-0",
         "libxkbcommon0",
         "libxkbfile1"
+      ],
+      "fpm": [
+        "--deb-changelog",
+        "packaging/deb-changelog.txt"
       ]
     },
     "rpm": {

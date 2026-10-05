@@ -7,7 +7,11 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: release-${{ github.ref }}
+  # One group for the whole repo, not one per ref. Every run rewrites the same
+  # gh-pages branch, and a per-ref group let a tag build and a workflow_dispatch
+  # push concurrently, where the loser failed on a non-fast-forward. Serialising
+  # releases is cheap: they are sequential by nature.
+  group: release-${{ github.repository }}
   cancel-in-progress: false
 
 jobs:
@@ -41,7 +45,22 @@ jobs:
       - name: Build Packages
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: npm run dist -- --linux AppImage deb rpm tar.gz pacman
+          # fpm stamps generated files -- including usr/share/doc/*/changelog.gz
+          # inside the deb -- with the current time unless SOURCE_DATE_EPOCH is
+          # set. That made every rebuild of the same commit produce a different
+          # deb, so the copy in the apt repo never matched the release asset.
+          # Pinning it to the commit timestamp makes a build reproducible per
+          # revision: same commit in, byte-identical packages out.
+          #
+          # Derived from git rather than github.event.head_commit.timestamp,
+          # because that expression is an ISO-8601 string on push and absent on
+          # workflow_dispatch, and fpm parses this value with Integer() -- an
+          # ISO string would silently become 2026.
+        run: |
+          SOURCE_DATE_EPOCH="$(git log -1 --format=%ct)"
+          echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH ($(git log -1 --format=%cI))"
+          echo "SOURCE_DATE_EPOCH=$SOURCE_DATE_EPOCH" >> "$GITHUB_ENV"
+          npm run dist -- --linux AppImage deb rpm tar.gz pacman
 
       - name: Create Portable Zip
         run: cd dist && zip -r OpenAnime-${{ github.ref_name }}-portable.zip linux-unpacked/
@@ -90,12 +109,32 @@ jobs:
           printf '%s' "$REPO_GPG_PRIVATE_KEY" | gpg --batch --import
           gpg --batch --list-secret-keys --keyid-format LONG "$REPO_GPG_KEY_ID"
 
+      - name: Seed Repository Pool
+        if: env.SKIP_REPO != '1'
+        run: |
+          # Pull the packages already on gh-pages down flat, so build-repo.sh can
+          # merge them into the pool *before* it generates any index. Fetching
+          # them after generation put them in the pool with no metadata pointing
+          # at them: files a client could see but never install.
+          rm -rf pool-seed
+          mkdir -p pool-seed
+          if git ls-remote --exit-code --heads origin gh-pages >/dev/null 2>&1; then
+            git fetch --depth=1 origin gh-pages
+            git ls-tree -r --name-only FETCH_HEAD -- apt/pool rpm pacman \
+              | grep -E '\.(deb|rpm|pkg\.tar\.[a-z]+)$' \
+              | while IFS= read -r path; do
+                  git show "FETCH_HEAD:$path" > "pool-seed/$(basename "$path")"
+                done
+          fi
+          echo "seeded $(find pool-seed -type f | wc -l) package(s) from gh-pages"
+          find pool-seed -type f | sort
+
       - name: Generate Repository Metadata
         if: env.SKIP_REPO != '1'
         env:
           REPO_GPG_KEY_ID: ${{ secrets.REPO_GPG_KEY_ID }}
         run: |
-          bash scripts/repo/build-repo.sh dist repo-site OpenAnime "$REPO_GPG_KEY_ID"
+          bash scripts/repo/build-repo.sh dist repo-site OpenAnime "$REPO_GPG_KEY_ID" pool-seed
           cp packaging/repo/openanime-repo.asc repo-site/openanime-repo.asc
           find repo-site -type f | sort
 
@@ -186,9 +225,9 @@ jobs:
             rm -rf ./* ./.github ./.gitignore
             mv "$RUNNER_TEMP/keep-site" ./repo-site
           fi
-          if [ -d apt/pool ]; then cp -a apt/pool repo-site/apt/; fi
-          if [ -d rpm ]; then find rpm -maxdepth 1 -name '*.rpm' -exec cp -a {} repo-site/rpm/ \; ; fi
-          if [ -d pacman ]; then find pacman -maxdepth 1 -name '*.pkg.tar.*' -exec cp -a {} repo-site/pacman/ \; ; fi
+          # The pool already carries every previously published package, because
+          # build-repo.sh merged them in before generating the indexes. Copying
+          # them here as well would re-add files that no index references.
           cp -a repo-site/. .
           rm -rf repo-site
           git add -A apt rpm pacman openanime-repo.asc
