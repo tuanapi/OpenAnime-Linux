@@ -1,92 +1,81 @@
-# Sürüm 1.1.8
+# Sürüm 1.1.9
 
-## Yeni
-
-**Uygulama içi ayar kartları.** Discord RPC ve Pencere ayarları artık sitenin kendi
-`/settings` sayfasında, sitenin gerçek Expander bileşenine bağlanan iki kart olarak
-görünür. Kartlar yerel site kartlarıyla aynı şekilde açılır; animasyon ve klavye
-davranışı da yerellerle aynıdır.
-
-- **Discord RPC** – aç/kapa, **RPC Görünürlüğü** (`Her şey` / `İzlenen`), **Zaman Aşımı**
-  (1–60 dk).
-- **Pencere** – **Özel Pencere Çerçevesi**, **Tam Ekranı Koru**, **Açılışta Pencereyi Büyüt**.
-
-**Discord durum rozetleri.** Oynatılıyor / duraklatıldı durumları kendi ikonlarını
-kullanır.
-
-**Zaman aşımı ayarı.** `pauseDropMinutes` ile duraklatıldıktan kaç dakika sonra Discord
-durumunun temizleneceği belirlenebilir.
-
-**Hata sayfası.** Sayfa üç kez yüklenemezse boş pencere yerine hatayı açıklayan bir
-sayfa gösterilir.
-
-**Güncelleme denetleyicisi.** Uygulama açılışta ve altı saatte bir GitHub
-sürümlerini denetler. Yeni bir sürüm varsa pencere içinde bildirim çıkar. Bildirimi
-kapatmak yeterlidir; "Şimdi Güncelle" dediğinizde güncelleme işini uygulamanın kendi
-paket yöneticisine devreder — `pacman`, `dnf` ya da `apt` ne kuruluysa o açılır.
-Uygulama kendi başına hiçbir paketi indirip kurmaz.
-
-**İmzalı paket depoları.** `deb`, `rpm` ve `pacman` paketleri artık imzalı bir depoda
-da sunuluyor. Depoyu ekledikten sonra güncellemeler dağıtımınızın kendi aracıyla
-gelir:
-
-- Arch / Manjaro / EndeavourOS: `pacman -Syu`
-- Fedora / openSUSE / RHEL: `dnf upgrade`
-- Debian / Ubuntu / Mint / Pop!_OS: `apt update && apt upgrade`
-
-Depo anahtarı `packaging/repo/openanime-repo.asc` dosyasındadır; kurulum
-yönergeleri `packaging/repo/README.md` içinde.
-
-**`CHECKSUMS.txt`.** Her sürümün dosyaları için SHA-256 sağlama toplamları ayrı bir
-varlık olarak yayımlanıyor.
+Bu sürüm uygulamanın davranışını değiştiren bir düzeltmeyi ve paketleme ile depo
+altyapısını birlikte getiriyor. Sürüm 1.1.8 ile 1.1.9 arasında bir gün geçmiş
+olsa da, değişiklikler birbirinden bağımsız ve tek bir konuda toplanmıyor.
 
 ## Düzeltilenler
 
-- **Ağ kontrolü yanlış adrese gidiyordu.** "İnternet var mı" testi `1.1.1.1:443`
-  (Cloudflare) ile kuruluyordu; o adres engellendiğinde test başarısız oluyor ve eski
-  sayfayı yenileme hiç çalışmıyordu. Artık `openani.me` kullanılıyor.
-- **Ağ kontrolü yalnızca TCP'yi yokluyordu.** Bağlantı açık olduğu için "internet
-  var" deniyordu, ama TLS el sıkışması başarısız olduğunda sitenin kendi çevrimdışı
-  sayfası açılıp kalıyordu. Artık test gerçek bir HTTPS isteği yapıyor; bağlantı
-  koptuğunda yenileme denemeleri birkaç saniye arayla tekrarlanıyor.
-- **"Tam Ekranı Koru" ayarı ancak yeniden başlayınca etkili oluyordu.** Ayar
-  pencere açılırken bir kez okunuyor, sonra değişiklikler dikkate alınmıyordu. Artık
-  ayar anında geçerli oluyor.
-- **Kayıtlı pencere konumu geçersiz kalınca uygulama görünmez açılıyordu.** Monitörü
-  değiştirince ya da çözünürlüğü oynatınca eski konum olduğu gibi kullanılıyordu.
-  Konum ve boyut artık bağlı bulunduğu ekrana sığdırılıyor; sığmıyorsa pencere
-  ortalanıyor.
-- **Pencereler sandbox olmadan çalışıyordu.** Ana pencere ve açılır
-  pencereler artık `sandbox: true` ile açılıyor.
-- **`get-config` config.json'daki her anahtarı renderer'a veriyordu.** Okuma listesiyle
-  sınırlandı.
-- **WebGPU tercihi her açılışta yeniden yazılıyordu.** `settings.useWebGPU` değeri
-  kontrol edilmeden, her açılışta üzerine yazılıyordu. Artık yalnızca gerçekten
-  farklıysa yazılır; `forceWebGPU` `false` ise hiç dokunulmaz.
-- **config.json yazımı atomik değildi.** Yazma sırasında uygulama çökerse dosya yarım
-  kalıyordu. Artık `config.json.tmp` üzerine yazılıp `rename` ile yerine konuyor;
-  kapanışta bekleyen yazma tamamlanıyor.
-- **X11'e geçişte parent süreç uygulama boyunca arka planda açık kalıyordu.** Artık
-  3 saniye bekledikten sonra sonlanıyor.
-- **Paket bağımlılıklarında `libxkbcommon` eksikti.** Electron `libxkbcommon`'u doğrudan
-  bağlıyor; bu kütüphane `deb` / `rpm` / `pacman` ve kaynak AUR paketinde bağımlılık
-  olarak tanımlı değildi. `-bin` AUR paketinde ayrıca `libxkbfile` ve `libxtst` de
-  eksikti. Üçü de artık tüm paketlerde tanımlı.
-- **Pencere görev çubuğuyla eşleşmiyordu.** Uygulamanın pencere sınıfı (`openanime`)
-  ile `.desktop` dosyasındaki `StartupWMClass` değeri (`OpenAnime`) birbirinden
-  farklıydı; bu yüzden görev çubuğu ya da dock ikonu pencereyi tanımıyor, ikinci bir
-  simge açıyor ya da hiç simge göstermiyordu. İkisi de artık `openanime`. Nix paketi
-  de aynı şekilde düzeltildi (flake.nix içinde de `StartupWMClass=OpenAnime` idi).
-- **AMD kartlarda `RADV_DEBUG` kendi adını değerine yazıyordu.** Değişken
-  `RADV_DEBUG=RADV_DEBUG=nodcc` biçiminde kuruluyordu, bu yüzden Radeon
-  sürücüsü ayarı geçersiz sayılıyordu. Artık düz `nodcc` yazılıyor; `AMD_DEBUG`
-  için de aynı düzeltme geçerli.
+- **Uygulama açılışta sayfayı iki kez yeniliyordu.** Sayfa yüklenirken bir yenileme
+  daha tetikleniyordu; ikinci yükleme de yenileme yaptığı için istek sayısı
+  gereğinden fazlaydı. Artık `loadURL` çağrısından hemen sonra **tek ve koşulsuz**
+  bir yenileme yapılır. "İnternet var mı" ön kontrolü, `openani.me`'ye bağlanma
+  denemesi ve bunun zamanlayıcısı tamamen kaldırıldı; ön kontrol artık yalnızca
+  hizmet çalışanının (`serviceWorker.controller`) var olup olmadığını okuyor.
+  Sayfa üç kez yüklenemezse gösterilen hata sayfası da aynı sıralamayı kullanıyor.
+  Davranış değişikliği: ağ sonradan geri gelirse uygulama artık kendini yeniden
+  denemez, hata sayfasında kalır.
+
+- **`deb` ve `rpm` paketleri çalışma zamanı kitaplıklarını beyan etmiyordu.**
+  `libasound2t64` (ALSA), `libcups2` (yazdırma) ve `libgbm1` (Mesa) Electron tarafından
+  doğrudan yükleniyor ama paket bağımlılıklarında yoktu; dağıtım bunları zaten
+  kurmuş olsa bile paket yöneticisi bunları bilmiyordu. Ubuntu 24.04 paket dizini
+  karşısında çözümlenerek doğrulandı: bağımlılıklar eklenince çözümleme 177 pakete
+  çıkıyor, eski hâliyle bu üç kitaplık hiç getirilmiyordu. `rpm` için karşılıkları
+  `alsa-lib`, `cups-libs` ve `mesa-libgbm`; AUR paketlerine de `cups-libs` ve `mesa`
+  eklendi.
+
+## Yeni
+
+- **Depo ana sayfası.** İmzalı deponun kökünde
+  `https://tuanapi.github.io/OpenAnime-Linux/` adresinde bir giriş sayfası var.
+  Paket yöneticinize eklemeniz gereken komutlar, parmak izi ve imza anahtarı
+  tek yerde toplanmış durumda; her komut bloğunun üzerine gelince **Kopyala**
+  düğmesi beliriyor.
+
+- **Depolarda her dizin gezilebilir.** GitHub Pages dizin listelemesi sunmadığı
+  için `apt/`, `rpm/`, `pacman/` ve alt dizinler gezildiğinde 404 dönüyordu. Artık
+  her dizin için bir dizin listesi üretiliyor; kök sayfa elle yazılan giriş
+  sayfasıyla değiştiriliyor.
+
+- **Depoda çok sürümlü geçmiş.** Daha önce yayımlanmış paketler bir sonraki
+  çalışmada havuza katılıp indeksler yeniden üretildiği için geçmiş sürümler
+  kurulabiliyor; `apt` ve `dnf` tarafında birden çok sürüm yan yana duruyor.
+  `pacman` veritabanı aynı adlı paketin yalnızca en yeni sürümünü tutabildiği
+  için orada tek sürüm kalıyor.
+
+- **`deb` paketleri artık tekrarlanabilir.** Aynı commit'ten yapılan iki derleme
+  artık birebir aynı sağlama toplamını üretiyor. Zaman damgası `SOURCE_DATE_EPOCH`
+  değerinden geliyor, paket günlüğü `packaging/deb-changelog.txt` dosyasından
+  okunuyor.
+
+## Altyapı
+
+- **Sürüm çalıştırmaları sıraya giriyor.** Her çalışma aynı `gh-pages` dalını
+  yeniden yazdığı için, eşzamanlı iki çalıştırma birbirinin üstüne yazıyordu.
+  Artık depo başına tek bir kuyruk var.
+- **`electron-builder` artık kendi kendine yayınlamıyor.** Yapılandırılmış bir
+  yayın sağlayıcısı olmadığında depo uzak sunucusundan GitHub'ı tahmin edip her
+  çalıştırmada, `workflow_dispatch` dâhil, yayın yapıyordu; var olmayan bir etiket
+  için yetim taslak sürüm oluşuyordu. Yayınlama kapatıldı, sürüm varlıklarını
+  yükleyen adım her koşulda çalışıyor.
+- **`latest-linux.yml`** dosyası electron-builder'ın kendisi yerine derlenen
+  AppImage'den üretiliyor, böylece dosya ile varlık arasında kayma olamıyor.
+- **Nix.** `flake.nix` içindeki Electron sürümü ile `package.json` arasındaki
+  uyuşmazlık giderildi ve bağımlılık karma`sı yenilendi. Ayrıca Nix'in Electron
+  paketinin WebGPU'yu derlemediği, bu yüzden Nix üzerinden kurulumda WebGPU'nun
+  çalışmadığı ve daha eski bir sürümün kurulması gerektiği belgelendi.
+- **Küçük düzeltmeler:** `dnf` adımındaki başıboş `</command>` ve kabuk değişkeni
+  kaldırıldı, `dnf`'e `-y` eklendi, `gpgkey=` verildi, depo üreticisindeki üç hata
+  giderildi, tüm `run:` blokları söz dizimi denetiminden geçirildi.
 
 ## 📥 İndirme Seçenekleri
 
 - **AppImage (`.AppImage`):** Tek tıkla çalışır, kurulum gerektirmez. (Tüm Linux dağıtımları için önerilir)
+- **İmzalı depo (arch):** `sudo pacman -S openanime` — yukarıdaki giriş sayfasındaki yönergeyi izleyin.
 - **Arch Linux (`.pacman`):** Arch Linux, Manjaro, EndeavourOS vb. sistemler için yerel paket.
 - **Debian/Ubuntu (`.deb`):** Debian, Ubuntu, Linux Mint, Pop!_OS vb. için kurulum paketi.
 - **Fedora/RHEL (`.rpm`):** Fedora, openSUSE, RHEL tabanlı sistemler için kurulum paketi.
+- **AUR:** `openanime` kaynaktan derler, `openanime-bin` hazır AppImage kullanır.
 - **Nix/NixOS:** `nix run github:tuanapi/OpenAnime-Linux` — ayrı indirme gerekmez, `flake.nix` repoda.
 - **Portable (`.zip` / `.tar.gz`):** Arşivi klasöre çıkartın ve doğrudan `openanime` dosyasını çalıştırın.
