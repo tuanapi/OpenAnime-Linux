@@ -127,15 +127,18 @@ jobs:
         if: env.SKIP_REPO != '1'
         run: |
           sudo rpm --import packaging/repo/openanime-repo.asc
-          # repo_gpgcheck is verified by libdnf, which takes its keys from the
-          # repo definition's gpgkey= and not from the rpm package keyring that
-          # `rpm --import` writes to. --repofrompath defines the repo inline, so
-          # without this the verification runs with no key at all and fails as
-          # "repomd.xml GPG signature verification error: Bad GPG signature".
-          # The APT and Pacman steps both hand their client the key explicitly;
-          # this is the same thing for dnf, and it mirrors the gpgkey= line the
-          # documented .repo file carries.
-          DNF="sudo dnf --disablerepo=* \
+          # -y is load-bearing, not a convenience flag. dnf keeps a per-repository
+          # pubring under /var/cache/dnf and populates it from an interactive
+          # "Is this ok [y/N]:" prompt. `rpm --import` does not feed it, by
+          # design (RHBZ 1768206). On a runner there is no TTY, so the prompt
+          # defaults to No, the key is never accepted, and dnf reports the
+          # misleading "repomd.xml GPG signature verification error: Bad GPG
+          # signature" rather than anything about a missing key. -y accepts the
+          # configured gpgkey= without prompting.
+          #
+          # gpgkey= is required too: it is how dnf learns which key to import,
+          # and --repofrompath defines the repo inline without one.
+          DNF="sudo dnf -y --disablerepo=* \
             --repofrompath=openanime,file://$PWD/repo-site/rpm \
             --setopt=openanime.gpgcheck=0 \
             --setopt=openanime.repo_gpgcheck=1 \
