@@ -8,11 +8,11 @@ Installed-Size: 294678
 Depends: libgtk-3-0, libnotify4, libnss3, libxss1, libxtst6, xdg-utils, libatspi2.0-0, libuuid1, libsecret-1-0, libxkbcommon0, libxkbfile1, libasound2t64 | libasound2, libcups2, libgbm1
 Recommends: libappindicator3-1
 Filename: pool/main/o/openanime/openanime_1.1.8_amd64.deb
-Size: 99799120
-MD5sum: 5a430ba3c4e3a129bb388b3daaf49874
-SHA1: f3dc86cdffca445a90f10d262b84b777c7d50aff
-SHA256: 4142cd1021d77fdbe21b93552e19c273a0e470e51ea969defe6835ace76573a4
-SHA512: c6bc68190f2c72698ac3371b45fa415e6f43d3504bb7a789bd12107d9ab68f3b2e55eb0f2b130542648dffeef3023cda1835f31fdceabe7aadf59a13525e7dad
+Size: 99798988
+MD5sum: 9745fbcb00ba198226133b3f5dc3b063
+SHA1: db4d932194aa5f724c243dfb5d8379d4e97f0478
+SHA256: 2e6cfa3d93e217458996764100c910f209f2b75fccd30a559874c22bb1257ef6
+SHA512: 3363b22c1460b2e28cd975172a26ea61cf73502a7824c198d1149c4c47d11000e2b1f689cad6ce6c820c2cdc8f8bd2a56fd081a4d10ec9b4c61451e4c3cc369d
 Homepage: https://github.com/tuanapi/OpenAnime-Linux
 Description: 
   OpenAnime için geliştirilmiş, resmi olmayan (unofficial), yerel WebGPU destekli Linux istemcisi.
