@@ -40,7 +40,10 @@
         "libuuid1",
         "libsecret-1-0",
         "libxkbcommon0",
-        "libxkbfile1"
+        "libxkbfile1",
+        "libasound2t64 | libasound2",
+        "libcups2",
+        "libgbm1"
       ],
       "fpm": [
         "--deb-changelog",
@@ -58,7 +61,10 @@
         "at-spi2-core",
         "(libuuid or libuuid1)",
         "libxkbcommon",
-        "libxkbfile"
+        "libxkbfile",
+        "alsa-lib",
+        "cups-libs",
+        "mesa-libgbm"
       ]
     },
     "pacman": {
@@ -69,7 +75,9 @@
         "alsa-lib",
         "libxtst",
         "libxkbfile",
-        "libxkbcommon"
+        "libxkbcommon",
+        "libcups",
+        "mesa"
       ]
     },
     "directories": {
