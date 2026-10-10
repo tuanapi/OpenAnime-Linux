@@ -64,6 +64,45 @@ jobs:
           # publishes on every run, tags included; Create Release owns uploads.
           npm run dist -- --linux AppImage deb rpm tar.gz pacman --publish never
 
+      - name: Import Repository Signing Key
+        env:
+          REPO_GPG_PRIVATE_KEY: ${{ secrets.REPO_GPG_PRIVATE_KEY }}
+          REPO_GPG_KEY_ID: ${{ secrets.REPO_GPG_KEY_ID }}
+        run: |
+          if [ -z "$REPO_GPG_PRIVATE_KEY" ] || [ -z "$REPO_GPG_KEY_ID" ]; then
+            echo "::notice title=Repository signing skipped::REPO_GPG_PRIVATE_KEY / REPO_GPG_KEY_ID secrets are not set"
+            echo "SKIP_REPO=1" >> "$GITHUB_ENV"
+            exit 0
+          fi
+          printf '%s' "$REPO_GPG_PRIVATE_KEY" | gpg --batch --import
+          gpg --batch --list-secret-keys --keyid-format LONG "$REPO_GPG_KEY_ID"
+
+      - name: Sign RPM Packages
+        if: env.SKIP_REPO != '1'
+        env:
+          REPO_GPG_KEY_ID: ${{ secrets.REPO_GPG_KEY_ID }}
+        run: |
+          # dnf verifies each package's own OpenPGP signature when gpgcheck=1,
+          # separately from repomd.xml. A signed repomd.xml does not make the
+          # packages signed, so an unsigned rpm is refused with "the package is
+          # not signed" however healthy the metadata is. Signing happens before
+          # the checksums are generated and the release is uploaded, so the
+          # release asset and the copy in the rpm repo are the same signed file.
+          for pkg in dist/*.rpm; do
+            rpmsign --addsign --define "_openpgp_sign_id $REPO_GPG_KEY_ID" "$pkg"
+          done
+
+          # Verify the way a client will: a throwaway rpmdb holding only the
+          # public key, so nothing is trusted merely because it is on this box.
+          # rpmkeys exits non-zero when a signature is missing or fails.
+          rpmdb="$RUNNER_TEMP/rpmdb"
+          mkdir -p "$rpmdb"
+          rpm --dbpath "$rpmdb" --initdb
+          rpm --dbpath "$rpmdb" --import packaging/repo/openanime-repo.asc
+          for pkg in dist/*.rpm; do
+            rpmkeys --dbpath "$rpmdb" --checksig "$pkg"
+          done
+
       - name: Create Portable Zip
         run: cd dist && zip -r OpenAnime-${{ github.ref_name }}-portable.zip linux-unpacked/
 
@@ -122,19 +161,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y apt-utils createrepo-c pacman-package-manager dnf dnf-plugins-core
-
-      - name: Import Repository Signing Key
-        env:
-          REPO_GPG_PRIVATE_KEY: ${{ secrets.REPO_GPG_PRIVATE_KEY }}
-          REPO_GPG_KEY_ID: ${{ secrets.REPO_GPG_KEY_ID }}
-        run: |
-          if [ -z "$REPO_GPG_PRIVATE_KEY" ] || [ -z "$REPO_GPG_KEY_ID" ]; then
-            echo "::notice title=Repository metadata skipped::REPO_GPG_PRIVATE_KEY / REPO_GPG_KEY_ID secrets are not set"
-            echo "SKIP_REPO=1" >> "$GITHUB_ENV"
-            exit 0
-          fi
-          printf '%s' "$REPO_GPG_PRIVATE_KEY" | gpg --batch --import
-          gpg --batch --list-secret-keys --keyid-format LONG "$REPO_GPG_KEY_ID"
 
       - name: Seed Repository Pool
         if: env.SKIP_REPO != '1'
@@ -204,16 +230,20 @@ jobs:
           #
           # gpgkey= is required too: it is how dnf learns which key to import,
           # and --repofrompath defines the repo inline without one.
+          #
+          # gpgcheck=1 makes this probe actually exercise the package signature,
+          # which is the check that used to fail with "the package is not
+          # signed" for Fedora users.
           sudo dnf -y --disablerepo='*' \
             --repofrompath=openanime,"file://$PWD/repo-site/rpm" \
-            --setopt=openanime.gpgcheck=0 \
+            --setopt=openanime.gpgcheck=1 \
             --setopt=openanime.repo_gpgcheck=1 \
             --setopt=openanime.gpgkey="file://$PWD/packaging/repo/openanime-repo.asc" \
             repoquery --qf '%{name}-%{version}-%{release}.%{arch}' openanime
           mkdir -p "$RUNNER_TEMP/dnf-probe"
           sudo dnf -y --disablerepo='*' \
             --repofrompath=openanime,"file://$PWD/repo-site/rpm" \
-            --setopt=openanime.gpgcheck=0 \
+            --setopt=openanime.gpgcheck=1 \
             --setopt=openanime.repo_gpgcheck=1 \
             --setopt=openanime.gpgkey="file://$PWD/packaging/repo/openanime-repo.asc" \
             download --downloaddir="$RUNNER_TEMP/dnf-probe" openanime

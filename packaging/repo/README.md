@@ -61,7 +61,7 @@ sudo tee /etc/yum.repos.d/openanime.repo > /dev/null <<'EOF'
 name=OpenAnime
 baseurl=https://tuanapi.github.io/OpenAnime-Linux/rpm
 enabled=1
-gpgcheck=0
+gpgcheck=1
 repo_gpgcheck=1
 gpgkey=https://tuanapi.github.io/OpenAnime-Linux/openanime-repo.asc
 EOF
@@ -72,9 +72,9 @@ sudo dnf install openanime
 `gpgkey` adresi ilk kullanımda otomatik indirilip içe aktarılır; onay
 istendiğinde `y` demek imzayı güvenilir kılar.
 
-`gpgcheck=0` çünkü tek tek `.rpm` dosyaları imzalı değil. Bütünlük `repomd.xml`
-imzasından geliyor: `repomd.xml` → `primary.xml` → paket `sha256` zinciri, yani
-`repo_gpgcheck=1` paket içeriğini de kapsıyor.
+`gpgcheck=1` çünkü tek tek `.rpm` dosyaları da depo anahtarıyla imzalanır. DNF
+hem depoların üst verisini (`repomd.xml`, `repo_gpgcheck=1`) hem de paketin
+kendisini (`gpgcheck=1`) aynı anahtarla doğrular.
 
 Kaldırmak için:
 

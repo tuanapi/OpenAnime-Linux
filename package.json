@@ -95,7 +95,8 @@
       "!packaging",
       "!venv"
     ],
-    "asar": true
+    "asar": true,
+    "buildNumber": "2"
   },
   "devDependencies": {
     "electron": "^44.5.1",
