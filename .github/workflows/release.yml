@@ -88,8 +88,10 @@ jobs:
           # not signed" however healthy the metadata is. Signing happens before
           # the checksums are generated and the release is uploaded, so the
           # release asset and the copy in the rpm repo are the same signed file.
+          # _gpg_name is the portable macro: rpm 4.18 refuses to sign unless it
+          # is set, and newer rpm resolves _openpgp_sign_id from it by default.
           for pkg in dist/*.rpm; do
-            rpmsign --addsign --define "_openpgp_sign_id $REPO_GPG_KEY_ID" "$pkg"
+            rpmsign --addsign --define "_gpg_name $REPO_GPG_KEY_ID" "$pkg"
           done
 
           # Verify the way a client will: a throwaway rpmdb holding only the
