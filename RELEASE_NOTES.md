@@ -1,38 +1,24 @@
-# Sürüm 1.1.9-2
+# Sürüm 1.2.0
 
-Bu bir paketleme sürümüdür. Uygulamanın kendisi **1.1.9** ile aynıdır; değişiklik
-yalnızca paket imzalama ve depo tarafındadır. Bu yüzden sürüm numarası değil, paket
-revizyonu (`-2`) arttı.
+Bu sürüm AUR paketlerinin (Arch Linux) bağımlılık tanımını düzeltir; uygulamanın
+kendisinde davranış değişikliği yoktur. Sürüm revizyonu paketleme düzeltmesiyle
+birlikte `1.2.0` olarak yayımlanır.
 
 ## Düzeltilenler
 
-- **RPM paketleri artık GPG ile imzalı.** `dnf`, `gpgcheck=1` ile her paketin
-  *kendi* OpenPGP imzasını denetler; imzalı `repomd.xml` paket imzasının yerini
-  tutmaz. Paketler daha önce imzasızdı, bu yüzden Fedora kullanıcıları
-  `openanime` kurarken `the package is not signed` hatası alıyordu. Artık her
-  `.rpm`, depo anahtarıyla imzalanıyor ve sürüme yüklenmeden önce imzası
-  doğrulanıyor.
-
-- **Fedora kurulum yönergesi sadeleşti.** Depo tanımındaki imzasız pakiti
-  tolere eden `gpgcheck=0` kaldırıldı. Hem depoların üst verisi
-  (`repo_gpgcheck=1`) hem paketin kendisi (`gpgcheck=1`) aynı anahtarla
-  doğrulanıyor.
-
-## Değişenler
-
-- **Paket revizyonu `2`.** `deb`, `rpm`, `pacman` ve her iki AUR paketi
-  `1.1.9-2` olarak yayımlanır. Böylece paketi eski `gpgcheck=0` ayarıyla kurmuş
-  Fedora kullanıcıları da `sudo dnf upgrade` ile imzalı pakete geçer.
-
-- **Depo giriş sayfası bağlantıları.** Alt dizinlerdeki "üst dizin" bağlantısı
-  artık tek seviye yukarı çıkıyor; bağlantılar göreli. Bu, 1.1.9 etiketinden
-  sonra yayımlanan düzeltmenin kalıcı hâlidir.
+- **AUR bağımlılığı düzeltildi: `cups-libs` → `libcups`.** Arch depolarında
+  `cups-libs` diye bir paket yoktur — o isim Fedora'ya aittir. Arch'ta CUPS
+  kitaplığının paket adı `libcups`'tır. Eski isimle bağımlılık çözülemediği için
+  `openanime` ve `openanime-bin` paketleri kurulamıyordu. İki AUR paketinin de
+  `PKGBUILD` ve `.SRCINFO` dosyaları `libcups` kullanacak şekilde düzeltildi.
 
 ## Notlar
 
-APT üst verisi (`InRelease`), pacman veritabanı ve paketleri, ayrıca RPM
-üst verisi (`repomd.xml`) zaten imzalıydı; bunlara dokunulmadı. Değişen tek
-imzalama davranışı, tek tek RPM paketlerinin de imzalanmasıdır.
+- **RPM imzalama (1.1.9-2'den itibaren) bu sürümde de geçerli.** Her `.rpm`
+  paketi depo anahtarıyla imzalanır; Fedora kurulumunda `gpgcheck=1` hem depo
+  üst verisini hem paketin kendisini doğrular.
+- Paketler `1.2.0-1` olarak imzalanır: `deb`, `rpm`, `pacman` ve AUR
+  (`pkgrel=1`).
 
 ## İndirme
 
