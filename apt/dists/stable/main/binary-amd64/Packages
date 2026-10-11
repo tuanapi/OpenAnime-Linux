@@ -40,3 +40,24 @@ Description:
 License: MIT
 Vendor: tuanapi <tuanapi@proton.me>
 
+Package: openanime
+Architecture: amd64
+Version: 1.2.0-1
+Priority: optional
+Section: default
+Maintainer: tuanapi <tuanapi@proton.me>
+Installed-Size: 294678
+Depends: libgtk-3-0, libnotify4, libnss3, libxss1, libxtst6, xdg-utils, libatspi2.0-0, libuuid1, libsecret-1-0, libxkbcommon0, libxkbfile1, libasound2t64 | libasound2, libcups2, libgbm1
+Recommends: libappindicator3-1
+Filename: pool/main/o/openanime/openanime_1.2.0_amd64.deb
+Size: 99798824
+MD5sum: 89953d40b29ca3bf84ffa8e1d11811f8
+SHA1: 50fa22c41c94e49b5677364037879e82c6dc3a9a
+SHA256: c2ec8ce0a65857c9be94a320a44a590de93bf74684a95a9ce22948f83056ca89
+SHA512: d940801394228acf0c5da0d192a9c395aa84daaa23a888054ba36767074ec7bd5015f3a736c447e389391bc767b61099141828eaf5a35d0f200e24c9fa79bd23
+Homepage: https://github.com/tuanapi/OpenAnime-Linux
+Description: 
+  OpenAnime için geliştirilmiş, resmi olmayan (unofficial), yerel WebGPU destekli Linux istemcisi.
+License: MIT
+Vendor: tuanapi <tuanapi@proton.me>
+

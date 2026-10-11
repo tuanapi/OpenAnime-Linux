@@ -1,28 +1,28 @@
 Architectures: amd64
 Codename: stable
 Components: main
-Date: Sat, 10 Oct 2026 15:20:12 +0000
+Date: Sun, 11 Oct 2026 10:43:53 +0000
 Description: OpenAnime repository
 Label: OpenAnime
 Origin: OpenAnime
 Suite: stable
 MD5Sum:
- 3ba3ba8a8fee61e2fd6022d704da3d8b              176 Release
- dbf55cf08c0e20fd59bec257ef05887e             1922 main/binary-amd64/Packages
- 831782d34d7cdc3bc595a8770d91cfe2              840 main/binary-amd64/Packages.gz
- 89acc60ca16b7d5252e720a9c84c21e7              838 main/binary-amd64/Packages.zst
+ 09f515a01ad5358b9f7596147b827264              176 Release
+ 42df17a586de58b66028da66659d8fbf             2884 main/binary-amd64/Packages
+ 61f3894698ab2afecbae0fdea8a40ff1             1036 main/binary-amd64/Packages.gz
+ 3ff2eb6c8d2883a38f4df3b35460c77c             1014 main/binary-amd64/Packages.zst
 SHA1:
- d016211936896767a669dc82103223cecdc3cff2              176 Release
- cfbaee65abb1008d4b0a125804553cdacaa601b6             1922 main/binary-amd64/Packages
- 1e76902dad3915ab9c42a2af94061e34c3e8e4a5              840 main/binary-amd64/Packages.gz
- acd387e974af9a8b6af86e43c872e3d21977c084              838 main/binary-amd64/Packages.zst
+ af0ea49cb218d2a2b142f6c7b9b3fd3a446857b4              176 Release
+ 59d485c318c43071556f61f029361bd647fbf20a             2884 main/binary-amd64/Packages
+ 1b539e78a560fb618eee51e815948e451522462a             1036 main/binary-amd64/Packages.gz
+ ab783bcf85934b0eb295b15e9bac324ded612aab             1014 main/binary-amd64/Packages.zst
 SHA256:
- e976971dc1400ec57a92b343e96c3fec35ad36ba5c0abd30a1d14a2d2642bb0b              176 Release
- a7ba3bc2a889bdaa43009f67e583529b76205ed4bb6b5097e4cd9bbec5f2ce68             1922 main/binary-amd64/Packages
- 8a1793e765eda34b549027cb073f78907222383ffabeabbf102f1b86cc5a918a              840 main/binary-amd64/Packages.gz
- bccc05009b1da72dc593141382ed1c9cd10174c2d704a7c1cb63418233e2df48              838 main/binary-amd64/Packages.zst
+ e183bba116afea955241906469f042b442866c57ee370af930d03db90dd86223              176 Release
+ a0f68adbe56e964343123ce6fed194111ed44de1872c357818867dc52b8b62ea             2884 main/binary-amd64/Packages
+ 403a10497597dc737a802162f47b454c4545c00d08b4af59b4aea844c3050ed7             1036 main/binary-amd64/Packages.gz
+ 5a052a8400b83b87efe1137f6ed4c044d6ec82eb265bf5300fb3a37c7d63f091             1014 main/binary-amd64/Packages.zst
 SHA512:
- 8806483b367a803f8f22e44d48f52dffca527bf965a82b5609b805973d1dbba6a8f7ce3452e035536fcd8ec3bb1449eb789d9a483e78e83a72b7c592d417dfb0              176 Release
- b475713ec9733cc0d57998f8ccdc0e5121b56f0ba45c2d3f2910671a84fa4aa9ba8cbdd75afb86bfa773713178d596dc7932f7b72ec53015d9ba542809182027             1922 main/binary-amd64/Packages
- c5ca647b37085370b9c8b4a1d0db976f54647a7e149799291f190b131072c6586ed5d67c05b396a4363d356cf95de1cb7df2362bc79d3205ad41175a4d3a062a              840 main/binary-amd64/Packages.gz
- fdcff90f1d542250f0362c7e643eb84c2ecc9d97f2d6f951976764b9f1eee0ed7544490f3ee961d75cd2d90b333adc8d3e3ec00a0d2ba4988dc978ab00eed17b              838 main/binary-amd64/Packages.zst
+ 92d7b1a0163c523f91b545295451f60cb3529ffd7b32af30528c007a9c89d7acf69524282dd81cc252466ea159d69afe899c3153b6c3838cd87eade99eb8034a              176 Release
+ 70de05d77295c19388fbd3421cb15b54de4eb2a7e870aa5b58772b55c27feec1482a54c7691ec76375110874300b3deebbb4c89da9e3e595f224c7c2d20027a5             2884 main/binary-amd64/Packages
+ e58a0593a074e42a1a5849d03de78727cba77ed6fb0f53d6b3e4c6804eed0a6b453519c9e1135db7f703beebcc83cf8a0e96929c1dc1f20533ec93ad1bf4dd04             1036 main/binary-amd64/Packages.gz
+ df7bee7b3bd2b0a199084df4a2def122afa510027bd562cba0c40af1638492162ba593dc77a64d0b9f18d5b3c499896447bdc3135b248553abac12e8f9a1f901             1014 main/binary-amd64/Packages.zst
