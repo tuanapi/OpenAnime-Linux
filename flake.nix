@@ -28,7 +28,7 @@
 
           src = ./.;
 
-          npmDepsHash = "sha256-orxbHbGOKkIZUq9hxRGAYqvEVrgrDvQyQPoWrZcqJuE=";
+          npmDepsHash = "sha256-oICeLNtjek/4WmQo33tMEQmppWgFLPFhOOPit9UPz3s=";
 
           # Runtime only needs @xhayper/discord-rpc — electron and
           # electron-builder are devDependencies for the AppImage/deb/rpm
